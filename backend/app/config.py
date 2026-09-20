@@ -30,9 +30,19 @@ class Settings(BaseSettings):
 
     sync_interval_minutes: int = 360
 
-    # Comprovantes de pagamento anexados a lançamentos
+    # Comprovantes de pagamento: disco local (Docker) por padrão. Se supabase_url e
+    # supabase_service_key estiverem definidos, usa Supabase Storage (necessário na Vercel,
+    # onde o sistema de arquivos das funções é temporário).
     upload_dir: str = "/srv/uploads"
     max_upload_mb: int = 8
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+    supabase_bucket: str = "receipts"
+
+    # Vercel Cron chama /api/cron/sync no lugar da tarefa em segundo plano (que não existe
+    # em ambiente serverless); a Vercel manda esse valor como "Authorization: Bearer <valor>"
+    # automaticamente quando CRON_SECRET está configurado — https://vercel.com/docs/cron-jobs
+    cron_secret: str = ""
 
 
 @lru_cache

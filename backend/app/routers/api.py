@@ -3,13 +3,11 @@ import hashlib
 import hmac
 import io
 import secrets
-import uuid
 from datetime import date, datetime
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -19,7 +17,7 @@ from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Category, CategoryRule, Contract, Goal,
                       Income, PluggyItem, Transaction, User)
-from ..services import advisor, analytics, assistant, market, pluggy
+from ..services import advisor, analytics, assistant, market, pluggy, storage
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -335,10 +333,6 @@ def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends
     return tx_out(t)
 
 
-_RECEIPT_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp",
-                  "image/heic": ".heic", "application/pdf": ".pdf"}
-
-
 @router.post("/transactions/{tid}/receipt")
 async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_user),
                          db: Session = Depends(get_db)):
@@ -346,30 +340,28 @@ async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_u
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
-    ext = _RECEIPT_TYPES.get(file.content_type)
+    ext = storage.ext_for(file.content_type)
     if not ext:
         raise HTTPException(400, "Envie uma imagem (JPG/PNG/WEBP/HEIC) ou PDF.")
     s = get_settings()
     data = await file.read()
     if len(data) > s.max_upload_mb * 1024 * 1024:
         raise HTTPException(400, f"Arquivo maior que {s.max_upload_mb} MB.")
-    user_dir = Path(s.upload_dir) / str(u.id)
-    user_dir.mkdir(parents=True, exist_ok=True)
-    if t.receipt_path:
-        Path(t.receipt_path).unlink(missing_ok=True)
-    dest = user_dir / f"{tid}-{uuid.uuid4().hex[:8]}{ext}"
-    dest.write_bytes(data)
-    t.receipt_path = str(dest)
+    old = t.receipt_path
+    t.receipt_path = storage.save(u.id, tid, ext, data)
     db.commit()
+    storage.delete(old)
     return tx_out(t)
 
 
 @router.get("/transactions/{tid}/receipt")
 def get_receipt(tid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
-    if not t or not t.receipt_path or not Path(t.receipt_path).is_file():
+    resolved = storage.resolve(t.receipt_path) if t and t.receipt_path else None
+    if not resolved:
         raise HTTPException(404, "Sem comprovante para este lançamento.")
-    return FileResponse(t.receipt_path)
+    kind, value = resolved
+    return RedirectResponse(value) if kind == "url" else FileResponse(value)
 
 
 @router.delete("/transactions/{tid}/receipt")
@@ -378,7 +370,7 @@ def delete_receipt(tid: int, u: User = Depends(current_user), db: Session = Depe
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
     if t.receipt_path:
-        Path(t.receipt_path).unlink(missing_ok=True)
+        storage.delete(t.receipt_path)
         t.receipt_path = None
         db.commit()
     return {"ok": True}
@@ -522,8 +514,7 @@ def delete_transaction(tid: int, u: User = Depends(current_user), db: Session = 
     if not t:
         raise HTTPException(404, "Não encontrado")
     _apply_tx_effect(db, t, -1)
-    if t.receipt_path:
-        Path(t.receipt_path).unlink(missing_ok=True)
+    storage.delete(t.receipt_path)
     db.delete(t)
     db.commit()
     return {"ok": True}

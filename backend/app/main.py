@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +19,10 @@ from .services.categorizer import DEFAULT_CATEGORIES
 
 log = logging.getLogger("finora")
 FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
+# A Vercel define essa variável em toda função serverless. Sem processo contínuo lá, não
+# existe tarefa em segundo plano nem faz sentido montar o frontend (a Vercel serve os
+# arquivos estáticos direto, sem passar pela função Python) — ver vercel.json.
+ON_VERCEL = bool(os.environ.get("VERCEL"))
 
 
 def _migrate(engine):
@@ -95,9 +100,10 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
     _migrate(engine)
     _backfill_default_categories()
-    task = asyncio.create_task(periodic_sync())
+    task = None if ON_VERCEL else asyncio.create_task(periodic_sync())
     yield
-    task.cancel()
+    if task:
+        task.cancel()
 
 
 app = FastAPI(title="Finora API", version="1.0.0", lifespan=lifespan)
@@ -131,12 +137,35 @@ def public_config():
     return {"google_client_id": get_settings().google_client_id}
 
 
-app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
+@app.get("/api/cron/sync")
+async def cron_sync(request: Request):
+    """Chamado pela Vercel Cron no lugar da tarefa em segundo plano (ver vercel.json)."""
+    s = get_settings()
+    if s.cron_secret and request.headers.get("authorization") != f"Bearer {s.cron_secret}":
+        raise HTTPException(401, "Não autorizado")
+    if not pluggy.enabled():
+        return {"synced": 0}
+    db = SessionLocal()
+    n = 0
+    try:
+        for it in db.query(PluggyItem).all():
+            try:
+                await asyncio.to_thread(pluggy.sync_item, db, it.user_id, it.item_id, 15)
+                analytics.run_alerts(db, it.user_id)
+                n += 1
+            except Exception as e:  # noqa: BLE001
+                log.warning("cron sync %s falhou: %s", it.item_id, e)
+    finally:
+        db.close()
+    return {"synced": n}
 
 
-@app.get("/{path:path}", include_in_schema=False)
-def spa(path: str):
-    f = FRONTEND / path
-    if path and f.is_file() and FRONTEND in f.resolve().parents:
-        return FileResponse(f)
-    return FileResponse(FRONTEND / "index.html")
+if not ON_VERCEL:
+    app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        f = FRONTEND / path
+        if path and f.is_file() and FRONTEND in f.resolve().parents:
+            return FileResponse(f)
+        return FileResponse(FRONTEND / "index.html")

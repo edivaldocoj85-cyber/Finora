@@ -9,6 +9,8 @@ web
 ## Stack
 Existing codebase: vanilla JS SPA frontend (`frontend/app.js`, no framework/build step) + FastAPI (Python) backend + Postgres, served as one container behind Caddy in production, `docker compose` for local/self-hosted deploy.
 
+Also deployable to Vercel (added 2026-09-20, user's chosen path): `api/index.py` exposes the same FastAPI app as an ASGI serverless function, `vercel.json` routes `/api/*` there and serves `frontend/` as static assets directly. Two things that don't exist in Docker mode had to change for this: the background Pluggy sync loop becomes a Vercel Cron hitting `GET /api/cron/sync` (guarded by `CRON_SECRET`), and payment-receipt storage moves from local disk to Supabase Storage (`backend/app/services/storage.py` picks whichever backend is configured — local disk when `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` are unset, Supabase otherwise). Postgres itself has to be external on Vercel (the user picked Supabase for that too, so DB + file storage share one account). Both deploy paths stay supported from the same codebase.
+
 ## Users
 Primary user: Edivaldo, using Finora for his own personal/family financial life — not building it as a product for other people (confirmed). Single-tenant-per-deployment self-hosted tool, not a commercial multi-tenant SaaS today.
 
