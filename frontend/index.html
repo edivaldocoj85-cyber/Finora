@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Finora — controle financeiro pessoal com Open Finance e consultor inteligente">
+<title>Finora</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="auth" class="auth hidden">
+  <canvas id="authCanvas" aria-hidden="true"></canvas>
+  <div class="auth-card">
+    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <p class="muted">Sua vida financeira organizada, com alertas e orientação inteligente.</p>
+    <div class="tabs" id="authTabs">
+      <button class="active" data-mode="login">Entrar</button>
+      <button data-mode="register">Criar conta</button>
+    </div>
+    <form id="authForm">
+      <label class="reg-only">Nome<input name="name" autocomplete="name"></label>
+      <label>E-mail<input name="email" type="email" required autocomplete="email"></label>
+      <label>Senha<input name="password" type="password" required minlength="8" autocomplete="current-password"></label>
+      <label class="check reg-only"><input type="checkbox" name="lgpd_consent"> Aceito os termos de uso e a política de privacidade (LGPD)</label>
+      <button class="btn primary full" type="submit">Entrar</button>
+      <p class="error" id="authError"></p>
+    </form>
+    <div id="googleAuth" class="hidden">
+      <div class="divider"><span>ou</span></div>
+      <div id="googleBtn"></div>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">F</span> Finora</div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div id="userName" class="muted small"></div>
+      <button class="btn ghost small" id="logout">Sair</button>
+    </div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <h1 id="pageTitle">Painel</h1>
+      <div class="top-actions">
+        <input type="month" id="monthRef" title="Mês de referência">
+        <button class="icon-btn" id="themeBtn" title="Aparência"></button>
+        <button class="icon-btn" id="alertsBtn" title="Alertas">🔔<span id="alertBadge" class="badge hidden"></span></button>
+        <button class="btn primary" id="quickAdd">+ Lançamento</button>
+      </div>
+    </header>
+    <section id="view"></section>
+  </main>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <button id="assistantBtn" title="Assistente Finora">🤖<span id="apBadge" class="badge hidden"></span></button>
+  <div id="assistantPanel" class="hidden">
+    <div class="ap-head"><strong>🤖 Assistente Finora</strong><button class="ap-close" id="apClose" type="button">✕</button></div>
+    <div id="ap-msgs"></div>
+    <div class="ap-chips" id="apChips"></div>
+    <form id="apForm"><input id="apInput" placeholder="Pergunte ou peça algo…" autocomplete="off"><button class="btn primary small" type="submit">➤</button></form>
+  </div>
+</div>
+
+<dialog id="modal"><form method="dialog" id="modalForm"></form></dialog>
+<div id="toast" class="toast hidden"></div>
+<div id="onboarding" class="onboarding hidden"></div>
+
+<script src="/vendor/chart.umd.min.js"></script>
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/vendor/gsap.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
