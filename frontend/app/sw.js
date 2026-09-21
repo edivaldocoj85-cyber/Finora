@@ -1,8 +1,9 @@
-// Service worker: cache do app (shell) para abrir rápido e funcionar offline em modo leitura.
-const CACHE = "finora-v3";
-const SHELL = ["/", "/index.html", "/styles.css", "/app.js", "/manifest.json", "/icon.svg",
-  "/vendor/chart.umd.min.js", "/vendor/marked.min.js", "/vendor/purify.min.js", "/vendor/gsap.min.js",
-  "/vendor/supabase.min.js"];
+// Service worker do app autenticado — escopo /app (registrado com caminho relativo em
+// app.js, então por padrão só controla essa pasta; a landing em / fica de fora).
+const CACHE = "finora-v4";
+const SHELL = ["/app/", "/app/index.html", "/app/styles.css", "/app/app.js", "/app/manifest.json", "/icon.svg",
+  "/app/vendor/chart.umd.min.js", "/app/vendor/marked.min.js", "/app/vendor/purify.min.js", "/app/vendor/gsap.min.js",
+  "/app/vendor/supabase.min.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))));
@@ -14,5 +15,5 @@ self.addEventListener("fetch", (e) => {
   // rede primeiro, cache como reserva
   e.respondWith(fetch(e.request).then((r) => {
     const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r;
-  }).catch(() => caches.match(e.request).then((r) => r || caches.match("/index.html"))));
+  }).catch(() => caches.match(e.request).then((r) => r || caches.match("/app/index.html"))));
 });

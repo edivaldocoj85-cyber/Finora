@@ -1363,7 +1363,7 @@ function initAssistant() {
 
 /* ------------------------------------------------------------------ PWA */
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); window._installPrompt = e; });
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
 initAuth();
 initAssistant();
