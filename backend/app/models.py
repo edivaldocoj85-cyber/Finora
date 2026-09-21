@@ -128,6 +128,21 @@ class Goal(Owned, Base):
     target_amount: Mapped[float] = mapped_column(Float)
     current_amount: Mapped[float] = mapped_column(Float, default=0)
     deadline: Mapped[date | None] = mapped_column(Date)
+    kind: Mapped[str] = mapped_column(String(20), default="custom")  # custom | emergency_fund
+    # só usados quando kind="emergency_fund": target_amount vira months_target × monthly_cost
+    months_target: Mapped[float | None] = mapped_column(Float)
+    monthly_cost: Mapped[float | None] = mapped_column(Float)
+
+
+class Asset(Owned, Base):
+    """Bens que entram no patrimônio líquido mas não são contas conectadas — imóvel,
+    veículo, etc. Cadastrados à mão, com consulta opcional à tabela FIPE pra veículos."""
+    __tablename__ = "assets"
+    name: Mapped[str] = mapped_column(String(120))
+    kind: Mapped[str] = mapped_column(String(20), default="outro")  # imovel | veiculo | outro
+    value: Mapped[float] = mapped_column(Float, default=0)
+    vehicle_fipe_code: Mapped[str | None] = mapped_column(String(20))
+    notes: Mapped[str] = mapped_column(String(300), default="")
 
 
 class PluggyItem(Owned, Base):

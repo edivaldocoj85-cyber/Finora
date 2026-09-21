@@ -2,6 +2,7 @@ import csv
 import hashlib
 import hmac
 import io
+import time
 from datetime import date, datetime
 from typing import Optional
 
@@ -15,8 +16,8 @@ from sqlalchemy.orm import Session
 from ..auth import current_admin, current_user, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
-from ..models import (Account, AdvisorReport, Alert, Category, CategoryRule, Contract, Goal,
-                      Income, PluggyItem, Transaction, User)
+from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
+                      Goal, Income, PluggyItem, Transaction, User)
 from ..services import advisor, analytics, assistant, market, pluggy, storage
 from ..services.categorizer import categorize, seed_categories
 
@@ -246,6 +247,17 @@ class GoalIn(BaseModel):
     target_amount: float
     current_amount: float = 0
     deadline: Optional[date] = None
+    kind: str = "custom"  # custom | emergency_fund
+    months_target: Optional[float] = None
+    monthly_cost: Optional[float] = None
+
+
+class AssetIn(BaseModel):
+    name: str
+    kind: str = "outro"  # imovel | veiculo | outro
+    value: float = Field(ge=0)
+    vehicle_fipe_code: Optional[str] = None
+    notes: str = Field("", max_length=300)
 
 
 class TransactionIn(BaseModel):
@@ -344,6 +356,48 @@ crud("categories", Category, CategoryIn, order=Category.name)
 crud("contracts", Contract, ContractIn, {"category_id": Category, "account_id": Account}, order=Contract.due_day)
 crud("incomes", Income, IncomeIn, order=Income.pay_day)
 crud("goals", Goal, GoalIn)
+crud("assets", Asset, AssetIn, order=Asset.created_at)
+
+
+# ---------------------------------------------------------------- FIPE (valor de mercado de veículos)
+# Proxy pra tabela FIPE pública (parallelum.com.br): evita CORS no frontend e cacheia em
+# memória por um dia — marcas/modelos praticamente não mudam e a tabela FIPE é mensal.
+_FIPE_BASE = "https://parallelum.com.br/fipe/api/v1"
+_fipe_cache: dict[str, tuple[float, object]] = {}
+_FIPE_TTL = 60 * 60 * 24
+
+
+def _fipe_get(path: str):
+    now = time.time()
+    hit = _fipe_cache.get(path)
+    if hit and now - hit[0] < _FIPE_TTL:
+        return hit[1]
+    r = httpx.get(f"{_FIPE_BASE}{path}", timeout=15)
+    if r.status_code >= 300:
+        raise HTTPException(502, "Tabela FIPE indisponível no momento.")
+    data = r.json()
+    _fipe_cache[path] = (now, data)
+    return data
+
+
+@router.get("/fipe/marcas")
+def fipe_marcas(u: User = Depends(current_user)):
+    return _fipe_get("/carros/marcas")
+
+
+@router.get("/fipe/modelos")
+def fipe_modelos(marca: str, u: User = Depends(current_user)):
+    return _fipe_get(f"/carros/marcas/{marca}/modelos")["modelos"]
+
+
+@router.get("/fipe/anos")
+def fipe_anos(marca: str, modelo: str, u: User = Depends(current_user)):
+    return _fipe_get(f"/carros/marcas/{marca}/modelos/{modelo}/anos")
+
+
+@router.get("/fipe/valor")
+def fipe_valor(marca: str, modelo: str, ano: str, u: User = Depends(current_user)):
+    return _fipe_get(f"/carros/marcas/{marca}/modelos/{modelo}/anos/{ano}")
 
 
 class ConfirmPaymentIn(BaseModel):

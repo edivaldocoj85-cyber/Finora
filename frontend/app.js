@@ -11,14 +11,46 @@ const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOff
 function localGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
 
+// Ícones: Lucide (traço único, peso consistente — nunca emoji como substituto de sistema
+// de ícones). Cada entrada é o miolo do SVG (paths/shapes), envolvido por navIcon() abaixo.
+const ICONS = {
+  dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  transactions: '<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>',
+  cards: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 14h2"/>',
+  accounts: '<path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
+  patrimonio: '<path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>',
+  contracts: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  incomes: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  categories: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+  goals: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  reserve: '<circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/>',
+  advisor: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
+  market: '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+  bank: '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
+  settings: '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+  admin: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  more: '<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>',
+  logout: '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
+  monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+  bell: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+  bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+};
+const navIcon = (id) => `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id] || ""}</svg>`;
+
 /* ------------------------------------------------------------------ aparência (claro/escuro/automático) */
 const THEME_ORDER = ["light", "dark", "auto"];
-const THEME_ICON = { light: "☀️", dark: "🌙", auto: "🖥️" };
+const THEME_ICON = { light: "sun", dark: "moon", auto: "monitor" };
 const THEME_LABEL = { light: "Claro", dark: "Escuro", auto: "Automático (sistema)" };
 function applyTheme(mode) {
   document.documentElement.dataset.theme = mode;
   const btn = $("#themeBtn");
-  if (btn) btn.textContent = THEME_ICON[mode] || THEME_ICON.auto;
+  if (btn) btn.innerHTML = navIcon(THEME_ICON[mode] || THEME_ICON.auto);
   if (btn) btn.title = `Aparência: ${THEME_LABEL[mode] || THEME_LABEL.auto} — clique para trocar`;
 }
 function setTheme(mode) { localSet("finora_theme", mode); applyTheme(mode); }
@@ -30,23 +62,26 @@ $("#themeBtn").onclick = () => {
 
 const KINDS = { checking: "Conta corrente", savings: "Poupança", investment: "Investimentos", cash: "Dinheiro", credit_card: "Cartão de crédito" };
 const INCOME_KINDS = { salary: "Salário", freelance: "Freelance/serviços", rent: "Aluguel recebido", dividends: "Dividendos", other: "Outra" };
+const ASSET_KINDS = { imovel: "Imóvel", veiculo: "Veículo", outro: "Outro bem" };
 
 const ROUTES = [
-  { id: "dashboard", label: "Painel", icon: "📊", mobile: true },
-  { id: "transactions", label: "Lançamentos", icon: "🧾", mobile: true },
-  { id: "cards", label: "Cartões", icon: "💳", mobile: true },
-  { id: "accounts", label: "Contas", icon: "🏦" },
-  { id: "contracts", label: "Contratos e fixas", icon: "📄" },
-  { id: "incomes", label: "Renda", icon: "💰" },
-  { id: "categories", label: "Categorias e regras", icon: "🏷️" },
-  { id: "goals", label: "Metas", icon: "🎯" },
-  { id: "advisor", label: "Consultor", icon: "🧠", mobile: true },
-  { id: "market", label: "Mercado e simulador", icon: "📈" },
-  { id: "bank", label: "Conexões bancárias", icon: "🔗" },
-  { id: "settings", label: "Configurações", icon: "⚙️" },
+  { id: "dashboard", label: "Painel", icon: "dashboard", mobile: true, primary: true },
+  { id: "transactions", label: "Lançamentos", icon: "transactions", mobile: true, primary: true },
+  { id: "cards", label: "Cartões", icon: "cards", mobile: true, primary: true },
+  { id: "accounts", label: "Contas", icon: "accounts", primary: true },
+  { id: "patrimonio", label: "Patrimônio", icon: "patrimonio", primary: true },
+  { id: "market", label: "Mercado e simulador", icon: "market", primary: true },
+  { id: "contracts", label: "Contratos e fixas", icon: "contracts" },
+  { id: "incomes", label: "Renda", icon: "incomes" },
+  { id: "categories", label: "Categorias e regras", icon: "categories" },
+  { id: "goals", label: "Metas", icon: "goals" },
+  { id: "reserve", label: "Reserva de emergência", icon: "reserve" },
+  { id: "advisor", label: "Consultor", icon: "advisor", mobile: true },
+  { id: "bank", label: "Conexões bancárias", icon: "bank" },
+  { id: "settings", label: "Configurações", icon: "settings" },
 ];
 function visibleRoutes() {
-  return state.user?.is_admin ? [...ROUTES, { id: "admin", label: "Administração", icon: "🛡️" }] : ROUTES;
+  return state.user?.is_admin ? [...ROUTES, { id: "admin", label: "Administração", icon: "admin" }] : ROUTES;
 }
 
 /* ------------------------------------------------------------------ API */
@@ -303,10 +338,18 @@ async function initAuth() {
 }
 
 /* ------------------------------------------------------------------ shell */
+const navLink = (r, cls = "") => `<a class="nav-item${cls ? " " + cls : ""}" href="#${r.id}" data-r="${r.id}">${navIcon(r.icon)}<span class="nav-label">${esc(r.label)}</span></a>`;
 function buildNav() {
-  $("#nav").innerHTML = visibleRoutes().map((r) => `<a class="nav-item" href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("");
-  $("#bottomNav").innerHTML = visibleRoutes().filter((r) => r.mobile).map((r) => `<a href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("")
-    + `<a href="#more" data-r="more"><span>☰</span>Mais</a>`;
+  const routes = visibleRoutes();
+  const primary = routes.filter((r) => r.primary);
+  const secondary = routes.filter((r) => !r.primary && r.id !== "admin");
+  const admin = routes.find((r) => r.id === "admin");
+  $("#nav").innerHTML = primary.map((r) => navLink(r, "primary")).join("")
+    + `<div class="nav-divider" role="separator" aria-hidden="true"></div>`
+    + secondary.map((r) => navLink(r)).join("")
+    + (admin ? `<div class="nav-divider" role="separator" aria-hidden="true"></div>${navLink(admin, "admin")}` : "");
+  $("#bottomNav").innerHTML = routes.filter((r) => r.mobile).map((r) => navLink(r)).join("")
+    + `<a href="#more" data-r="more">${navIcon("more")}<span class="nav-label">Mais</span></a>`;
 }
 async function boot() {
   try { state.user = await api("/me"); } catch { return showAuth(); }
@@ -495,8 +538,8 @@ const barFill = (p) => `transform:scaleX(${Math.max(0, Math.min(100, p)) / 100})
 const VIEWS = {};
 
 VIEWS.more = async (v) => {
-  v.innerHTML = `<div class="card list">${visibleRoutes().map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}"><span>${r.icon}</span><div class="grow title">${r.label}</div><span class="muted">›</span></a>`).join("")}
-  <a class="li" style="text-decoration:none;color:inherit" href="#" onclick="logout();return false"><span>🚪</span><div class="grow title">Sair</div></a></div>`;
+  v.innerHTML = `<div class="card list">${visibleRoutes().map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}">${navIcon(r.icon)}<div class="grow title">${esc(r.label)}</div><span class="muted">›</span></a>`).join("")}
+  <a class="li" style="text-decoration:none;color:inherit" href="#" onclick="logout();return false">${navIcon("logout")}<div class="grow title">Sair</div></a></div>`;
 };
 
 let dashboardTrendMonths = 6;
@@ -510,9 +553,9 @@ VIEWS.dashboard = async (v) => {
   const bal = d.month.income - d.month.expense;
   const empty = !d.accounts.length;
   v.innerHTML = `
-  ${empty ? `<div class="card" style="margin-bottom:16px"><h2>Bem-vindo ao Finora 👋</h2><p class="muted">Comece em 3 passos: <a href="#bank">conecte seus bancos</a> ou <a href="#accounts">cadastre contas e cartões</a>, informe sua <a href="#incomes">renda</a> e seus <a href="#contracts">contratos e contas fixas</a>.</p></div>` : ""}
+  ${empty ? `<div class="card" style="margin-bottom:16px"><h2>Bem-vindo ao Finora</h2><p class="muted">Comece em 3 passos: <a href="#bank">conecte seus bancos</a> ou <a href="#accounts">cadastre contas e cartões</a>, informe sua <a href="#incomes">renda</a> e seus <a href="#contracts">contratos e contas fixas</a>.</p></div>` : ""}
   <div class="grid g4 keep2">
-    <div class="card stat hero"><h3>Patrimônio líquido</h3><div class="value" data-count="${d.net_worth}">${brl(d.net_worth)}</div><div class="sub">Saldo ${brl(d.cash)} · Invest. ${brl(d.investments)}</div></div>
+    <div class="card stat hero"><h3>Patrimônio líquido</h3><div class="value" data-count="${d.net_worth}">${brl(d.net_worth)}</div><div class="sub">Saldo ${brl(d.cash)} · Invest. ${brl(d.investments)}${d.assets_total ? ` · Bens ${brl(d.assets_total)}` : ""}</div></div>
     <div class="card stat"><h3>Receitas do mês</h3><div class="value pos" data-count="${d.month.income}">${brl(d.month.income)}</div><div class="sub">Esperado ${brl(d.expected_income)}</div></div>
     <div class="card stat"><h3>Despesas do mês</h3><div class="value neg" data-count="${d.month.expense}">${brl(d.month.expense)}</div><div class="sub">Projeção ${brl(d.projected_expense)}</div></div>
     <div class="card stat"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
@@ -535,7 +578,10 @@ VIEWS.dashboard = async (v) => {
   </div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><h2>Contas</h2><div class="list">${d.accounts.filter((a) => a.kind !== "credit_card").map((a) => `<div class="li"><span class="dot" style="background:${esc(a.color)}"></span><div class="grow"><div class="title">${esc(a.name)}</div><div class="small muted">${esc(KINDS[a.kind])}${a.institution ? " · " + esc(a.institution) : ""}</div></div><div class="amount ${a.balance < 0 ? "neg" : ""}">${brl(a.balance)}</div></div>`).join("") || '<div class="empty">Nenhuma conta.</div>'}</div></div>
-    <div class="card"><h2>Metas</h2><div class="list">${d.goals.map((g) => `<div class="li" style="display:block"><div class="between"><strong>${esc(g.name)}</strong><span class="small">${brl(g.current)} / ${brl(g.target)}</span></div><div class="bar"><i style="${barFill(pct(g.current, g.target))}"></i></div></div>`).join("") || '<div class="empty"><a href="#goals">Crie uma meta</a> para acompanhar sua evolução.</div>'}</div></div>
+    <div class="card"><h2>Metas</h2><div class="list">
+      ${d.emergency_fund ? `<a class="li" style="display:block;text-decoration:none;color:inherit" href="#reserve"><div class="between"><strong>${navIcon("reserve")} Reserva de emergência</strong><span class="small">${d.emergency_fund.months_covered} / ${d.emergency_fund.months_target} meses</span></div><div class="bar"><i style="${barFill(pct(d.emergency_fund.current, d.emergency_fund.target))}"></i></div></a>` : `<a class="li" style="display:block;text-decoration:none;color:inherit" href="#reserve"><strong>${navIcon("reserve")} Configure sua reserva de emergência</strong><div class="small muted">Meses de despesas guardados pra imprevistos</div></a>`}
+      ${d.goals.map((g) => `<div class="li" style="display:block"><div class="between"><strong>${esc(g.name)}</strong><span class="small">${brl(g.current)} / ${brl(g.target)}</span></div><div class="bar"><i style="${barFill(pct(g.current, g.target))}"></i></div></div>`).join("") || (d.emergency_fund ? "" : '<div class="empty"><a href="#goals">Crie uma meta</a> para acompanhar sua evolução.</div>')}
+    </div></div>
   </div>
   ${(() => {
     const essTotal = d.categories.filter((c) => c.essential).reduce((s, c) => s + c.total, 0);
@@ -804,7 +850,7 @@ function goalForm(g = {}) {
   });
 }
 VIEWS.goals = async (v) => {
-  const items = await api("/goals");
+  const items = (await api("/goals")).filter((g) => g.kind !== "emergency_fund");
   simpleList(v, {
     items, empty: "Nenhuma meta ainda.", newLabel: "+ Meta", onNew: goalForm, intro: "Acompanhe seus objetivos e quanto guardar por mês.",
     render: (g) => {
@@ -817,6 +863,121 @@ VIEWS.goals = async (v) => {
       return `<div class="grow"><div class="between"><span class="title">${esc(g.name)}</span><span class="small">${brl(g.current_amount)} / ${brl(g.target_amount)}</span></div><div class="bar"><i style="${barFill(pct(g.current_amount, g.target_amount))}"></i></div><div class="small muted" style="margin-top:4px">${g.deadline ? "Prazo " + fdate(g.deadline) : "Sem prazo"}${perMonth}</div></div>`;
     },
   });
+};
+
+/* ------------------------------------------------------------------ patrimônio (outros bens) */
+function assetForm(a = {}) {
+  const isVehicle = a.kind === "veiculo";
+  return openForm({
+    title: a.id ? "Editar bem" : "Novo bem", values: { kind: "outro", ...a },
+    fields: [
+      { name: "name", label: "Nome", required: true, placeholder: "Apartamento, carro, moto…" },
+      { name: "kind", label: "Tipo", type: "select", options: Object.entries(ASSET_KINDS) },
+      { name: "value", label: "Valor estimado (R$)", type: "number", required: true },
+      { name: "notes", label: "Observações", type: "textarea" },
+    ],
+    extra: `<div class="fipe-box" id="fipeBox">
+      <p class="small" style="font-weight:600;margin:0 0 8px">Veículo? Busque o valor pela tabela FIPE</p>
+      <label>Marca<select id="fipeMarca"><option value="">Carregando…</option></select></label>
+      <label>Modelo<select id="fipeModelo" disabled><option value="">Escolha a marca primeiro</option></select></label>
+      <label>Ano<select id="fipeAno" disabled><option value="">Escolha o modelo primeiro</option></select></label>
+      <p class="small muted" id="fipeResult" style="margin-top:6px"></p>
+    </div>${isVehicle && a.vehicle_fipe_code ? `<input type="hidden" name="vehicle_fipe_code" value="${esc(a.vehicle_fipe_code)}">` : ""}`,
+    onSubmit: (d) => {
+      const fipeInput = $("#modalForm input[name=vehicle_fipe_code]");
+      d.vehicle_fipe_code = fipeInput ? fipeInput.value : (a.vehicle_fipe_code || null);
+      return api(a.id ? `/assets/${a.id}` : "/assets", { method: a.id ? "PUT" : "POST", body: d });
+    },
+    onDelete: a.id ? () => api(`/assets/${a.id}`, { method: "DELETE" }) : null,
+  });
+  // (segue abaixo, fora do return, a fiação dos selects em cascata da FIPE)
+}
+async function _wireFipePicker() {
+  const marcaSel = $("#fipeMarca"), modeloSel = $("#fipeModelo"), anoSel = $("#fipeAno"), result = $("#fipeResult");
+  if (!marcaSel) return;
+  try {
+    const marcas = await api("/fipe/marcas");
+    marcaSel.innerHTML = `<option value="">Selecione…</option>` + marcas.map((m) => `<option value="${m.codigo}">${esc(m.nome)}</option>`).join("");
+  } catch { marcaSel.innerHTML = `<option value="">Indisponível no momento</option>`; return; }
+  marcaSel.onchange = async () => {
+    modeloSel.disabled = true; anoSel.disabled = true; result.textContent = "";
+    if (!marcaSel.value) return;
+    modeloSel.innerHTML = `<option value="">Carregando…</option>`;
+    const modelos = await api(`/fipe/modelos?marca=${marcaSel.value}`);
+    modeloSel.innerHTML = `<option value="">Selecione…</option>` + modelos.map((m) => `<option value="${m.codigo}">${esc(m.nome)}</option>`).join("");
+    modeloSel.disabled = false;
+  };
+  modeloSel.onchange = async () => {
+    anoSel.disabled = true; result.textContent = "";
+    if (!modeloSel.value) return;
+    anoSel.innerHTML = `<option value="">Carregando…</option>`;
+    const anos = await api(`/fipe/anos?marca=${marcaSel.value}&modelo=${modeloSel.value}`);
+    anoSel.innerHTML = `<option value="">Selecione…</option>` + anos.map((a) => `<option value="${a.codigo}">${esc(a.nome)}</option>`).join("");
+    anoSel.disabled = false;
+  };
+  anoSel.onchange = async () => {
+    if (!anoSel.value) return;
+    result.textContent = "Consultando…";
+    const r = await api(`/fipe/valor?marca=${marcaSel.value}&modelo=${modeloSel.value}&ano=${anoSel.value}`);
+    result.innerHTML = `<b>${esc(r.Valor)}</b> — ${esc(r.Marca)} ${esc(r.Modelo)} (${esc(r.AnoModelo)}) <button type="button" class="btn small" id="fipeUse">Usar este valor</button>`;
+    $("#fipeUse").onclick = () => {
+      $("#modalForm input[name=value]").value = String(r.Valor).replace(/[^\d,]/g, "").replace(",", ".");
+      $("#modalForm select[name=kind]").value = "veiculo";
+      let hidden = $("#modalForm input[name=vehicle_fipe_code]");
+      if (!hidden) { hidden = document.createElement("input"); hidden.type = "hidden"; hidden.name = "vehicle_fipe_code"; $("#modalForm").appendChild(hidden); }
+      hidden.value = r.CodigoFipe;
+      toast("Valor FIPE aplicado", "success");
+    };
+  };
+}
+VIEWS.patrimonio = async (v) => {
+  const items = await api("/assets");
+  const total = items.reduce((s, a) => s + a.value, 0);
+  simpleList(v, {
+    items, empty: "Nenhum bem cadastrado ainda.", newLabel: "+ Bem",
+    onNew: (a) => { assetForm(a); _wireFipePicker(); },
+    intro: `Outros bens (fora das contas conectadas): <b>${brl(total)}</b>`,
+    render: (a) => `<div class="grow"><div class="title">${esc(a.name)}</div><div class="small muted">${esc(ASSET_KINDS[a.kind] || a.kind)}${a.notes ? " · " + esc(a.notes) : ""}</div></div><div class="amount">${brl(a.value)}</div>`,
+  });
+};
+
+/* ------------------------------------------------------------------ reserva de emergência */
+function reserveForm(g = {}) {
+  return openForm({
+    title: g.id ? "Ajustar reserva de emergência" : "Configurar reserva de emergência",
+    values: { months_target: 6, monthly_cost: 0, current_amount: 0, ...g },
+    fields: [
+      { row: [{ name: "months_target", label: "Meses de cobertura desejados", type: "number", required: true }, { name: "monthly_cost", label: "Custo mensal essencial (R$)", type: "number", required: true }] },
+      { name: "current_amount", label: "Já guardado hoje (R$)", type: "number" },
+    ],
+    onSubmit: (d) => {
+      const body = { name: "Reserva de emergência", kind: "emergency_fund", months_target: d.months_target, monthly_cost: d.monthly_cost,
+                     current_amount: d.current_amount, target_amount: d.months_target * d.monthly_cost };
+      return api(g.id ? `/goals/${g.id}` : "/goals", { method: g.id ? "PUT" : "POST", body });
+    },
+    onDelete: g.id ? () => api(`/goals/${g.id}`, { method: "DELETE" }) : null,
+  });
+}
+VIEWS.reserve = async (v) => {
+  const goals = await api("/goals");
+  const g = goals.find((x) => x.kind === "emergency_fund");
+  if (!g) {
+    v.innerHTML = `<div class="card empty">
+      <p>Você ainda não configurou sua reserva de emergência.</p>
+      <p class="small muted">Regra geral: entre 3 e 6 meses das suas despesas essenciais guardados em algo líquido, pra imprevistos sem precisar recorrer a dívida.</p>
+      <button class="btn primary" id="setupReserve">Configurar agora</button></div>`;
+    $("#setupReserve").onclick = () => reserveForm();
+    return;
+  }
+  const monthsCovered = g.monthly_cost ? g.current_amount / g.monthly_cost : 0;
+  v.innerHTML = `<div class="card">
+    <div class="between"><h2 style="margin:0">Reserva de emergência</h2><button class="btn small" id="editReserve">Ajustar</button></div>
+    <div class="bar" style="margin-top:14px"><i style="${barFill(pct(g.current_amount, g.target_amount))}"></i></div>
+    <div class="between small muted" style="margin-top:6px"><span>${brl(g.current_amount)} guardado</span><span>alvo ${brl(g.target_amount)}</span></div>
+    <p style="margin-top:18px;font-size:15px"><b>${monthsCovered.toFixed(1)}</b> de <b>${g.months_target}</b> meses de cobertura</p>
+    <p class="small muted">Baseado num custo mensal essencial de ${brl(g.monthly_cost)}.</p>
+  </div>`;
+  $("#editReserve").onclick = () => reserveForm(g);
 };
 
 // Links no conteúdo gerado por IA (fontes de pesquisa) sempre abrem em nova aba sem
@@ -877,7 +1038,7 @@ VIEWS.market = async (v) => {
     ladder = `<div class="card" style="margin-top:16px"><h2>Trilha de investimentos</h2>
       <p class="muted small">Sugestões educativas geradas a partir do seu painel — não é recomendação de produto específico, e rentabilidade passada não garante retorno futuro.</p>
       <div class="list">${steps.map((s) => `<div class="li" style="display:block">
-        <strong>${s.done ? "✅ " : ""}${esc(s.title)}</strong>
+        <strong>${s.done ? navIcon("check") + " " : ""}${esc(s.title)}</strong>
         ${s.progress != null ? `<div class="bar" style="margin:6px 0"><i style="${barFill(s.progress)}"></i></div>` : ""}
         <div class="small muted" style="margin-top:4px">${esc(s.text)}</div>
       </div>`).join("")}</div></div>`;
@@ -957,7 +1118,7 @@ VIEWS.settings = async (v) => {
     <label>Meta de economia mensal (R$)<input id="pg" type="number" value="${state.user.monthly_goal_savings || 0}"></label>
     <button class="btn primary full" id="saveMe">Salvar</button>
     <h2 style="margin-top:22px">Aparência</h2>
-    <div class="tabs" id="themeTabs">${THEME_ORDER.map((m) => `<button type="button" data-mode="${m}" class="${m === theme ? "active" : ""}">${THEME_ICON[m]} ${THEME_LABEL[m].split(" (")[0]}</button>`).join("")}</div></div>
+    <div class="tabs" id="themeTabs">${THEME_ORDER.map((m) => `<button type="button" data-mode="${m}" class="${m === theme ? "active" : ""}">${navIcon(THEME_ICON[m])} ${esc(THEME_LABEL[m].split(" (")[0])}</button>`).join("")}</div></div>
     <div class="card"><h2>Instalar no dispositivo</h2><p class="muted small">No celular, abra o menu do navegador e toque em “Adicionar à tela inicial”. No computador, use o ícone de instalação na barra de endereço.</p><button class="btn" id="installBtn" ${window._installPrompt ? "" : "disabled"}>Instalar app</button>
     <h2 style="margin-top:22px">Privacidade (LGPD)</h2><p class="muted small">Você pode exportar seus lançamentos na tela de Lançamentos. Excluir a conta remove todos os seus dados e revoga as conexões bancárias.</p>
     <button class="btn danger" id="delMe">Excluir minha conta</button></div></div>`;
@@ -1020,7 +1181,7 @@ VIEWS.admin = async (v) => {
 /* ------------------------------------------------------------------ assistente de primeiro acesso */
 const OB_STEPS = [
   {
-    icon: "👋", title: "Bem-vindo ao Finora",
+    icon: "sparkles", title: "Bem-vindo ao Finora",
     text: "Vamos preparar seu painel em menos de um minuto. Tudo aqui é opcional — pule quando quiser.",
     fields: [{ name: "name", label: "Como podemos te chamar?" }],
     value: (f) => (f.name === "name" ? state.user.name : ""),
@@ -1032,7 +1193,7 @@ const OB_STEPS = [
     },
   },
   {
-    icon: "🏦", title: "Sua primeira conta ou cartão",
+    icon: "accounts", title: "Sua primeira conta ou cartão",
     text: "Assim já conseguimos calcular saldo, fatura e alertas pra você.",
     fields: [
       { name: "name", label: "Nome", placeholder: "Ex.: Nubank, Itaú, Carteira" },
@@ -1041,7 +1202,7 @@ const OB_STEPS = [
     submit: async (d) => { if (d.name) { await api("/accounts", { body: { name: d.name, kind: d.kind || "checking" } }); await refreshRefs(); } },
   },
   {
-    icon: "💰", title: "Sua renda mensal",
+    icon: "incomes", title: "Sua renda mensal",
     text: "Usamos isso pra projetar o mês e calcular sua taxa de poupança.",
     fields: [
       { name: "name", label: "Fonte de renda", placeholder: "Ex.: Salário" },
@@ -1050,7 +1211,7 @@ const OB_STEPS = [
     submit: async (d) => { if (+d.net_amount > 0) await api("/incomes", { body: { name: d.name || "Salário", net_amount: +d.net_amount } }); },
   },
   {
-    icon: "🎯", title: "Uma meta pra economizar",
+    icon: "goals", title: "Uma meta pra economizar",
     text: "Pode ser a reserva de emergência, uma viagem, o que fizer mais sentido agora.",
     fields: [
       { name: "name", label: "Nome da meta", placeholder: "Ex.: Reserva de emergência" },
@@ -1065,7 +1226,7 @@ function renderObStep() {
   const step = OB_STEPS[obIndex], last = obIndex === OB_STEPS.length - 1;
   $("#onboarding").innerHTML = `<div class="ob-card">
     <div class="ob-steps">${OB_STEPS.map((_, i) => `<i class="${i < obIndex ? "done" : i === obIndex ? "active" : ""}"></i>`).join("")}</div>
-    <div class="ob-icon">${step.icon}</div>
+    <div class="ob-icon">${navIcon(step.icon)}</div>
     <h2>${esc(step.title)}</h2>
     <p class="muted small">${esc(step.text)}</p>
     <form id="obForm">${step.fields.map((f) => field(f, step.value ? step.value(f) : undefined)).join("")}</form>

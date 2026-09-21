@@ -7,7 +7,7 @@ import re
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Account, Transaction, Category, Contract, Income, Goal, Alert
+from ..models import Account, Asset, Transaction, Category, Contract, Income, Goal, Alert
 
 _INSTALLMENT_RE = re.compile(r"^(\d+)/(\d+)$")
 
@@ -151,6 +151,8 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
     invest = sum(a.balance for a in accounts if a.kind == "investment")
     cards = card_invoices(db, user_id, ref)
     card_debt = sum(c["outstanding_balance"] for c in cards)
+    assets = db.query(Asset).filter_by(user_id=user_id).all()
+    assets_total = sum(a.value for a in assets)
 
     months = totals_by_month(db, user_id, trend_months, ref)
     cur = months[-1]
@@ -174,10 +176,12 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         c["prev"] = prev_cats.get(c["id"], 0)
 
     goals = db.query(Goal).filter_by(user_id=user_id).all()
+    emergency_fund = next((g for g in goals if g.kind == "emergency_fund"), None)
     return {
         "ref": ref.isoformat(),
-        "net_worth": round(cash + invest - card_debt, 2),
+        "net_worth": round(cash + invest + assets_total - card_debt, 2),
         "cash": round(cash, 2), "investments": round(invest, 2), "card_debt": round(card_debt, 2),
+        "assets_total": round(assets_total, 2),
         "month": cur, "months": months,
         "expected_income": round(expected_income, 2), "fixed_costs": round(fixed_costs, 2),
         "projected_expense": round(projected_expense, 2),
@@ -187,7 +191,15 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         "accounts": [{"id": a.id, "name": a.name, "kind": a.kind, "balance": a.balance,
                       "color": a.color, "institution": a.institution} for a in accounts],
         "goals": [{"id": g.id, "name": g.name, "target": g.target_amount, "current": g.current_amount,
-                   "deadline": g.deadline.isoformat() if g.deadline else None} for g in goals],
+                   "deadline": g.deadline.isoformat() if g.deadline else None, "kind": g.kind}
+                  for g in goals if g.kind != "emergency_fund"],
+        "emergency_fund": None if not emergency_fund else {
+            "id": emergency_fund.id, "months_target": emergency_fund.months_target,
+            "monthly_cost": emergency_fund.monthly_cost, "target": emergency_fund.target_amount,
+            "current": emergency_fund.current_amount,
+            "months_covered": round(emergency_fund.current_amount / emergency_fund.monthly_cost, 1)
+                              if emergency_fund.monthly_cost else 0,
+        },
         "unread_alerts": db.query(Alert).filter_by(user_id=user_id, read=False).count(),
     }
 

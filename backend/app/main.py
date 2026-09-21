@@ -68,6 +68,12 @@ def _migrate(engine):
             cols = {c["name"] for c in insp.get_columns("contracts")}
             if "account_id" not in cols:
                 conn.execute(text("ALTER TABLE contracts ADD COLUMN account_id INTEGER"))
+        if "goals" in tables:
+            cols = {c["name"] for c in insp.get_columns("goals")}
+            if "kind" not in cols:
+                conn.execute(text("ALTER TABLE goals ADD COLUMN kind VARCHAR(20) DEFAULT 'custom'"))
+                conn.execute(text("ALTER TABLE goals ADD COLUMN months_target FLOAT"))
+                conn.execute(text("ALTER TABLE goals ADD COLUMN monthly_cost FLOAT"))
 
 
 def _backfill_default_categories():
