@@ -6,6 +6,12 @@ import time
 from datetime import date, datetime
 from typing import Optional
 
+# Alias só pra anotar campos Pydantic chamados "date": quando um campo tem esse nome E um
+# valor padrão, o pydantic resolve o type hint olhando o namespace da própria classe antes
+# do módulo, acha o atributo "date" (o default, não o tipo) e trata o campo como só-None.
+# Usar esse alias na anotação evita a colisão de nome sem precisar renomear o campo.
+_Date = date
+
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
@@ -401,7 +407,7 @@ def fipe_valor(marca: str, modelo: str, ano: str, u: User = Depends(current_user
 
 
 class ConfirmPaymentIn(BaseModel):
-    date: Optional[date] = None
+    date: Optional[_Date] = None
     amount: Optional[float] = None
 
 
@@ -570,7 +576,7 @@ class TxPatch(BaseModel):
     to_account_id: Optional[int] = None
     description: Optional[str] = None
     notes: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[_Date] = None
     amount: Optional[float] = None
     type: Optional[str] = None
     create_rule: bool = False

@@ -61,6 +61,7 @@ h3 { font-size: var(--fs-xs); margin: 0 0 8px; color: var(--muted); font-weight:
 .auth { position: relative; min-height: 100%; display: grid; place-items: center; padding: 16px; background: var(--bg); overflow: hidden; }
 #authCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .auth-card { position: relative; z-index: 1; width: 100%; max-width: 400px; background: var(--surface); border-radius: 20px; padding: 28px; box-shadow: var(--shadow-lg); text-align: center; }
+.auth-mark { width: 72px; height: 72px; margin: 0 auto 6px; display: block; }
 .auth-card form { text-align: left; }
 .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-size: 13px; }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
@@ -73,13 +74,14 @@ h3 { font-size: var(--fs-xs); margin: 0 0 8px; color: var(--muted); font-weight:
 #mfaSetupForm, #mfaVerifyForm { margin-top: 6px; }
 
 /* layout */
-.nav-icon { width: 1em; height: 1em; vertical-align: -0.15em; flex-shrink: 0; }
+.nav-icon { width: 1em; height: 1em; vertical-align: -0.15em; flex-shrink: 0; transition: transform var(--dur-quick) var(--ease); }
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100%; }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 20px 14px; border-right: 1px solid var(--border); background: var(--panel); display: flex; flex-direction: column; gap: 20px; }
 .sidebar nav { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow: auto; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 500; font-size: 13.5px; transition: background-color var(--dur-quick) var(--ease), color var(--dur-quick) var(--ease); }
 .nav-item:hover { background: var(--surface-2); color: var(--text); }
 .nav-item.active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+.nav-item.active .nav-icon { transform: scale(1.08); }
 .nav-item .nav-icon { width: 17px; height: 17px; flex-shrink: 0; }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-item.primary { font-weight: 700; font-size: 14.5px; color: var(--text); padding: 9px 12px; }

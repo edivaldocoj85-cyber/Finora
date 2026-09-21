@@ -53,7 +53,14 @@ function applyTheme(mode) {
   if (btn) btn.innerHTML = navIcon(THEME_ICON[mode] || THEME_ICON.auto);
   if (btn) btn.title = `Aparência: ${THEME_LABEL[mode] || THEME_LABEL.auto} — clique para trocar`;
 }
-function setTheme(mode) { localSet("finora_theme", mode); applyTheme(mode); }
+function setTheme(mode) {
+  localSet("finora_theme", mode);
+  applyTheme(mode);
+  const icon = $("#themeBtn .nav-icon");
+  if (icon && window.gsap && !reducedMotion()) {
+    gsap.fromTo(icon, { rotate: -90, autoAlpha: 0, scale: .6 }, { rotate: 0, autoAlpha: 1, scale: 1, duration: MOTION.quick, ease: MOTION.ease });
+  }
+}
 applyTheme(localGet("finora_theme") || "auto");
 $("#themeBtn").onclick = () => {
   const cur = document.documentElement.dataset.theme || "auto";
@@ -135,6 +142,13 @@ function animateAuthCard() {
   if (window.gsap && !reducedMotion()) {
     gsap.fromTo("#auth .auth-card:not(.hidden)", { autoAlpha: 0, y: 16, scale: .98 },
       { autoAlpha: 1, y: 0, scale: 1, duration: MOTION.slow, ease: MOTION.ease });
+    const mark = document.querySelector("#auth .auth-card:not(.hidden) .auth-mark");
+    if (mark) {
+      gsap.fromTo(mark.querySelectorAll(".auth-mark-shape"), { autoAlpha: 0, scale: .5, transformOrigin: "50% 50%" },
+        { autoAlpha: 1, scale: 1, duration: MOTION.standard, ease: MOTION.ease, stagger: .08, delay: .1 });
+      gsap.fromTo(mark.querySelector(".auth-mark-ring"), { autoAlpha: 0, rotate: -30, transformOrigin: "50% 50%" },
+        { autoAlpha: .35, rotate: 0, duration: MOTION.slow, ease: MOTION.ease, delay: .1 });
+    }
   }
 }
 
