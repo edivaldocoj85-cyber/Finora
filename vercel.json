@@ -6,6 +6,9 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/app", "dest": "/frontend/app/index.html" },
+    { "src": "/app/", "dest": "/frontend/app/index.html" },
+    { "src": "/app/(.*)", "dest": "/frontend/app/$1" },
     { "src": "/(.*)", "dest": "/frontend/$1" }
   ],
   "crons": [

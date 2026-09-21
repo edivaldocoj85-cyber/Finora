@@ -183,9 +183,17 @@ async def cron_sync(request: Request):
 
 if not ON_VERCEL:
     app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
+    APP_DIR = FRONTEND / "app"
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
+        # /app/* é o painel autenticado (SPA); qualquer outro caminho é a landing pública.
+        if path == "app" or path.startswith("app/"):
+            sub = path[len("app/"):] if path.startswith("app/") else ""
+            f = APP_DIR / sub if sub else None
+            if sub and f.is_file() and APP_DIR in f.resolve().parents:
+                return FileResponse(f)
+            return FileResponse(APP_DIR / "index.html")
         f = FRONTEND / path
         if path and f.is_file() and FRONTEND in f.resolve().parents:
             return FileResponse(f)
