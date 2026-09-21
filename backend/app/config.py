@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     supabase_service_key: str = ""
     supabase_bucket: str = "receipts"
 
+    # Autenticação (Supabase Auth / GoTrue): o backend só verifica o JWT de sessão (via
+    # JWKS público de supabase_url, sem segredo nenhum); o frontend precisa de supabase_url
+    # + supabase_anon_key (chave pública, segura de expor) pra abrir o client supabase-js.
+    supabase_anon_key: str = ""
+
     # Vercel Cron chama /api/cron/sync no lugar da tarefa em segundo plano (que não existe
     # em ambiente serverless); a Vercel manda esse valor como "Authorization: Bearer <valor>"
     # automaticamente quando CRON_SECRET está configurado — https://vercel.com/docs/cron-jobs

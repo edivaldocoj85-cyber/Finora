@@ -1,7 +1,8 @@
 // Service worker: cache do app (shell) para abrir rápido e funcionar offline em modo leitura.
-const CACHE = "finora-v2";
+const CACHE = "finora-v3";
 const SHELL = ["/", "/index.html", "/styles.css", "/app.js", "/manifest.json", "/icon.svg",
-  "/vendor/chart.umd.min.js", "/vendor/marked.min.js", "/vendor/purify.min.js", "/vendor/gsap.min.js"];
+  "/vendor/chart.umd.min.js", "/vendor/marked.min.js", "/vendor/purify.min.js", "/vendor/gsap.min.js",
+  "/vendor/supabase.min.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))));

@@ -2,20 +2,17 @@ import csv
 import hashlib
 import hmac
 import io
-import secrets
 from datetime import date, datetime
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..auth import (consume_backup_code, create_token, current_admin, current_user,
-                    current_user_mfa_pending, hash_backup_codes, hash_password,
-                    mfa_provisioning_uri, new_backup_codes, new_mfa_secret, rate_limit,
-                    verify_google_credential, verify_totp)
+from ..auth import current_admin, current_user, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Category, CategoryRule, Contract, Goal,
@@ -26,108 +23,49 @@ from ..services.categorizer import categorize, seed_categories
 router = APIRouter(prefix="/api")
 
 
-# ---------------------------------------------------------------- auth
-# Login é só por Google — sem senha, sem endpoint pra força bruta tentar. MFA (TOTP) é
-# obrigatório: o Google autentica a identidade, o segundo fator garante que só quem tem
-# o celular da pessoa entra de fato. /auth/google nunca devolve uma sessão completa —
-# sempre um token "mfa_pending" (10 min, só serve pros dois endpoints abaixo) até o
-# código do app autenticador (ou um código de backup) ser confirmado.
+# ---------------------------------------------------------------- perfil
+# Login, Google e MFA são geridos pelo Supabase Auth (supabase-js, direto no browser) —
+# ver ../auth.py. O backend só lê o token de sessão já emitido; não existe mais endpoint
+# de login/registro/MFA aqui.
 def user_out(u: User):
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
-            "onboarded": bool(u.onboarded_at), "mfa_enabled": bool(u.mfa_enabled_at),
-            "is_admin": u.is_admin}
-
-
-class GoogleIn(BaseModel):
-    credential: str = Field(min_length=10)
-
-
-@router.post("/auth/google", dependencies=[Depends(rate_limit("google", 20, 300))])
-def auth_google(data: GoogleIn, db: Session = Depends(get_db)):
-    claims = verify_google_credential(data.credential)
-    google_id = claims["sub"]
-    email = (claims.get("email") or "").lower()
-    u = db.query(User).filter_by(google_id=google_id).first()
-    if not u and email:
-        u = db.query(User).filter_by(email=email).first()  # vincula conta já criada antes
-    is_new = False
-    if not u:
-        u = User(name=claims.get("name") or email.split("@")[0] or "Usuário", email=email,
-                 password_hash=hash_password(secrets.token_urlsafe(32)),
-                 lgpd_consent_at=datetime.utcnow())
-        db.add(u)
-        db.flush()
-        is_new = True
-    u.google_id = google_id
-    u.avatar_url = claims.get("picture") or u.avatar_url
-    db.commit()
-    if is_new:
-        seed_categories(db, u.id)
-    return {"token": create_token(u.id, "mfa_pending"), "mfa_enrolled": bool(u.mfa_secret)}
-
-
-class MfaVerifyIn(BaseModel):
-    code: str = Field(min_length=4, max_length=20)
-
-
-@router.post("/auth/mfa/setup", dependencies=[Depends(rate_limit("mfa-setup", 10, 300))])
-def mfa_setup(u: User = Depends(current_user_mfa_pending), db: Session = Depends(get_db)):
-    """Gera segredo TOTP novo + códigos de backup. Só cria de fato (mfa_enabled_at) depois
-    que /auth/mfa/verify confirmar um código real — repetir esta chamada antes disso troca
-    o segredo/códigos sem problema (ainda não está em uso)."""
-    if u.mfa_enabled_at:
-        raise HTTPException(400, "MFA já está ativo nesta conta.")
-    secret = new_mfa_secret()
-    codes = new_backup_codes()
-    u.mfa_secret = secret
-    u.mfa_backup_codes = hash_backup_codes(codes)
-    db.commit()
-    return {"secret": secret, "otpauth_uri": mfa_provisioning_uri(secret, u.email), "backup_codes": codes}
-
-
-@router.post("/auth/mfa/verify", dependencies=[Depends(rate_limit("mfa-verify", 10, 300))])
-def mfa_verify(data: MfaVerifyIn, u: User = Depends(current_user_mfa_pending), db: Session = Depends(get_db)):
-    if not u.mfa_secret:
-        raise HTTPException(400, "Configure o MFA primeiro em /auth/mfa/setup.")
-    code = data.code.strip()
-    ok = verify_totp(u.mfa_secret, code)
-    if not ok:
-        remaining = consume_backup_code(u.mfa_backup_codes, code)
-        if remaining is not None:
-            u.mfa_backup_codes = remaining
-            ok = True
-    if not ok:
-        raise HTTPException(401, "Código inválido.")
-    if u.suspended_at:
-        raise HTTPException(403, "Conta suspensa. Fale com o administrador.")
-    first_time = u.mfa_enabled_at is None
-    if first_time:
-        u.mfa_enabled_at = datetime.utcnow()
-    db.commit()
-    return {"token": create_token(u.id, "full"), "user": user_out(u), "first_time": first_time}
-
-
-@router.post("/auth/mfa/backup-codes")
-def mfa_regenerate_backup_codes(u: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Gera um novo lote de códigos de backup (os antigos deixam de valer) — pra quando
-    a pessoa está ficando sem códigos."""
-    if not u.mfa_enabled_at:
-        raise HTTPException(400, "MFA não está ativo.")
-    codes = new_backup_codes()
-    u.mfa_backup_codes = hash_backup_codes(codes)
-    db.commit()
-    return {"backup_codes": codes}
+            "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin}
 
 
 # ---------------------------------------------------------------- admin (backoffice da plataforma)
 # Restrito a usuários com is_admin=True. Não existe cadastro de admin pela UI — é promovido
 # diretamente no banco (ou por outro admin) para evitar qualquer caminho de auto-promoção.
+# Suspensão/MFA de fato são impostos pela Admin API do Supabase (GoTrue) — o campo local
+# `suspended_at` é só um espelho pra listar rápido sem round-trip extra por usuário.
+def _gotrue_headers() -> dict:
+    key = get_settings().supabase_service_key
+    return {"Authorization": f"Bearer {key}", "apikey": key}
+
+
+def _gotrue_ban(supabase_uid: str, ban: bool) -> None:
+    s = get_settings()
+    r = httpx.put(f"{s.supabase_url}/auth/v1/admin/users/{supabase_uid}",
+                  headers=_gotrue_headers(), json={"ban_duration": "876000h" if ban else "none"}, timeout=15)
+    if r.status_code >= 300:
+        raise HTTPException(502, f"Falha ao atualizar usuário no Supabase: {r.status_code} {r.text[:200]}")
+
+
+def _gotrue_reset_mfa(supabase_uid: str) -> None:
+    s = get_settings()
+    r = httpx.get(f"{s.supabase_url}/auth/v1/admin/users/{supabase_uid}", headers=_gotrue_headers(), timeout=15)
+    if r.status_code >= 300:
+        raise HTTPException(502, f"Falha ao buscar usuário no Supabase: {r.status_code} {r.text[:200]}")
+    for factor in r.json().get("factors") or []:
+        httpx.delete(f"{s.supabase_url}/auth/v1/admin/users/{supabase_uid}/factors/{factor['id']}",
+                     headers=_gotrue_headers(), timeout=15)
+
+
 def admin_user_out(u: User, db: Session):
     return {
         "id": u.id, "name": u.name, "email": u.email, "plan": u.plan, "is_admin": u.is_admin,
         "avatar_url": u.avatar_url, "created_at": u.created_at.isoformat() if u.created_at else None,
-        "onboarded": bool(u.onboarded_at), "mfa_enabled": bool(u.mfa_enabled_at),
+        "onboarded": bool(u.onboarded_at), "linked": bool(u.supabase_uid),
         "suspended_at": u.suspended_at.isoformat() if u.suspended_at else None,
         "accounts_count": db.query(Account).filter_by(user_id=u.id).count(),
         "transactions_count": db.query(Transaction).filter_by(user_id=u.id).count(),
@@ -164,6 +102,8 @@ def admin_suspend_user(uid: int, admin: User = Depends(current_admin), db: Sessi
         raise HTTPException(404, "Usuário não encontrado.")
     if u.id == admin.id:
         raise HTTPException(400, "Você não pode suspender a própria conta.")
+    if u.supabase_uid:
+        _gotrue_ban(u.supabase_uid, ban=True)  # bloqueia de fato na camada de autenticação
     u.suspended_at = datetime.utcnow()
     db.commit()
     return admin_user_out(u, db)
@@ -174,6 +114,8 @@ def admin_reactivate_user(uid: int, admin: User = Depends(current_admin), db: Se
     u = db.get(User, uid)
     if not u:
         raise HTTPException(404, "Usuário não encontrado.")
+    if u.supabase_uid:
+        _gotrue_ban(u.supabase_uid, ban=False)
     u.suspended_at = None
     db.commit()
     return admin_user_out(u, db)
@@ -181,16 +123,15 @@ def admin_reactivate_user(uid: int, admin: User = Depends(current_admin), db: Se
 
 @router.post("/admin/users/{uid}/reset-mfa")
 def admin_reset_mfa(uid: int, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
-    """Limpa o MFA do usuário — na próxima vez que ele entrar com o Google, terá que
-    configurar um segundo fator novo. Usar quando a pessoa perdeu o autenticador E os
-    códigos de backup e ficou trancada para sempre fora da própria conta."""
+    """Remove o(s) fator(es) TOTP do usuário no Supabase — no próximo login ele precisa
+    fazer o enroll de novo. Usar quando a pessoa perdeu o autenticador e ficou trancada
+    para sempre fora da própria conta (o Supabase Auth não tem código de backup nativo)."""
     u = db.get(User, uid)
     if not u:
         raise HTTPException(404, "Usuário não encontrado.")
-    u.mfa_secret = None
-    u.mfa_enabled_at = None
-    u.mfa_backup_codes = None
-    db.commit()
+    if not u.supabase_uid:
+        raise HTTPException(400, "Esse usuário ainda não fez login pelo Supabase — não há MFA pra resetar.")
+    _gotrue_reset_mfa(u.supabase_uid)
     return admin_user_out(u, db)
 
 

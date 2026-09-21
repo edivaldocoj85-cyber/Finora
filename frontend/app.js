@@ -79,16 +79,20 @@ function toast(msg, type = "info") {
 }
 
 /* ------------------------------------------------------------------ auth */
-let mfaPendingToken = null;
+// Login (Google) e MFA (TOTP) são geridos inteiramente pelo Supabase Auth no browser —
+// o backend nunca vê credencial nenhuma, só o token de sessão já pronto (ver ../auth.py).
+let sb = null;
 
-function logout() { state.token = null; mfaPendingToken = null; localSet("finora_token", null); location.hash = ""; showAuth(); }
+function logout() {
+  sb?.auth.signOut();
+  state.token = null; localSet("finora_token", null); location.hash = ""; showAuth();
+}
 $("#logout").onclick = logout;
 
 function showAuth() {
   $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
   $("#googleCard").classList.remove("hidden");
   $("#mfaCard").classList.add("hidden"); $("#mfaCard").innerHTML = "";
-  mfaPendingToken = null;
   startAuthCanvas();
   animateAuthCard();
 }
@@ -99,56 +103,68 @@ function animateAuthCard() {
   }
 }
 
-/* renderiza um QR code em um container, a partir de uma URI otpauth:// */
-function renderQr(container, text) {
-  container.innerHTML = "";
-  const qr = qrcode(0, "M");
-  qr.addData(text);
-  qr.make();
-  container.innerHTML = qr.createSvgTag({ scalable: true });
-  const svg = container.querySelector("svg");
-  if (svg) { svg.removeAttribute("width"); svg.removeAttribute("height"); }
+async function completeLogin() {
+  const { data } = await sb.auth.getSession();
+  state.token = data.session?.access_token || null;
+  localSet("finora_token", state.token);
+  boot();
 }
 
-function showMfaSetup(secret, otpauthUri, backupCodes) {
+/* depois do login Google, confere se a sessão já chegou em aal2 (2º fator confirmado);
+   senão, mostra configurar (1ª vez) ou verificar (já tem fator) o autenticador. Nunca deixa
+   a tela em branco: qualquer falha aqui cai de volta pra tela de login com um erro visível. */
+async function ensureMfaThenBoot() {
+  try {
+    const { data: aal, error: aalErr } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aalErr) throw aalErr;
+    if (aal.currentLevel === "aal2") { await completeLogin(); return; }
+    const { data: factorsData, error: listErr } = await sb.auth.mfa.listFactors();
+    if (listErr) throw listErr;
+    const verified = factorsData?.totp?.find((f) => f.status === "verified");
+    if (verified) { showMfaVerify(verified.id); return; }
+    // limpa fatores TOTP não confirmados de uma tentativa anterior antes de gerar um QR novo
+    for (const f of factorsData?.totp || []) await sb.auth.mfa.unenroll({ factorId: f.id });
+    await showMfaSetup();
+  } catch (err) {
+    showAuth();
+    $("#authError").textContent = err.message || "Não foi possível verificar sua sessão. Tente entrar de novo.";
+  }
+}
+
+async function showMfaSetup() {
   $("#googleCard").classList.add("hidden");
   const card = $("#mfaCard");
   card.classList.remove("hidden");
+  card.innerHTML = `<div class="empty">Preparando…</div>`;
+  animateAuthCard();
+  const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `finora-${Date.now()}` });
+  if (error) { card.innerHTML = `<p class="error">${esc(error.message)}</p>`; return; }
   card.innerHTML = `
     <div class="brand big"><span class="logo">F</span> Finora</div>
     <p class="muted">Proteja sua conta com um segundo fator. Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password...).</p>
-    <div class="mfa-qr" id="mfaQr"></div>
-    <p class="small muted">Não consegue escanear? Digite manualmente: <code class="mfa-secret">${esc(secret)}</code></p>
-    <div class="mfa-backup">
-      <p class="small" style="font-weight:600">Guarde estes códigos de backup — cada um serve para um único login se você perder o autenticador:</p>
-      <div class="mfa-codes">${backupCodes.map((c) => `<code>${esc(c)}</code>`).join("")}</div>
-    </div>
-    <label class="mfa-confirm-save"><input type="checkbox" id="mfaSavedCheck"> Eu salvei os códigos de backup em um lugar seguro</label>
+    <img class="mfa-qr" id="mfaQr" src="${esc(data.totp.qr_code)}" alt="QR code para configurar o autenticador">
+    <p class="small muted">Não consegue escanear? Digite manualmente: <code class="mfa-secret">${esc(data.totp.secret)}</code></p>
     <form id="mfaSetupForm">
       <input type="text" id="mfaSetupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos do app" required>
       <button class="btn primary" type="submit">Ativar MFA</button>
     </form>
     <p class="error" id="mfaError"></p>`;
-  renderQr($("#mfaQr"), otpauthUri);
-  animateAuthCard();
   $("#mfaSetupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!$("#mfaSavedCheck").checked) {
-      $("#mfaError").textContent = "Confirme que salvou os códigos de backup antes de continuar.";
-      shakeEl("#mfaCard"); return;
-    }
     const btn = e.target.querySelector("button[type=submit]");
     btn.disabled = true; btn.classList.add("loading");
     try {
-      const code = $("#mfaSetupCode").value;
-      const r = await api("/auth/mfa/verify", { body: { code }, headers: { Authorization: "Bearer " + mfaPendingToken } });
-      completeLogin(r);
+      const { data: ch, error: chErr } = await sb.auth.mfa.challenge({ factorId: data.id });
+      if (chErr) throw chErr;
+      const { error: vErr } = await sb.auth.mfa.verify({ factorId: data.id, challengeId: ch.id, code: $("#mfaSetupCode").value });
+      if (vErr) throw vErr;
+      await completeLogin();
     } catch (err) { $("#mfaError").textContent = err.message; shakeEl("#mfaCard"); }
     finally { btn.disabled = false; btn.classList.remove("loading"); }
   });
 }
 
-function showMfaVerify() {
+function showMfaVerify(factorId) {
   $("#googleCard").classList.add("hidden");
   const card = $("#mfaCard");
   card.classList.remove("hidden");
@@ -159,7 +175,6 @@ function showMfaVerify() {
       <input type="text" id="mfaVerifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos" required autofocus>
       <button class="btn primary" type="submit">Entrar</button>
     </form>
-    <button class="btn ghost small" id="mfaUseBackup" type="button" style="margin-top:10px">Usar código de backup</button>
     <p class="error" id="mfaError"></p>`;
   animateAuthCard();
   $("#mfaVerifyForm").addEventListener("submit", async (e) => {
@@ -167,24 +182,14 @@ function showMfaVerify() {
     const btn = e.target.querySelector("button[type=submit]");
     btn.disabled = true; btn.classList.add("loading");
     try {
-      const code = $("#mfaVerifyCode").value;
-      const r = await api("/auth/mfa/verify", { body: { code }, headers: { Authorization: "Bearer " + mfaPendingToken } });
-      completeLogin(r);
+      const { data: ch, error: chErr } = await sb.auth.mfa.challenge({ factorId });
+      if (chErr) throw chErr;
+      const { error: vErr } = await sb.auth.mfa.verify({ factorId, challengeId: ch.id, code: $("#mfaVerifyCode").value });
+      if (vErr) throw vErr;
+      await completeLogin();
     } catch (err) { $("#mfaError").textContent = err.message; shakeEl("#mfaCard"); }
     finally { btn.disabled = false; btn.classList.remove("loading"); }
   });
-  $("#mfaUseBackup").addEventListener("click", () => {
-    $("#mfaVerifyCode").placeholder = "Código de backup (ex: a1b2-c3d4)";
-    $("#mfaVerifyCode").maxLength = 20;
-    $("#mfaUseBackup").classList.add("hidden");
-  });
-}
-
-function completeLogin(r) {
-  state.token = r.token;
-  localSet("finora_token", r.token);
-  mfaPendingToken = null;
-  boot();
 }
 
 /* rede de pontos sutil no fundo do login — atmosfera, nunca dado real */
@@ -239,23 +244,57 @@ function startAuthCanvas() {
   loop();
 }
 
-async function initGoogleAuth() {
+/* nonce exigido pelo Supabase pra casar com o ID token do Google (evita replay) — a
+   versão hasheada (SHA-256) vai pro Google, a crua vai pro signInWithIdToken. */
+async function _sha256Hex(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function initAuth() {
+  let cfg = {};
+  try { cfg = await api("/public-config"); } catch { /* segue com cfg vazio, mostra erro abaixo */ }
+  if (!cfg.supabase_url || !cfg.supabase_anon_key) {
+    $("#authError").textContent = "Autenticação não configurada.";
+    showAuth();
+    return;
+  }
   try {
-    const { google_client_id } = await api("/public-config");
-    if (!google_client_id) { $("#authError").textContent = "Login com Google não configurado."; return; }
+    sb = supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+  } catch {
+    $("#authError").textContent = "Falha ao iniciar a autenticação. Recarregue a página.";
+    showAuth();
+    return;
+  }
+  sb.auth.onAuthStateChange((_event, session) => {
+    state.token = session?.access_token || null;
+    localSet("finora_token", state.token);
+  });
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await ensureMfaThenBoot(); else showAuth();
+  } catch {
+    $("#authError").textContent = "Não foi possível recuperar sua sessão. Tente entrar de novo.";
+    showAuth();
+  }
+
+  if (!cfg.google_client_id) {
+    if (!session) $("#authError").textContent = "Login com Google não configurado.";
+    return;
+  }
+  try {
     await loadScript(GOOGLE_IDENTITY_SRC);
+    const rawNonce = crypto.randomUUID() + crypto.randomUUID();
+    const hashedNonce = await _sha256Hex(rawNonce);
     window.google.accounts.id.initialize({
-      client_id: google_client_id,
+      client_id: cfg.google_client_id,
+      nonce: hashedNonce,
       callback: async ({ credential }) => {
         try {
-          const r = await api("/auth/google", { body: { credential } });
-          mfaPendingToken = r.token;
-          if (r.mfa_enrolled) {
-            showMfaVerify();
-          } else {
-            const setup = await api("/auth/mfa/setup", { headers: { Authorization: "Bearer " + mfaPendingToken } });
-            showMfaSetup(setup.secret, setup.otpauth_uri, setup.backup_codes);
-          }
+          const { error } = await sb.auth.signInWithIdToken({ provider: "google", token: credential, nonce: rawNonce });
+          if (error) throw error;
+          await ensureMfaThenBoot();
         } catch (e) { $("#authError").textContent = e.message; shakeEl("#googleCard"); }
       },
     });
@@ -942,13 +981,13 @@ VIEWS.admin = async (v) => {
         <div class="between">
           <div class="grow">
             <div class="title">${esc(u.name)} ${u.is_admin ? '<span class="chip">admin</span>' : ""}${u.suspended_at ? '<span class="chip" style="color:var(--red)">suspenso</span>' : ""}</div>
-            <div class="small muted">${esc(u.email)} · desde ${fdate(u.created_at?.slice(0, 10))} · ${u.mfa_enabled ? "MFA ativo" : "MFA pendente"} · ${u.accounts_count} contas · ${u.transactions_count} lançamentos</div>
+            <div class="small muted">${esc(u.email)} · desde ${fdate(u.created_at?.slice(0, 10))} · ${u.linked ? "já entrou pelo Supabase" : "ainda não fez o primeiro login"} · ${u.accounts_count} contas · ${u.transactions_count} lançamentos</div>
           </div>
           <div class="row" style="flex:0 0 auto;gap:6px;width:auto">
             ${u.id === state.user.id ? '<span class="small muted">você</span>' : `
               <button class="btn small" data-role="${u.id}" data-set="${u.is_admin ? 0 : 1}">${u.is_admin ? "Remover admin" : "Tornar admin"}</button>
               <button class="btn small ${u.suspended_at ? "" : "danger"}" data-susp="${u.id}" data-set="${u.suspended_at ? 0 : 1}">${u.suspended_at ? "Reativar" : "Suspender"}</button>
-              <button class="btn small" data-mfa="${u.id}">Resetar MFA</button>
+              ${u.linked ? `<button class="btn small" data-mfa="${u.id}">Resetar MFA</button>` : ""}
             `}
           </div>
         </div>
@@ -1151,6 +1190,5 @@ function initAssistant() {
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); window._installPrompt = e; });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
-state.token ? boot() : showAuth();
-initGoogleAuth();
+initAuth();
 initAssistant();

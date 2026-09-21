@@ -39,14 +39,19 @@ def _migrate(engine):
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
             if "onboarded_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN onboarded_at TIMESTAMP"))
-            if "mfa_secret" not in cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64)"))
-                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_enabled_at TIMESTAMP"))
-                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT"))
             if "is_admin" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
             if "suspended_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN suspended_at TIMESTAMP"))
+            if "supabase_uid" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN supabase_uid VARCHAR(36)"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_uid ON users (supabase_uid)"))
+            # Autenticação migrou pro Supabase Auth — essas colunas guardavam credenciais
+            # do sistema de login caseiro (senha aleatória, segredo TOTP, códigos de backup)
+            # e não têm mais uso; removidas para não deixar segredo morto no banco.
+            for legacy_col in ("password_hash", "google_id", "mfa_secret", "mfa_enabled_at", "mfa_backup_codes"):
+                if legacy_col in cols:
+                    conn.execute(text(f"ALTER TABLE users DROP COLUMN {legacy_col}"))
         if "accounts" in tables:
             cols = {c["name"] for c in insp.get_columns("accounts")}
             if "import_reminder" not in cols:
@@ -142,7 +147,9 @@ def health():
 @app.get("/api/public-config")
 def public_config():
     """Configuração pública (sem segredos) que o frontend precisa antes do login."""
-    return {"google_client_id": get_settings().google_client_id}
+    s = get_settings()
+    return {"google_client_id": s.google_client_id, "supabase_url": s.supabase_url,
+            "supabase_anon_key": s.supabase_anon_key}
 
 
 @app.get("/api/cron/sync")
