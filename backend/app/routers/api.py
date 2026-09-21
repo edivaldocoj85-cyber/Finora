@@ -2,6 +2,7 @@ import csv
 import hashlib
 import hmac
 import io
+import re
 import time
 from datetime import date, datetime
 from typing import Optional
@@ -23,7 +24,7 @@ from ..auth import current_admin, current_user, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
-                      Goal, Income, PluggyItem, Transaction, User)
+                      Goal, Income, PluggyItem, Transaction, User, WaitlistSignup)
 from ..services import advisor, analytics, assistant, market, pluggy, storage
 from ..services.categorizer import categorize, seed_categories
 
@@ -38,6 +39,28 @@ def user_out(u: User):
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
             "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin}
+
+
+# ---------------------------------------------------------------- acesso antecipado (landing pública)
+# Único endpoint sem autenticação que grava algo no banco — protegido por limite de taxa
+# por IP pra não virar um jeito barato de floodar a tabela.
+_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+class WaitlistIn(BaseModel):
+    email: str = Field(min_length=5, max_length=180)
+
+
+@router.post("/acesso", dependencies=[Depends(rate_limit("acesso", 8, 300))])
+def pedir_acesso(data: WaitlistIn, db: Session = Depends(get_db)):
+    email = data.email.strip().lower()
+    if not _EMAIL_RE.match(email):
+        return {"ok": False, "erro": "Esse e-mail não parece válido."}
+    if db.query(WaitlistSignup).filter_by(email=email).first():
+        return {"ok": False, "erro": "Esse e-mail já está na lista de espera."}
+    db.add(WaitlistSignup(email=email))
+    db.commit()
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------- admin (backoffice da plataforma)

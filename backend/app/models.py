@@ -27,6 +27,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
 
+class WaitlistSignup(Base):
+    """Pedido de acesso antecipado feito na landing pública — não é dado de um usuário
+    autenticado, por isso não usa o mixin Owned (sem user_id)."""
+    __tablename__ = "waitlist_signups"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(180), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+
+
 class Owned:
     """Mixin para dados do usuário."""
     id: Mapped[int] = mapped_column(primary_key=True)
