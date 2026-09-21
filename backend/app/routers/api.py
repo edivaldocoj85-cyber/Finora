@@ -6,13 +6,16 @@ import secrets
 from datetime import date, datetime
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..auth import create_token, current_user, hash_password, rate_limit, verify_google_credential, verify_password
+from ..auth import (consume_backup_code, create_token, current_admin, current_user,
+                    current_user_mfa_pending, hash_backup_codes, hash_password,
+                    mfa_provisioning_uri, new_backup_codes, new_mfa_secret, rate_limit,
+                    verify_google_credential, verify_totp)
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Category, CategoryRule, Contract, Goal,
@@ -24,44 +27,16 @@ router = APIRouter(prefix="/api")
 
 
 # ---------------------------------------------------------------- auth
-class RegisterIn(BaseModel):
-    name: str = Field(min_length=2, max_length=120)
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
-    lgpd_consent: bool
-
-
-class LoginIn(BaseModel):
-    email: EmailStr
-    password: str
-
-
+# Login é só por Google — sem senha, sem endpoint pra força bruta tentar. MFA (TOTP) é
+# obrigatório: o Google autentica a identidade, o segundo fator garante que só quem tem
+# o celular da pessoa entra de fato. /auth/google nunca devolve uma sessão completa —
+# sempre um token "mfa_pending" (10 min, só serve pros dois endpoints abaixo) até o
+# código do app autenticador (ou um código de backup) ser confirmado.
 def user_out(u: User):
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
-            "has_google": bool(u.google_id), "onboarded": bool(u.onboarded_at)}
-
-
-@router.post("/auth/register", dependencies=[Depends(rate_limit("register", 8, 3600))])
-def register(data: RegisterIn, db: Session = Depends(get_db)):
-    if not data.lgpd_consent:
-        raise HTTPException(400, "É necessário aceitar os termos e a política de privacidade.")
-    if db.query(User).filter_by(email=data.email.lower()).first():
-        raise HTTPException(400, "E-mail já cadastrado.")
-    u = User(name=data.name, email=data.email.lower(), password_hash=hash_password(data.password),
-             lgpd_consent_at=datetime.utcnow())
-    db.add(u)
-    db.commit()
-    seed_categories(db, u.id)
-    return {"token": create_token(u.id), "user": user_out(u)}
-
-
-@router.post("/auth/login", dependencies=[Depends(rate_limit("login", 10, 300))])
-def login(data: LoginIn, db: Session = Depends(get_db)):
-    u = db.query(User).filter_by(email=data.email.lower()).first()
-    if not u or not verify_password(data.password, u.password_hash):
-        raise HTTPException(401, "E-mail ou senha incorretos.")
-    return {"token": create_token(u.id), "user": user_out(u)}
+            "onboarded": bool(u.onboarded_at), "mfa_enabled": bool(u.mfa_enabled_at),
+            "is_admin": u.is_admin}
 
 
 class GoogleIn(BaseModel):
@@ -75,7 +50,7 @@ def auth_google(data: GoogleIn, db: Session = Depends(get_db)):
     email = (claims.get("email") or "").lower()
     u = db.query(User).filter_by(google_id=google_id).first()
     if not u and email:
-        u = db.query(User).filter_by(email=email).first()  # vincula conta já criada por e-mail
+        u = db.query(User).filter_by(email=email).first()  # vincula conta já criada antes
     is_new = False
     if not u:
         u = User(name=claims.get("name") or email.split("@")[0] or "Usuário", email=email,
@@ -89,7 +64,134 @@ def auth_google(data: GoogleIn, db: Session = Depends(get_db)):
     db.commit()
     if is_new:
         seed_categories(db, u.id)
-    return {"token": create_token(u.id), "user": user_out(u)}
+    return {"token": create_token(u.id, "mfa_pending"), "mfa_enrolled": bool(u.mfa_secret)}
+
+
+class MfaVerifyIn(BaseModel):
+    code: str = Field(min_length=4, max_length=20)
+
+
+@router.post("/auth/mfa/setup", dependencies=[Depends(rate_limit("mfa-setup", 10, 300))])
+def mfa_setup(u: User = Depends(current_user_mfa_pending), db: Session = Depends(get_db)):
+    """Gera segredo TOTP novo + códigos de backup. Só cria de fato (mfa_enabled_at) depois
+    que /auth/mfa/verify confirmar um código real — repetir esta chamada antes disso troca
+    o segredo/códigos sem problema (ainda não está em uso)."""
+    if u.mfa_enabled_at:
+        raise HTTPException(400, "MFA já está ativo nesta conta.")
+    secret = new_mfa_secret()
+    codes = new_backup_codes()
+    u.mfa_secret = secret
+    u.mfa_backup_codes = hash_backup_codes(codes)
+    db.commit()
+    return {"secret": secret, "otpauth_uri": mfa_provisioning_uri(secret, u.email), "backup_codes": codes}
+
+
+@router.post("/auth/mfa/verify", dependencies=[Depends(rate_limit("mfa-verify", 10, 300))])
+def mfa_verify(data: MfaVerifyIn, u: User = Depends(current_user_mfa_pending), db: Session = Depends(get_db)):
+    if not u.mfa_secret:
+        raise HTTPException(400, "Configure o MFA primeiro em /auth/mfa/setup.")
+    code = data.code.strip()
+    ok = verify_totp(u.mfa_secret, code)
+    if not ok:
+        remaining = consume_backup_code(u.mfa_backup_codes, code)
+        if remaining is not None:
+            u.mfa_backup_codes = remaining
+            ok = True
+    if not ok:
+        raise HTTPException(401, "Código inválido.")
+    if u.suspended_at:
+        raise HTTPException(403, "Conta suspensa. Fale com o administrador.")
+    first_time = u.mfa_enabled_at is None
+    if first_time:
+        u.mfa_enabled_at = datetime.utcnow()
+    db.commit()
+    return {"token": create_token(u.id, "full"), "user": user_out(u), "first_time": first_time}
+
+
+@router.post("/auth/mfa/backup-codes")
+def mfa_regenerate_backup_codes(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Gera um novo lote de códigos de backup (os antigos deixam de valer) — pra quando
+    a pessoa está ficando sem códigos."""
+    if not u.mfa_enabled_at:
+        raise HTTPException(400, "MFA não está ativo.")
+    codes = new_backup_codes()
+    u.mfa_backup_codes = hash_backup_codes(codes)
+    db.commit()
+    return {"backup_codes": codes}
+
+
+# ---------------------------------------------------------------- admin (backoffice da plataforma)
+# Restrito a usuários com is_admin=True. Não existe cadastro de admin pela UI — é promovido
+# diretamente no banco (ou por outro admin) para evitar qualquer caminho de auto-promoção.
+def admin_user_out(u: User, db: Session):
+    return {
+        "id": u.id, "name": u.name, "email": u.email, "plan": u.plan, "is_admin": u.is_admin,
+        "avatar_url": u.avatar_url, "created_at": u.created_at.isoformat() if u.created_at else None,
+        "onboarded": bool(u.onboarded_at), "mfa_enabled": bool(u.mfa_enabled_at),
+        "suspended_at": u.suspended_at.isoformat() if u.suspended_at else None,
+        "accounts_count": db.query(Account).filter_by(user_id=u.id).count(),
+        "transactions_count": db.query(Transaction).filter_by(user_id=u.id).count(),
+    }
+
+
+@router.get("/admin/users")
+def admin_list_users(q: Optional[str] = None, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    query = db.query(User)
+    if q:
+        like = f"%{q.strip()}%"
+        query = query.filter(or_(User.name.ilike(like), User.email.ilike(like)))
+    users = query.order_by(User.created_at.desc()).all()
+    return [admin_user_out(u, db) for u in users]
+
+
+@router.post("/admin/users/{uid}/role")
+def admin_set_role(uid: int, is_admin: bool = Body(..., embed=True),
+                   admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Usuário não encontrado.")
+    if u.id == admin.id and not is_admin:
+        raise HTTPException(400, "Você não pode remover seu próprio acesso de administrador.")
+    u.is_admin = is_admin
+    db.commit()
+    return admin_user_out(u, db)
+
+
+@router.post("/admin/users/{uid}/suspend")
+def admin_suspend_user(uid: int, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Usuário não encontrado.")
+    if u.id == admin.id:
+        raise HTTPException(400, "Você não pode suspender a própria conta.")
+    u.suspended_at = datetime.utcnow()
+    db.commit()
+    return admin_user_out(u, db)
+
+
+@router.post("/admin/users/{uid}/reactivate")
+def admin_reactivate_user(uid: int, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Usuário não encontrado.")
+    u.suspended_at = None
+    db.commit()
+    return admin_user_out(u, db)
+
+
+@router.post("/admin/users/{uid}/reset-mfa")
+def admin_reset_mfa(uid: int, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """Limpa o MFA do usuário — na próxima vez que ele entrar com o Google, terá que
+    configurar um segundo fator novo. Usar quando a pessoa perdeu o autenticador E os
+    códigos de backup e ficou trancada para sempre fora da própria conta."""
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Usuário não encontrado.")
+    u.mfa_secret = None
+    u.mfa_enabled_at = None
+    u.mfa_backup_codes = None
+    db.commit()
+    return admin_user_out(u, db)
 
 
 @router.get("/me")

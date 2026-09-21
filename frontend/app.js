@@ -45,11 +45,15 @@ const ROUTES = [
   { id: "bank", label: "Conexões bancárias", icon: "🔗" },
   { id: "settings", label: "Configurações", icon: "⚙️" },
 ];
+function visibleRoutes() {
+  return state.user?.is_admin ? [...ROUTES, { id: "admin", label: "Administração", icon: "🛡️" }] : ROUTES;
+}
 
 /* ------------------------------------------------------------------ API */
 async function api(path, opts = {}) {
   const headers = { ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}) };
   if (state.token) headers.Authorization = "Bearer " + state.token;
+  Object.assign(headers, opts.headers || {});
   const res = await fetch("/api" + path, {
     method: opts.method || (opts.body ? "POST" : "GET"), headers,
     body: opts.body instanceof FormData ? opts.body : opts.body ? JSON.stringify(opts.body) : undefined,
@@ -75,36 +79,112 @@ function toast(msg, type = "info") {
 }
 
 /* ------------------------------------------------------------------ auth */
-let authMode = "login";
-$("#authTabs").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  authMode = b.dataset.mode;
-  document.querySelectorAll("#authTabs button").forEach((x) => x.classList.toggle("active", x === b));
-  $("#auth").classList.toggle("register", authMode === "register");
-  $("#authForm button[type=submit]").textContent = authMode === "login" ? "Entrar" : "Criar conta";
-});
-$("#authForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const body = { email: f.get("email"), password: f.get("password") };
-  if (authMode === "register") Object.assign(body, { name: f.get("name"), lgpd_consent: f.get("lgpd_consent") === "on" });
-  const btn = $("#authForm button[type=submit]");
-  btn.disabled = true; btn.classList.add("loading");
-  try {
-    const r = await api("/auth/" + authMode, { body });
-    state.token = r.token; localSet("finora_token", r.token); boot();
-  } catch (err) { $("#authError").textContent = err.message; shakeEl(".auth-card"); }
-  finally { btn.disabled = false; btn.classList.remove("loading"); }
-});
-function logout() { state.token = null; localSet("finora_token", null); location.hash = ""; showAuth(); }
+let mfaPendingToken = null;
+
+function logout() { state.token = null; mfaPendingToken = null; localSet("finora_token", null); location.hash = ""; showAuth(); }
 $("#logout").onclick = logout;
+
 function showAuth() {
   $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
+  $("#googleCard").classList.remove("hidden");
+  $("#mfaCard").classList.add("hidden"); $("#mfaCard").innerHTML = "";
+  mfaPendingToken = null;
   startAuthCanvas();
+  animateAuthCard();
+}
+function animateAuthCard() {
   if (window.gsap && !reducedMotion()) {
-    gsap.fromTo("#auth .auth-card", { autoAlpha: 0, y: 16, scale: .98 },
+    gsap.fromTo("#auth .auth-card:not(.hidden)", { autoAlpha: 0, y: 16, scale: .98 },
       { autoAlpha: 1, y: 0, scale: 1, duration: MOTION.slow, ease: MOTION.ease });
   }
+}
+
+/* renderiza um QR code em um container, a partir de uma URI otpauth:// */
+function renderQr(container, text) {
+  container.innerHTML = "";
+  const qr = qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+  container.innerHTML = qr.createSvgTag({ scalable: true });
+  const svg = container.querySelector("svg");
+  if (svg) { svg.removeAttribute("width"); svg.removeAttribute("height"); }
+}
+
+function showMfaSetup(secret, otpauthUri, backupCodes) {
+  $("#googleCard").classList.add("hidden");
+  const card = $("#mfaCard");
+  card.classList.remove("hidden");
+  card.innerHTML = `
+    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <p class="muted">Proteja sua conta com um segundo fator. Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password...).</p>
+    <div class="mfa-qr" id="mfaQr"></div>
+    <p class="small muted">Não consegue escanear? Digite manualmente: <code class="mfa-secret">${esc(secret)}</code></p>
+    <div class="mfa-backup">
+      <p class="small" style="font-weight:600">Guarde estes códigos de backup — cada um serve para um único login se você perder o autenticador:</p>
+      <div class="mfa-codes">${backupCodes.map((c) => `<code>${esc(c)}</code>`).join("")}</div>
+    </div>
+    <label class="mfa-confirm-save"><input type="checkbox" id="mfaSavedCheck"> Eu salvei os códigos de backup em um lugar seguro</label>
+    <form id="mfaSetupForm">
+      <input type="text" id="mfaSetupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos do app" required>
+      <button class="btn primary" type="submit">Ativar MFA</button>
+    </form>
+    <p class="error" id="mfaError"></p>`;
+  renderQr($("#mfaQr"), otpauthUri);
+  animateAuthCard();
+  $("#mfaSetupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!$("#mfaSavedCheck").checked) {
+      $("#mfaError").textContent = "Confirme que salvou os códigos de backup antes de continuar.";
+      shakeEl("#mfaCard"); return;
+    }
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.classList.add("loading");
+    try {
+      const code = $("#mfaSetupCode").value;
+      const r = await api("/auth/mfa/verify", { body: { code }, headers: { Authorization: "Bearer " + mfaPendingToken } });
+      completeLogin(r);
+    } catch (err) { $("#mfaError").textContent = err.message; shakeEl("#mfaCard"); }
+    finally { btn.disabled = false; btn.classList.remove("loading"); }
+  });
+}
+
+function showMfaVerify() {
+  $("#googleCard").classList.add("hidden");
+  const card = $("#mfaCard");
+  card.classList.remove("hidden");
+  card.innerHTML = `
+    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <p class="muted">Digite o código de 6 dígitos do seu app autenticador.</p>
+    <form id="mfaVerifyForm">
+      <input type="text" id="mfaVerifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos" required autofocus>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>
+    <button class="btn ghost small" id="mfaUseBackup" type="button" style="margin-top:10px">Usar código de backup</button>
+    <p class="error" id="mfaError"></p>`;
+  animateAuthCard();
+  $("#mfaVerifyForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.classList.add("loading");
+    try {
+      const code = $("#mfaVerifyCode").value;
+      const r = await api("/auth/mfa/verify", { body: { code }, headers: { Authorization: "Bearer " + mfaPendingToken } });
+      completeLogin(r);
+    } catch (err) { $("#mfaError").textContent = err.message; shakeEl("#mfaCard"); }
+    finally { btn.disabled = false; btn.classList.remove("loading"); }
+  });
+  $("#mfaUseBackup").addEventListener("click", () => {
+    $("#mfaVerifyCode").placeholder = "Código de backup (ex: a1b2-c3d4)";
+    $("#mfaVerifyCode").maxLength = 20;
+    $("#mfaUseBackup").classList.add("hidden");
+  });
+}
+
+function completeLogin(r) {
+  state.token = r.token;
+  localSet("finora_token", r.token);
+  mfaPendingToken = null;
+  boot();
 }
 
 /* rede de pontos sutil no fundo do login — atmosfera, nunca dado real */
@@ -162,26 +242,31 @@ function startAuthCanvas() {
 async function initGoogleAuth() {
   try {
     const { google_client_id } = await api("/public-config");
-    if (!google_client_id) return;
+    if (!google_client_id) { $("#authError").textContent = "Login com Google não configurado."; return; }
     await loadScript(GOOGLE_IDENTITY_SRC);
     window.google.accounts.id.initialize({
       client_id: google_client_id,
       callback: async ({ credential }) => {
         try {
           const r = await api("/auth/google", { body: { credential } });
-          state.token = r.token; localSet("finora_token", r.token); boot();
-        } catch (e) { $("#authError").textContent = e.message; }
+          mfaPendingToken = r.token;
+          if (r.mfa_enrolled) {
+            showMfaVerify();
+          } else {
+            const setup = await api("/auth/mfa/setup", { headers: { Authorization: "Bearer " + mfaPendingToken } });
+            showMfaSetup(setup.secret, setup.otpauth_uri, setup.backup_codes);
+          }
+        } catch (e) { $("#authError").textContent = e.message; shakeEl("#googleCard"); }
       },
     });
-    $("#googleAuth").classList.remove("hidden");
     window.google.accounts.id.renderButton($("#googleBtn"), { theme: "outline", size: "large", width: 320, locale: "pt-BR" });
-  } catch { /* Google indisponível: segue só com e-mail/senha */ }
+  } catch { $("#authError").textContent = "Não foi possível carregar o login do Google. Verifique sua conexão."; }
 }
 
 /* ------------------------------------------------------------------ shell */
 function buildNav() {
-  $("#nav").innerHTML = ROUTES.map((r) => `<a class="nav-item" href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("");
-  $("#bottomNav").innerHTML = ROUTES.filter((r) => r.mobile).map((r) => `<a href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("")
+  $("#nav").innerHTML = visibleRoutes().map((r) => `<a class="nav-item" href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("");
+  $("#bottomNav").innerHTML = visibleRoutes().filter((r) => r.mobile).map((r) => `<a href="#${r.id}" data-r="${r.id}"><span>${r.icon}</span>${r.label}</a>`).join("")
     + `<a href="#more" data-r="more"><span>☰</span>Mais</a>`;
 }
 async function boot() {
@@ -243,7 +328,7 @@ function animateCounters(container) {
 function route() {
   if (!state.user) return;
   const id = location.hash.slice(1) || "dashboard";
-  const r = ROUTES.find((x) => x.id === id) || (id === "more" ? { id: "more", label: "Menu" } : ROUTES[0]);
+  const r = visibleRoutes().find((x) => x.id === id) || (id === "more" ? { id: "more", label: "Menu" } : ROUTES[0]);
   document.querySelectorAll("[data-r]").forEach((a) => a.classList.toggle("active", a.dataset.r === r.id));
   $("#pageTitle").textContent = r.label;
   state.charts.forEach((c) => c.destroy()); state.charts = [];
@@ -371,7 +456,7 @@ const barFill = (p) => `transform:scaleX(${Math.max(0, Math.min(100, p)) / 100})
 const VIEWS = {};
 
 VIEWS.more = async (v) => {
-  v.innerHTML = `<div class="card list">${ROUTES.map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}"><span>${r.icon}</span><div class="grow title">${r.label}</div><span class="muted">›</span></a>`).join("")}
+  v.innerHTML = `<div class="card list">${visibleRoutes().map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}"><span>${r.icon}</span><div class="grow title">${r.label}</div><span class="muted">›</span></a>`).join("")}
   <a class="li" style="text-decoration:none;color:inherit" href="#" onclick="logout();return false"><span>🚪</span><div class="grow title">Sair</div></a></div>`;
 };
 
@@ -847,6 +932,50 @@ VIEWS.settings = async (v) => {
     if (prompt('Digite EXCLUIR para confirmar a exclusão definitiva da conta') !== "EXCLUIR") return;
     await api("/me", { method: "DELETE" }); logout();
   };
+};
+
+VIEWS.admin = async (v) => {
+  const renderList = async (q) => {
+    const users = await api("/admin/users" + (q ? `?q=${encodeURIComponent(q)}` : ""));
+    $("#adminUsers").innerHTML = users.map((u) => `
+      <div class="li" style="display:block">
+        <div class="between">
+          <div class="grow">
+            <div class="title">${esc(u.name)} ${u.is_admin ? '<span class="chip">admin</span>' : ""}${u.suspended_at ? '<span class="chip" style="color:var(--red)">suspenso</span>' : ""}</div>
+            <div class="small muted">${esc(u.email)} · desde ${fdate(u.created_at?.slice(0, 10))} · ${u.mfa_enabled ? "MFA ativo" : "MFA pendente"} · ${u.accounts_count} contas · ${u.transactions_count} lançamentos</div>
+          </div>
+          <div class="row" style="flex:0 0 auto;gap:6px;width:auto">
+            ${u.id === state.user.id ? '<span class="small muted">você</span>' : `
+              <button class="btn small" data-role="${u.id}" data-set="${u.is_admin ? 0 : 1}">${u.is_admin ? "Remover admin" : "Tornar admin"}</button>
+              <button class="btn small ${u.suspended_at ? "" : "danger"}" data-susp="${u.id}" data-set="${u.suspended_at ? 0 : 1}">${u.suspended_at ? "Reativar" : "Suspender"}</button>
+              <button class="btn small" data-mfa="${u.id}">Resetar MFA</button>
+            `}
+          </div>
+        </div>
+      </div>`).join("") || '<div class="empty">Nenhum usuário encontrado.</div>';
+
+    $("#adminUsers").querySelectorAll("[data-role]").forEach((b) => (b.onclick = async () => {
+      await api(`/admin/users/${b.dataset.role}/role`, { method: "POST", body: { is_admin: b.dataset.set === "1" } });
+      toast("Papel atualizado", "success"); renderList($("#adminSearch").value);
+    }));
+    $("#adminUsers").querySelectorAll("[data-susp]").forEach((b) => (b.onclick = async () => {
+      const action = b.dataset.set === "1" ? "suspend" : "reactivate";
+      await api(`/admin/users/${b.dataset.susp}/${action}`, { method: "POST" });
+      toast(action === "suspend" ? "Usuário suspenso" : "Usuário reativado", "success"); renderList($("#adminSearch").value);
+    }));
+    $("#adminUsers").querySelectorAll("[data-mfa]").forEach((b) => (b.onclick = async () => {
+      if (!confirm("Resetar o MFA desse usuário? Ele vai precisar configurar um novo autenticador no próximo login.")) return;
+      await api(`/admin/users/${b.dataset.mfa}/reset-mfa`, { method: "POST" });
+      toast("MFA resetado", "success"); renderList($("#adminSearch").value);
+    }));
+  };
+  v.innerHTML = `<div class="card">
+    <div class="between"><h2>Usuários</h2><input id="adminSearch" placeholder="Buscar por nome ou e-mail…" style="max-width:280px;margin:0"></div>
+    <div class="list" id="adminUsers" style="margin-top:12px"><div class="empty">Carregando…</div></div>
+  </div>`;
+  let searchT;
+  $("#adminSearch").addEventListener("input", () => { clearTimeout(searchT); searchT = setTimeout(() => renderList($("#adminSearch").value), 250); });
+  await renderList("");
 };
 
 /* ------------------------------------------------------------------ assistente de primeiro acesso */

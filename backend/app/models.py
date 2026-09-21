@@ -21,8 +21,12 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     plan: Mapped[str] = mapped_column(String(20), default="free")  # free | pro
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime)  # admin pode suspender acesso sem apagar dados
     lgpd_consent_at: Mapped[datetime | None] = mapped_column(DateTime)
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime)
+    mfa_secret: Mapped[str | None] = mapped_column(String(64))  # base32, TOTP
+    mfa_enabled_at: Mapped[datetime | None] = mapped_column(DateTime)  # null = setup ainda não confirmado
+    mfa_backup_codes: Mapped[str | None] = mapped_column(Text)  # JSON: lista de hashes bcrypt, um por código
     monthly_goal_savings: Mapped[float] = mapped_column(Float, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 

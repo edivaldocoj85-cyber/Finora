@@ -39,6 +39,14 @@ def _migrate(engine):
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
             if "onboarded_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN onboarded_at TIMESTAMP"))
+            if "mfa_secret" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64)"))
+                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_enabled_at TIMESTAMP"))
+                conn.execute(text("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT"))
+            if "is_admin" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+            if "suspended_at" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN suspended_at TIMESTAMP"))
         if "accounts" in tables:
             cols = {c["name"] for c in insp.get_columns("accounts")}
             if "import_reminder" not in cols:
