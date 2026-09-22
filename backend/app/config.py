@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # automaticamente quando CRON_SECRET está configurado — https://vercel.com/docs/cron-jobs
     cron_secret: str = ""
 
+    # E-mail transacional (alertas importantes) — https://resend.com, grátis até 3k/mês
+    resend_api_key: str = ""
+    resend_from: str = "Finora <onboarding@resend.dev>"
+
 
 @lru_cache
 def get_settings() -> Settings:

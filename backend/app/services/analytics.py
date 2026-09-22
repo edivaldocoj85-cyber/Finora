@@ -222,6 +222,14 @@ def _alert(db, user_id, key, level, title, message):
     if db.query(Alert).filter_by(user_id=user_id, key=key).first():
         return
     db.add(Alert(user_id=user_id, key=key, level=level, title=title, message=message))
+    # só manda e-mail pro que exige atenção de verdade (danger/warning) — "info" fica só no
+    # sininho, senão vira spam de aviso pouco importante
+    if level in ("danger", "warning") and email_service.enabled():
+        u = db.get(User, user_id)
+        if u and u.email:
+            public_url = get_settings().public_url.rstrip("/")
+            email_service.send(u.email, f"Finora — {title}",
+                              f"<p>{message}</p><p><a href='{public_url}/app/'>Abrir o Finora</a></p>")
 
 
 def run_alerts(db: Session, user_id: int, ref: date | None = None):
