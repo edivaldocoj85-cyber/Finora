@@ -104,6 +104,8 @@ main { min-width: 0; padding: 0 28px 40px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); z-index: 5; }
 .top-actions { display: flex; gap: 8px; align-items: center; }
 .bottom-nav { display: none; }
+.workspace-banner { display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: var(--fs-sm); margin-bottom: 16px; }
+.workspace-banner .nav-icon { width: 16px; height: 16px; color: var(--primary); flex: none; }
 
 /* componentes */
 .grid { display: grid; gap: 16px; }

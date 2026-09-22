@@ -126,10 +126,10 @@ def _parse_transaction(db: Session, user: User, message: str) -> dict | None:
     description = (desc_match.group(1).strip() if desc_match else message[:60]).strip(" .,")
     description = description[:1].upper() + description[1:] if description else "Lançamento"
 
-    acc = _best_account(db, user.id, message)
+    acc = _best_account(db, user.workspace_id, message)
     if not acc:
         return None
-    cat_id = categorize(db, user.id, description, tx_type)
+    cat_id = categorize(db, user.workspace_id, description, tx_type)
     cat = db.get(Category, cat_id) if cat_id else None
 
     return {
@@ -210,7 +210,7 @@ def _parse_form_intent(db: Session, user: User, message: str) -> dict | None:
             continue
         values = dict(defaults)
         if form == "transaction":
-            acc_id = _last_used_account_id(db, user.id)
+            acc_id = _last_used_account_id(db, user.workspace_id)
             if acc_id:
                 values["account_id"] = acc_id
         return {"kind": "open_form", "form": form, "values": values,
@@ -270,7 +270,7 @@ def _month_bounds(ref: date) -> tuple[date, date]:
 def _parse_balance_query(db: Session, user: User, message: str) -> dict | None:
     if not re.search(r"\b(saldo|quanto (eu )?tenho|meu dinheiro)\b", message, re.IGNORECASE):
         return None
-    accounts = db.query(Account).filter_by(user_id=user.id, archived=False).all()
+    accounts = db.query(Account).filter_by(user_id=user.workspace_id, archived=False).all()
     cash = sum(a.balance for a in accounts if a.kind in ("checking", "savings", "cash"))
     invest = sum(a.balance for a in accounts if a.kind == "investment")
     if not accounts:
@@ -289,12 +289,12 @@ def _parse_spending_query(db: Session, user: User, message: str) -> dict | None:
     start, end = _month_bounds(date.today())
     text_n = _norm(message)
     cat_match = None
-    for c in db.query(Category).filter_by(user_id=user.id, kind=tx_type):
+    for c in db.query(Category).filter_by(user_id=user.workspace_id, kind=tx_type):
         if _norm(c.name) in text_n:
             cat_match = c
             break
     q = db.query(func.sum(Transaction.amount)).filter(
-        Transaction.user_id == user.id, Transaction.type == tx_type,
+        Transaction.user_id == user.workspace_id, Transaction.type == tx_type,
         Transaction.date >= start, Transaction.date <= end)
     if cat_match:
         q = q.filter(Transaction.category_id == cat_match.id)
@@ -309,11 +309,11 @@ def nudges(db: Session, user: User) -> list[dict]:
     é conta fixa vencendo — junto já vem a ação de marcar como pago com um clique."""
     out = []
     today = date.today()
-    for c in db.query(Contract).filter_by(user_id=user.id, active=True):
+    for c in db.query(Contract).filter_by(user_id=user.workspace_id, active=True):
         if c.due_day != today.day or (c.end_date and c.end_date < today):
             continue
         paid_today = db.query(Transaction).filter(
-            Transaction.user_id == user.id, Transaction.account_id == c.account_id,
+            Transaction.user_id == user.workspace_id, Transaction.account_id == c.account_id,
             Transaction.date == today, Transaction.description == c.name,
             Transaction.external_id.like("contract-%")).first()
         if paid_today:

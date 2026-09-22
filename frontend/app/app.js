@@ -10,6 +10,7 @@ const fdate = (d) => d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") :
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 function localGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+const canEdit = () => state.user?.workspace_role !== "viewer";
 
 // Ícones: Lucide (traço único, peso consistente — nunca emoji como substituto de sistema
 // de ícones). Cada entrada é o miolo do SVG (paths/shapes), envolvido por navIcon() abaixo.
@@ -41,6 +42,8 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
   receivables: '<path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>',
+  taxes: '<path d="M14.5 3.5a2.12 2.12 0 0 1 3 3L6 18l-4 1 1-4Z"/><path d="m14.5 6.5 3 3"/><path d="M3 21h18"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
 };
 const navIcon = (id) => `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id] || ""}</svg>`;
 
@@ -87,6 +90,7 @@ const ROUTES = [
   { id: "reserve", label: "Reserva de emergência", icon: "reserve" },
   { id: "advisor", label: "Consultor", icon: "advisor", mobile: true },
   { id: "bank", label: "Conexões bancárias", icon: "bank" },
+  { id: "taxes", label: "Impostos", icon: "taxes" },
   { id: "settings", label: "Configurações", icon: "settings" },
 ];
 function visibleRoutes() {
@@ -372,10 +376,26 @@ async function boot() {
   if (state.user.trial_expired) return showTrialExpired();
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#userName").textContent = state.user.name;
+  renderWorkspaceBanner();
   if (!$("#monthRef").value) $("#monthRef").value = today().slice(0, 7);
   buildNav(); await refreshRefs(); route();
   if (!state.user.onboarded) startOnboarding();
   apCheckNudges();
+}
+function renderWorkspaceBanner() {
+  const el = $("#workspaceBanner"), owner = state.user.workspace_owner;
+  if (!owner) { el.classList.add("hidden"); el.innerHTML = ""; return; }
+  const roleLabel = state.user.workspace_role === "viewer" ? "somente leitura" : "pode editar";
+  el.innerHTML = `${navIcon("users")} Você está vendo os dados de <strong>${esc(owner.name)}</strong> (${roleLabel}) <button class="btn small ghost" id="wbLeave" style="margin-left:auto">Sair desse acesso</button>`;
+  el.classList.remove("hidden");
+  $("#wbLeave").onclick = async () => {
+    if (!confirm("Sair do acesso compartilhado? Você volta a ver só os seus próprios dados.")) return;
+    await api("/shared-access/leave", { method: "POST" });
+    state.user = await api("/me");
+    renderWorkspaceBanner();
+    await refreshRefs(); route();
+    toast("Você saiu do acesso compartilhado", "success");
+  };
 }
 function showTrialExpired() {
   $("#auth").classList.add("hidden"); $("#app").classList.add("hidden");
@@ -472,6 +492,7 @@ function field(f, v) {
   return `<label>${f.label}<input name="${f.name}" type="${f.type || "text"}" ${f.step ? `step="${f.step}"` : f.type === "number" ? 'step="0.01"' : ""} value="${esc(val)}" ${f.required ? "required" : ""} ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} placeholder="${esc(f.placeholder || "")}"></label>`;
 }
 function openForm({ title, fields, values = {}, onSubmit, onDelete, extra = "" }) {
+  if (!canEdit()) { toast("Você tem acesso somente leitura a esses dados.", "error"); return; }
   const form = $("#modalForm"), dlg = $("#modal");
   form.innerHTML = `<h2>${esc(title)}</h2>${fields.map((f) => f.row ? `<div class="row">${f.row.map((x) => field(x, values[x.name])).join("")}</div>` : field(f, values[f.name])).join("")}${extra}
     <p class="error" id="formError"></p>
@@ -779,9 +800,9 @@ function accountForm(values = {}) {
 }
 
 function simpleList(v, { items, empty, render, onNew, newLabel, intro = "" }) {
-  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">${intro}</p><button class="btn" id="newItem">${newLabel}</button></div>
+  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">${intro}</p>${canEdit() ? `<button class="btn" id="newItem">${newLabel}</button>` : ""}</div>
   <div class="card"><div class="list">${items.map((it, i) => `<div class="li clickable" data-i="${i}" style="cursor:pointer">${render(it)}</div>`).join("") || `<div class="empty">${empty}</div>`}</div></div>`;
-  $("#newItem").onclick = () => onNew();
+  if (canEdit()) $("#newItem").onclick = () => onNew();
   v.querySelectorAll("[data-i]").forEach((el) => (el.onclick = () => onNew(items[el.dataset.i])));
 }
 
@@ -1185,8 +1206,66 @@ VIEWS.bank = async (v) => {
   }));
 };
 
+VIEWS.taxes = async (v) => {
+  v.innerHTML = `<div class="card">
+    <h2>Impostos (DAS / Simples Nacional)</h2>
+    <p class="muted">O Finora não calcula o valor do seu DAS: a alíquota depende do seu anexo, do Fator R e do
+    faturamento acumulado dos últimos 12 meses — errar aqui gera multa e juros, então esse cálculo precisa ser
+    feito na fonte oficial, não por uma estimativa de terceiros.</p>
+    <p class="muted">Pra apurar e emitir a guia (PGDAS-D), acesse o Portal do Simples Nacional com sua conta gov.br:</p>
+    <a class="btn primary" href="https://www8.receita.fazenda.gov.br/simplesnacional/" target="_blank" rel="noopener">Abrir Portal do Simples Nacional ↗</a>
+    <p class="muted small" style="margin-top:16px">Depois de pagar o DAS, volte aqui e lance o valor em <a href="#transactions">Lançamentos</a>
+    (cai automaticamente em "Impostos e taxas" se a descrição tiver "DAS") ou cadastre-o como um <a href="#contracts">contrato recorrente</a> pra ter o lembrete de vencimento e o botão de "Marcar pago" todo mês.</p>
+  </div>`;
+};
+
+async function renderSharedAccessCard() {
+  const isOwner = state.user.workspace_role === "owner";
+  const [invitations, members] = await Promise.all([
+    api("/shared-access/invitations"),
+    isOwner ? api("/shared-access") : Promise.resolve([]),
+  ]);
+  const roleLabel = { editor: "pode editar", viewer: "somente leitura" };
+  let html = `<h2>Acesso compartilhado</h2>`;
+  if (invitations.length) {
+    html += `<p class="muted small">Convites pendentes pra você:</p><div class="list" style="margin-bottom:14px">
+      ${invitations.map((i) => `<div class="li"><div class="grow"><div class="title">${esc(i.owner_name)}</div><div class="small muted">${esc(i.owner_email)} · ${roleLabel[i.role]}</div></div>
+        <button class="btn small primary" data-accept="${i.id}">Aceitar</button><button class="btn small" data-decline="${i.id}" style="margin-left:6px">Recusar</button></div>`).join("")}
+    </div>`;
+  }
+  if (isOwner) {
+    html += `<p class="muted small">Convide alguém (sócio(a), cônjuge, contador) pra ver e editar os mesmos dados financeiros que você.</p>
+      <div class="row"><input id="shEmail" type="email" placeholder="E-mail da pessoa"><select id="shRole"><option value="editor">Pode editar</option><option value="viewer">Só visualizar</option></select><button class="btn" id="shInvite">Convidar</button></div>
+      <div class="list" style="margin-top:12px">${members.map((m) => `<div class="li"><div class="grow"><div class="title">${esc(m.email)} ${m.accepted_at ? "" : '<span class="chip">convite pendente</span>'}</div><div class="small muted">${roleLabel[m.role]}</div></div><button class="btn small danger" data-revoke="${m.id}">Remover</button></div>`).join("") || '<div class="empty">Ninguém tem acesso à sua conta ainda.</div>'}</div>`;
+  } else if (!state.user.workspace_owner) {
+    html += `<p class="muted small">Convide alguém pra ver e editar os mesmos dados financeiros que você — só é possível convidar enquanto você está vendo os seus próprios dados.</p>`;
+  }
+  return html;
+}
+function wireSharedAccessCard(v) {
+  v.querySelectorAll("[data-accept]").forEach((b) => (b.onclick = async () => {
+    try { await api(`/shared-access/${b.dataset.accept}/accept`, { method: "POST" }); state.user = await api("/me"); renderWorkspaceBanner(); toast("Convite aceito", "success"); route(); }
+    catch (e) { toast(e.message, "error"); }
+  }));
+  v.querySelectorAll("[data-decline]").forEach((b) => (b.onclick = async () => {
+    await api(`/shared-access/${b.dataset.decline}/decline`, { method: "POST" }); toast("Convite recusado", "success"); route();
+  }));
+  v.querySelectorAll("[data-revoke]").forEach((b) => (b.onclick = async () => {
+    if (!confirm("Remover o acesso dessa pessoa?")) return;
+    await api(`/shared-access/${b.dataset.revoke}`, { method: "DELETE" }); toast("Acesso removido", "success"); route();
+  }));
+  const inviteBtn = v.querySelector("#shInvite");
+  if (inviteBtn) inviteBtn.onclick = async () => {
+    const email = $("#shEmail").value.trim();
+    if (!email) return;
+    try { await api("/shared-access", { body: { email, role: $("#shRole").value } }); toast("Convite enviado", "success"); route(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+}
+
 VIEWS.settings = async (v) => {
   const theme = document.documentElement.dataset.theme || "auto";
+  const sharedHtml = await renderSharedAccessCard();
   v.innerHTML = `<div class="grid g2"><div class="card"><h2>Perfil</h2>
     <label>Nome<input id="pn" value="${esc(state.user.name)}"></label>
     <label>E-mail<input value="${esc(state.user.email)}" disabled></label>
@@ -1194,6 +1273,7 @@ VIEWS.settings = async (v) => {
     <button class="btn primary full" id="saveMe">Salvar</button>
     <h2 style="margin-top:22px">Aparência</h2>
     <div class="tabs" id="themeTabs">${THEME_ORDER.map((m) => `<button type="button" data-mode="${m}" class="${m === theme ? "active" : ""}">${navIcon(THEME_ICON[m])} ${esc(THEME_LABEL[m].split(" (")[0])}</button>`).join("")}</div></div>
+    <div class="card">${sharedHtml}</div>
     <div class="card"><h2>Instalar no dispositivo</h2><p class="muted small">No celular, abra o menu do navegador e toque em “Adicionar à tela inicial”. No computador, use o ícone de instalação na barra de endereço.</p><button class="btn" id="installBtn" ${window._installPrompt ? "" : "disabled"}>Instalar app</button>
     <h2 style="margin-top:22px">Privacidade (LGPD)</h2><p class="muted small">Você pode exportar seus lançamentos na tela de Lançamentos. Excluir a conta remove todos os seus dados e revoga as conexões bancárias.</p>
     <button class="btn danger" id="delMe">Excluir minha conta</button></div></div>`;
@@ -1207,6 +1287,7 @@ VIEWS.settings = async (v) => {
     if (prompt('Digite EXCLUIR para confirmar a exclusão definitiva da conta') !== "EXCLUIR") return;
     await api("/me", { method: "DELETE" }); logout();
   };
+  wireSharedAccessCard(v);
 };
 
 VIEWS.admin = async (v) => {

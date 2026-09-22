@@ -20,11 +20,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..auth import current_admin, current_user, current_user_active, rate_limit
+from ..auth import current_admin, current_editor, current_user, current_user_active, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
-                      Goal, Income, PluggyItem, Receivable, Transaction, User, WaitlistSignup)
+                      Goal, Income, PluggyItem, Receivable, SharedAccess, Transaction, User,
+                      WaitlistSignup)
 from ..services import advisor, analytics, assistant, market, pluggy, storage
 from ..services.categorizer import categorize, seed_categories
 
@@ -35,14 +36,19 @@ router = APIRouter(prefix="/api")
 # Login, Google e MFA são geridos pelo Supabase Auth (supabase-js, direto no browser) —
 # ver ../auth.py. O backend só lê o token de sessão já emitido; não existe mais endpoint
 # de login/registro/MFA aqui.
-def user_out(u: User):
-    trial_expired = bool(not u.is_admin and u.plan == "trial" and u.trial_ends_at
-                         and datetime.utcnow() > u.trial_ends_at)
+def user_out(u: User, db: Session):
+    trial_expired = bool(u.workspace_id == u.id and not u.is_admin and u.plan == "trial"
+                         and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at)
+    workspace_owner = None
+    if u.workspace_id != u.id:
+        owner = db.get(User, u.workspace_id)
+        workspace_owner = {"name": owner.name, "email": owner.email} if owner else None
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
             "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin,
             "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
-            "trial_expired": trial_expired}
+            "trial_expired": trial_expired,
+            "workspace_role": u.workspace_role, "workspace_owner": workspace_owner}
 
 
 # ---------------------------------------------------------------- acesso antecipado (landing pública)
@@ -193,8 +199,8 @@ def admin_reset_mfa(uid: int, admin: User = Depends(current_admin), db: Session 
 
 
 @router.get("/me")
-def me(u: User = Depends(current_user)):
-    return user_out(u)
+def me(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    return user_out(u, db)
 
 
 class MeIn(BaseModel):
@@ -208,7 +214,7 @@ def update_me(data: MeIn, u: User = Depends(current_user), db: Session = Depends
         setattr(u, k, v)
     db.merge(u)
     db.commit()
-    return user_out(u)
+    return user_out(u, db)
 
 
 @router.post("/me/onboarded")
@@ -217,7 +223,7 @@ def mark_onboarded(u: User = Depends(current_user), db: Session = Depends(get_db
     u.onboarded_at = datetime.utcnow()
     db.merge(u)
     db.commit()
-    return user_out(u)
+    return user_out(u, db)
 
 
 @router.delete("/me")
@@ -229,6 +235,113 @@ def delete_me(u: User = Depends(current_user), db: Session = Depends(get_db)):
               Account, Category):
         db.query(M).filter_by(user_id=u.id).delete()
     db.query(User).filter_by(id=u.id).delete()
+    db.commit()
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------- acesso compartilhado
+# Quem aceita um convite passa a ver e editar os dados do dono (`owner_id`) em vez dos
+# próprios — sócio(a), cônjuge ou contador acompanhando a mesma conta. Cada pessoa só pode
+# estar em UM workspace emprestado por vez; quem convida precisa estar operando como dono
+# (não pode convidar gente pra dentro de um workspace que ela própria só está visitando).
+class ShareIn(BaseModel):
+    email: str = Field(min_length=5, max_length=180)
+    role: str = Field("editor", pattern="^(editor|viewer)$")
+
+
+def share_out(s: SharedAccess, db: Session) -> dict:
+    member = db.get(User, s.member_id) if s.member_id else None
+    return {"id": s.id, "email": s.member_email, "role": s.role,
+            "invited_at": s.invited_at.isoformat(),
+            "accepted_at": s.accepted_at.isoformat() if s.accepted_at else None,
+            "member_name": member.name if member else None}
+
+
+@router.get("/shared-access")
+def list_shared_access(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    rows = (db.query(SharedAccess).filter_by(owner_id=u.id, revoked_at=None)
+            .order_by(SharedAccess.invited_at.desc()).all())
+    return [share_out(s, db) for s in rows]
+
+
+@router.post("/shared-access")
+def invite_shared_access(data: ShareIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Convida alguém, por e-mail, a acessar os mesmos dados financeiros. A pessoa precisa
+    ter (ou criar) uma conta no Finora com esse e-mail e aceitar o convite pra passar a ver
+    os dados — nada muda pra ela antes disso."""
+    if u.workspace_id != u.id:
+        raise HTTPException(400, "Você está vendo os dados de outra pessoa — só quem é dono da conta pode convidar.")
+    email = data.email.strip().lower()
+    if email == u.email.lower():
+        raise HTTPException(400, "Você não pode convidar a si mesmo.")
+    if db.query(SharedAccess).filter_by(owner_id=u.id, revoked_at=None).count() >= 5:
+        raise HTTPException(400, "Limite de 5 pessoas com acesso compartilhado por conta.")
+    if db.query(SharedAccess).filter_by(owner_id=u.id, member_email=email, revoked_at=None).first():
+        raise HTTPException(400, "Esse e-mail já tem um convite ativo.")
+    s = SharedAccess(owner_id=u.id, member_email=email, role=data.role)
+    db.add(s)
+    db.commit()
+    return share_out(s, db)
+
+
+@router.delete("/shared-access/{sid}")
+def revoke_shared_access(sid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Revoga um convite pendente ou tira o acesso de quem já tinha aceitado — some no
+    próximo pedido da pessoa, sem precisar dela deslogar."""
+    s = db.query(SharedAccess).filter_by(id=sid, owner_id=u.id, revoked_at=None).first()
+    if not s:
+        raise HTTPException(404, "Convite não encontrado.")
+    s.revoked_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/shared-access/invitations")
+def list_invitations(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Convites pendentes de aceite endereçados ao e-mail de quem está logado."""
+    rows = db.query(SharedAccess).filter_by(member_email=u.email.lower(), accepted_at=None, revoked_at=None).all()
+    out = []
+    for s in rows:
+        owner = db.get(User, s.owner_id)
+        out.append({"id": s.id, "role": s.role, "owner_name": owner.name if owner else "?",
+                    "owner_email": owner.email if owner else "", "invited_at": s.invited_at.isoformat()})
+    return out
+
+
+@router.post("/shared-access/{sid}/accept")
+def accept_shared_access(sid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    s = (db.query(SharedAccess)
+         .filter_by(id=sid, member_email=u.email.lower(), accepted_at=None, revoked_at=None).first())
+    if not s:
+        raise HTTPException(404, "Convite não encontrado ou já respondido.")
+    already = (db.query(SharedAccess).filter_by(member_id=u.id, revoked_at=None)
+               .filter(SharedAccess.accepted_at.isnot(None)).first())
+    if already:
+        raise HTTPException(400, "Você já está vendo os dados de outra conta — saia desse acesso antes de aceitar um novo.")
+    s.member_id = u.id
+    s.accepted_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/shared-access/{sid}/decline")
+def decline_shared_access(sid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    s = (db.query(SharedAccess)
+         .filter_by(id=sid, member_email=u.email.lower(), accepted_at=None, revoked_at=None).first())
+    if not s:
+        raise HTTPException(404, "Convite não encontrado.")
+    s.revoked_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/shared-access/leave")
+def leave_shared_access(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    s = (db.query(SharedAccess).filter_by(member_id=u.id, revoked_at=None)
+         .filter(SharedAccess.accepted_at.isnot(None)).first())
+    if not s:
+        raise HTTPException(400, "Você não está com acesso compartilhado de ninguém no momento.")
+    s.revoked_at = datetime.utcnow()
     db.commit()
     return {"ok": True}
 
@@ -379,37 +492,37 @@ def crud(path: str, Model, Schema, fks: dict | None = None, order=None):
 
     @router.get(f"/{path}", name=f"list_{path}")
     def _list(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-        q = db.query(Model).filter_by(user_id=u.id)
+        q = db.query(Model).filter_by(user_id=u.workspace_id)
         if order is not None:
             q = q.order_by(order)
         return [to_dict(o) for o in q.all()]
 
     @router.post(f"/{path}", name=f"create_{path}")
-    def _create(data: Schema, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    def _create(data: Schema, u: User = Depends(current_editor), db: Session = Depends(get_db)):
         vals = data.model_dump()
         for f, M in fks.items():
-            _check_fk(db, u.id, M, vals.get(f))
-        o = Model(user_id=u.id, **vals)
+            _check_fk(db, u.workspace_id, M, vals.get(f))
+        o = Model(user_id=u.workspace_id, **vals)
         db.add(o)
         db.commit()
         return to_dict(o)
 
     @router.put(f"/{path}/{{oid}}", name=f"update_{path}")
-    def _update(oid: int, data: Schema, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-        o = db.query(Model).filter_by(id=oid, user_id=u.id).first()
+    def _update(oid: int, data: Schema, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+        o = db.query(Model).filter_by(id=oid, user_id=u.workspace_id).first()
         if not o:
             raise HTTPException(404, "Não encontrado")
         vals = data.model_dump()
         for f, M in fks.items():
-            _check_fk(db, u.id, M, vals.get(f))
+            _check_fk(db, u.workspace_id, M, vals.get(f))
         for k, v in vals.items():
             setattr(o, k, v)
         db.commit()
         return to_dict(o)
 
     @router.delete(f"/{path}/{{oid}}", name=f"delete_{path}")
-    def _delete(oid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-        n = db.query(Model).filter_by(id=oid, user_id=u.id).delete()
+    def _delete(oid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+        n = db.query(Model).filter_by(id=oid, user_id=u.workspace_id).delete()
         db.commit()
         if not n:
             raise HTTPException(404, "Não encontrado")
@@ -472,12 +585,12 @@ class ConfirmPaymentIn(BaseModel):
 
 
 @router.post("/contracts/{cid}/confirm-payment")
-def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends(current_user_active),
+def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends(current_editor),
                              db: Session = Depends(get_db)):
     """Lança o pagamento de uma conta fixa com um clique — nunca automático e silencioso,
     porque isso mexe no saldo real; a pessoa confirma valor e data (ambos vêm preenchidos
     com o previsto no contrato, editáveis antes de enviar)."""
-    c = db.query(Contract).filter_by(id=cid, user_id=u.id).first()
+    c = db.query(Contract).filter_by(id=cid, user_id=u.workspace_id).first()
     if not c:
         raise HTTPException(404, "Contrato não encontrado")
     if not c.account_id:
@@ -485,9 +598,9 @@ def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends
     pay_date = data.date or date.today()
     amount = data.amount if data.amount is not None else c.amount
     ext = "contract-" + hashlib.sha1(f"{cid}{pay_date}{amount}".encode()).hexdigest()[:20]
-    if db.query(Transaction.id).filter_by(user_id=u.id, external_id=ext).first():
+    if db.query(Transaction.id).filter_by(user_id=u.workspace_id, external_id=ext).first():
         raise HTTPException(400, "Este pagamento já foi lançado.")
-    t = Transaction(user_id=u.id, account_id=c.account_id, category_id=c.category_id,
+    t = Transaction(user_id=u.workspace_id, account_id=c.account_id, category_id=c.category_id,
                     date=pay_date, description=c.name, amount=amount, type="expense",
                     external_id=ext, source="manual", category_locked=bool(c.category_id))
     db.add(t)
@@ -503,11 +616,11 @@ class ConfirmReceiptIn(BaseModel):
 
 
 @router.post("/receivables/{rid}/confirm-received")
-def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(current_user_active),
+def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(current_editor),
                        db: Session = Depends(get_db)):
     """Dá baixa numa conta a receber com um clique, lançando a receita na conta escolhida —
     mesma lógica do 1-clique de contratos, só que na direção contrária (entrada, não saída)."""
-    r = db.query(Receivable).filter_by(id=rid, user_id=u.id).first()
+    r = db.query(Receivable).filter_by(id=rid, user_id=u.workspace_id).first()
     if not r:
         raise HTTPException(404, "Conta a receber não encontrada")
     account_id = data.account_id or r.account_id
@@ -517,7 +630,7 @@ def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(curre
         raise HTTPException(400, "Este recebível já foi baixado.")
     recv_date = data.date or date.today()
     amount = data.amount if data.amount is not None else r.amount
-    t = Transaction(user_id=u.id, account_id=account_id, category_id=None,
+    t = Transaction(user_id=u.workspace_id, account_id=account_id, category_id=None,
                     date=recv_date, description=f"{r.client_name} — {r.description}".strip(" —"),
                     amount=amount, type="income", source="manual")
     db.add(t)
@@ -529,10 +642,10 @@ def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(curre
 
 
 @router.post("/transactions/{tid}/receipt")
-async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_user_active),
+async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_editor),
                          db: Session = Depends(get_db)):
     """Anexa o comprovante de pagamento a um lançamento — "dar baixa" com prova em mãos."""
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
     ext = storage.ext_for(file.content_type)
@@ -543,7 +656,7 @@ async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_u
     if len(data) > s.max_upload_mb * 1024 * 1024:
         raise HTTPException(400, f"Arquivo maior que {s.max_upload_mb} MB.")
     old = t.receipt_path
-    t.receipt_path = storage.save(u.id, tid, ext, data)
+    t.receipt_path = storage.save(u.workspace_id, tid, ext, data)
     db.commit()
     storage.delete(old)
     return tx_out(t)
@@ -551,7 +664,7 @@ async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_u
 
 @router.get("/transactions/{tid}/receipt")
 def get_receipt(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
     resolved = storage.resolve(t.receipt_path) if t and t.receipt_path else None
     if not resolved:
         raise HTTPException(404, "Sem comprovante para este lançamento.")
@@ -560,8 +673,8 @@ def get_receipt(tid: int, u: User = Depends(current_user_active), db: Session = 
 
 
 @router.delete("/transactions/{tid}/receipt")
-def delete_receipt(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
+def delete_receipt(tid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
     if t.receipt_path:
@@ -574,19 +687,19 @@ def delete_receipt(tid: int, u: User = Depends(current_user_active), db: Session
 # ---------------------------------------------------------------- regras de categoria
 @router.get("/rules")
 def list_rules(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    return [to_dict(r) for r in db.query(CategoryRule).filter_by(user_id=u.id)
+    return [to_dict(r) for r in db.query(CategoryRule).filter_by(user_id=u.workspace_id)
             .order_by(CategoryRule.priority.desc())]
 
 
 @router.post("/rules")
-def create_rule(data: RuleIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    _check_fk(db, u.id, Category, data.category_id)
-    r = CategoryRule(user_id=u.id, pattern=data.pattern, category_id=data.category_id, priority=data.priority)
+def create_rule(data: RuleIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    _check_fk(db, u.workspace_id, Category, data.category_id)
+    r = CategoryRule(user_id=u.workspace_id, pattern=data.pattern, category_id=data.category_id, priority=data.priority)
     db.add(r)
     db.commit()
     updated = 0
     if data.apply_existing:
-        for t in db.query(Transaction).filter(Transaction.user_id == u.id,
+        for t in db.query(Transaction).filter(Transaction.user_id == u.workspace_id,
                                               Transaction.category_locked.is_(False),
                                               Transaction.description.ilike(f"%{data.pattern}%")):
             t.category_id = data.category_id
@@ -596,8 +709,8 @@ def create_rule(data: RuleIn, u: User = Depends(current_user_active), db: Sessio
 
 
 @router.delete("/rules/{rid}")
-def delete_rule(rid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    db.query(CategoryRule).filter_by(id=rid, user_id=u.id).delete()
+def delete_rule(rid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    db.query(CategoryRule).filter_by(id=rid, user_id=u.workspace_id).delete()
     db.commit()
     return {"ok": True}
 
@@ -621,7 +734,7 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
                       min_amount: Optional[float] = None, max_amount: Optional[float] = None,
                       source: Optional[str] = None,
                       limit: int = 500, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    qry = db.query(Transaction).filter(Transaction.user_id == u.id)
+    qry = db.query(Transaction).filter(Transaction.user_id == u.workspace_id)
     if start: qry = qry.filter(Transaction.date >= start)
     if end: qry = qry.filter(Transaction.date <= end)
     if account_id: qry = qry.filter(Transaction.account_id == account_id)
@@ -636,21 +749,21 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
 
 
 @router.post("/transactions")
-def create_transaction(data: TransactionIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    _check_fk(db, u.id, Account, data.account_id)
-    _check_fk(db, u.id, Category, data.category_id)
+def create_transaction(data: TransactionIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    _check_fk(db, u.workspace_id, Account, data.account_id)
+    _check_fk(db, u.workspace_id, Category, data.category_id)
     if data.type == "transfer":
         if not data.to_account_id:
             raise HTTPException(400, "Informe a conta de destino da transferência.")
         if data.to_account_id == data.account_id:
             raise HTTPException(400, "A conta de destino deve ser diferente da conta de origem.")
-        _check_fk(db, u.id, Account, data.to_account_id)
-    cat = data.category_id or categorize(db, u.id, data.description, data.type)
+        _check_fk(db, u.workspace_id, Account, data.to_account_id)
+    cat = data.category_id or categorize(db, u.workspace_id, data.description, data.type)
     created = []
     per = round(data.amount / data.installments, 2)
     for i in range(data.installments):
         amt = per if i < data.installments - 1 else round(data.amount - per * (data.installments - 1), 2)
-        t = Transaction(user_id=u.id, account_id=data.account_id,
+        t = Transaction(user_id=u.workspace_id, account_id=data.account_id,
                         to_account_id=data.to_account_id if data.type == "transfer" else None,
                         category_id=cat, date=analytics.add_months(data.date, i), description=data.description,
                         amount=amt, type=data.type, notes=data.notes,
@@ -675,18 +788,18 @@ class TxPatch(BaseModel):
 
 
 @router.patch("/transactions/{tid}")
-def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
+def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
     if not t:
         raise HTTPException(404, "Não encontrado")
     _apply_tx_effect(db, t, -1)  # desfaz o efeito de caixa atual antes de editar
 
     vals = data.model_dump(exclude_none=True, exclude={"create_rule"})
     if "category_id" in vals:
-        _check_fk(db, u.id, Category, vals["category_id"])
+        _check_fk(db, u.workspace_id, Category, vals["category_id"])
         t.category_locked = True
     if "to_account_id" in vals:
-        _check_fk(db, u.id, Account, vals["to_account_id"])
+        _check_fk(db, u.workspace_id, Account, vals["to_account_id"])
     for k, v in vals.items():
         setattr(t, k, v)
     if t.type == "transfer" and not t.to_account_id:
@@ -697,15 +810,15 @@ def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_user_ac
     if data.create_rule and data.category_id:
         pattern = " ".join(t.description.split()[:2])[:60]
         if pattern:
-            db.add(CategoryRule(user_id=u.id, pattern=pattern, category_id=data.category_id, priority=1))
+            db.add(CategoryRule(user_id=u.workspace_id, pattern=pattern, category_id=data.category_id, priority=1))
     _apply_tx_effect(db, t, +1)  # reaplica com os valores (possivelmente novos)
     db.commit()
     return tx_out(t)
 
 
 @router.delete("/transactions/{tid}")
-def delete_transaction(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
+def delete_transaction(tid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
     if not t:
         raise HTTPException(404, "Não encontrado")
     _apply_tx_effect(db, t, -1)
@@ -716,10 +829,10 @@ def delete_transaction(tid: int, u: User = Depends(current_user_active), db: Ses
 
 
 @router.post("/transactions/import")
-async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_user_active),
+async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_editor),
                      db: Session = Depends(get_db)):
     """CSV com colunas: data;descricao;valor (valor negativo = gasto). Aceita , ou ; e data dd/mm/aaaa."""
-    acc = db.query(Account).filter_by(id=account_id, user_id=u.id).first()
+    acc = db.query(Account).filter_by(id=account_id, user_id=u.workspace_id).first()
     if not acc:
         raise HTTPException(400, "Account inválido")
     raw = (await file.read()).decode("utf-8-sig", errors="ignore")
@@ -737,11 +850,11 @@ async def import_csv(account_id: int, file: UploadFile, u: User = Depends(curren
         desc = row.get("descricao") or row.get("descrição") or row.get("description") or "Lançamento"
         typ = "expense" if v < 0 else "income"
         ext = "csv-" + hashlib.sha1(f"{account_id}{d}{desc}{v}".encode()).hexdigest()[:20]
-        if db.query(Transaction.id).filter_by(user_id=u.id, external_id=ext).first():
+        if db.query(Transaction.id).filter_by(user_id=u.workspace_id, external_id=ext).first():
             continue
-        db.add(Transaction(user_id=u.id, account_id=account_id, date=d, description=desc[:255],
+        db.add(Transaction(user_id=u.workspace_id, account_id=account_id, date=d, description=desc[:255],
                            amount=abs(v), type=typ, external_id=ext, source="manual",
-                           category_id=categorize(db, u.id, desc, typ)))
+                           category_id=categorize(db, u.workspace_id, desc, typ)))
         _adjust_balance(db, account_id, d, v, +1)
         n += 1
     acc.last_import_at = datetime.utcnow()
@@ -761,7 +874,7 @@ def export_csv(u: User = Depends(current_user_active), db: Session = Depends(get
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
     w.writerow(["data", "descricao", "valor", "tipo", "conta", "categoria", "parcela", "obs"])
-    for t in db.query(Transaction).filter_by(user_id=u.id).order_by(Transaction.date):
+    for t in db.query(Transaction).filter_by(user_id=u.workspace_id).order_by(Transaction.date):
         w.writerow([t.date.strftime("%d/%m/%Y"), _csv_safe(t.description), f"{t.amount:.2f}".replace(".", ","),
                     t.type, t.account.name if t.account else "", t.category.name if t.category else "",
                     t.installment or "", _csv_safe(t.notes)])
@@ -773,24 +886,24 @@ def export_csv(u: User = Depends(current_user_active), db: Session = Depends(get
 @router.get("/dashboard")
 def get_dashboard(ref: Optional[date] = None, months: int = Query(6, ge=1, le=24),
                   u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    analytics.run_alerts(db, u.id, ref)
-    return analytics.dashboard(db, u.id, ref, months)
+    analytics.run_alerts(db, u.workspace_id, ref)
+    return analytics.dashboard(db, u.workspace_id, ref, months)
 
 
 @router.get("/installments")
 def get_installments(ref: Optional[date] = None, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    return analytics.installment_plans(db, u.id, ref or date.today())
+    return analytics.installment_plans(db, u.workspace_id, ref or date.today())
 
 
 @router.get("/alerts")
 def list_alerts(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    return [to_dict(a) for a in db.query(Alert).filter_by(user_id=u.id)
+    return [to_dict(a) for a in db.query(Alert).filter_by(user_id=u.workspace_id)
             .order_by(Alert.created_at.desc()).limit(100)]
 
 
 @router.post("/alerts/read")
-def read_alerts(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    db.query(Alert).filter_by(user_id=u.id, read=False).update({"read": True})
+def read_alerts(u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    db.query(Alert).filter_by(user_id=u.workspace_id, read=False).update({"read": True})
     db.commit()
     return {"ok": True}
 
@@ -817,10 +930,10 @@ class AdvisorIn(BaseModel):
 
 
 @router.post("/advisor")
-def ask_advisor(data: AdvisorIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    dash = analytics.dashboard(db, u.id)
+def ask_advisor(data: AdvisorIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    dash = analytics.dashboard(db, u.workspace_id)
     content = advisor.generate(dash, data.question)
-    rep = AdvisorReport(user_id=u.id, content=content,
+    rep = AdvisorReport(user_id=u.workspace_id, content=content,
                         snapshot={"question": data.question, "ref": dash["ref"]})
     db.add(rep)
     db.commit()
@@ -829,7 +942,7 @@ def ask_advisor(data: AdvisorIn, u: User = Depends(current_user_active), db: Ses
 
 @router.get("/advisor")
 def list_reports(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    return [to_dict(r) for r in db.query(AdvisorReport).filter_by(user_id=u.id)
+    return [to_dict(r) for r in db.query(AdvisorReport).filter_by(user_id=u.workspace_id)
             .order_by(AdvisorReport.created_at.desc()).limit(20)]
 
 
@@ -854,15 +967,15 @@ def assistant_nudges(u: User = Depends(current_user_active), db: Session = Depen
 @router.get("/pluggy/status")
 def pluggy_status(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return {"enabled": pluggy.enabled(),
-            "items": [to_dict(i) for i in db.query(PluggyItem).filter_by(user_id=u.id)]}
+            "items": [to_dict(i) for i in db.query(PluggyItem).filter_by(user_id=u.workspace_id)]}
 
 
 @router.post("/pluggy/connect-token")
 def pluggy_token(item_id: Optional[str] = None, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    if item_id and not db.query(PluggyItem).filter_by(user_id=u.id, item_id=item_id).first():
+    if item_id and not db.query(PluggyItem).filter_by(user_id=u.workspace_id, item_id=item_id).first():
         raise HTTPException(404, "Conexão não encontrada")
     try:
-        return {"accessToken": pluggy.connect_token(u.id, item_id)}
+        return {"accessToken": pluggy.connect_token(u.workspace_id, item_id)}
     except pluggy.PluggyError as e:
         raise HTTPException(400, str(e))
 
@@ -872,35 +985,35 @@ class ItemIn(BaseModel):
 
 
 @router.post("/pluggy/items")
-def pluggy_add_item(data: ItemIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+def pluggy_add_item(data: ItemIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
     try:
-        res = pluggy.sync_item(db, u.id, data.item_id)
+        res = pluggy.sync_item(db, u.workspace_id, data.item_id)
     except pluggy.PluggyError as e:
         raise HTTPException(400, str(e))
-    analytics.run_alerts(db, u.id)
+    analytics.run_alerts(db, u.workspace_id)
     return res
 
 
 @router.post("/pluggy/sync")
-def pluggy_sync_all(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+def pluggy_sync_all(u: User = Depends(current_editor), db: Session = Depends(get_db)):
     out = []
-    for it in db.query(PluggyItem).filter_by(user_id=u.id).all():
+    for it in db.query(PluggyItem).filter_by(user_id=u.workspace_id).all():
         try:
-            out.append(pluggy.sync_item(db, u.id, it.item_id))
+            out.append(pluggy.sync_item(db, u.workspace_id, it.item_id))
         except pluggy.PluggyError as e:
             out.append({"item_id": it.item_id, "error": str(e)})
-    analytics.run_alerts(db, u.id)
+    analytics.run_alerts(db, u.workspace_id)
     return out
 
 
 @router.delete("/pluggy/items/{item_id}")
-def pluggy_remove(item_id: str, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    row = db.query(PluggyItem).filter_by(user_id=u.id, item_id=item_id).first()
+def pluggy_remove(item_id: str, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    row = db.query(PluggyItem).filter_by(user_id=u.workspace_id, item_id=item_id).first()
     if not row:
         raise HTTPException(404, "Não encontrado")
     pluggy.delete_item(item_id)
     db.delete(row)
-    db.query(Account).filter_by(user_id=u.id, pluggy_item_id=item_id).update({"archived": True})
+    db.query(Account).filter_by(user_id=u.workspace_id, pluggy_item_id=item_id).update({"archived": True})
     db.commit()
     return {"ok": True}
 

@@ -134,6 +134,22 @@ class Receivable(Owned, Base):
     notes: Mapped[str] = mapped_column(Text, default="")
 
 
+class SharedAccess(Base):
+    """Convite de acesso compartilhado: um usuário aceito passa a ver e editar os dados
+    de `owner_id` em vez dos próprios (sócio(a), cônjuge ou contador acompanhando a mesma
+    conta). Cada pessoa só pode estar em UM workspace emprestado por vez — sem hierarquia,
+    sem mesclar dados de dois donos diferentes."""
+    __tablename__ = "shared_access"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    member_email: Mapped[str] = mapped_column(String(180), index=True)
+    member_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(10), default="editor")  # editor | viewer
+    invited_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class Income(Owned, Base):
     """Fontes de renda: salário, pró-labore, aluguel recebido, freelas."""
     __tablename__ = "incomes"

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .db import get_db
-from .models import User
+from .models import SharedAccess, User
 from .services.categorizer import seed_categories
 
 bearer = HTTPBearer(auto_error=False)
@@ -72,6 +72,18 @@ def _get_or_create_profile(db: Session, claims: dict) -> User:
     return u
 
 
+def _resolve_workspace(db: Session, u: User) -> None:
+    """Anexa workspace_id/workspace_role ao objeto em memória (atributos transientes, não
+    mapeados — nunca persistem): se o usuário aceitou um convite de acesso compartilhado
+    ainda ativo, os dados a consultar são os do dono do convite (`owner_id`); senão são os
+    próprios. Resolvido a cada request a partir do banco, então revogar um convite tira o
+    acesso já no próximo pedido, sem precisar de logout."""
+    share = (db.query(SharedAccess).filter_by(member_id=u.id, revoked_at=None)
+             .filter(SharedAccess.accepted_at.isnot(None)).first())
+    u.workspace_id = share.owner_id if share else u.id
+    u.workspace_role = share.role if share else "owner"
+
+
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
                  db: Session = Depends(get_db)) -> User:
     """Sessão completa (Google + MFA confirmados no Supabase) — exigida por toda a API normal."""
@@ -86,15 +98,27 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     u = _get_or_create_profile(db, claims)
     if u.suspended_at:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta suspensa. Fale com o administrador.")
+    _resolve_workspace(db, u)
     return u
 
 
 def current_user_active(u: User = Depends(current_user)) -> User:
     """current_user + teste grátis ainda válido (ou plano pago, ou admin). Usado nos
     endpoints que de fato dão acesso ao produto — /me continua em current_user puro, pra
-    o front sempre conseguir saber o status da conta mesmo com o teste vencido."""
-    if not u.is_admin and u.plan == "trial" and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at:
+    o front sempre conseguir saber o status da conta mesmo com o teste vencido. Quem está
+    acessando os dados de outra pessoa via acesso compartilhado nunca é bloqueado pelo
+    próprio teste/plano — quem paga é o dono do workspace, não cada convidado."""
+    if (u.workspace_id == u.id and not u.is_admin and u.plan == "trial"
+            and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at):
         raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "Seu período de teste acabou.")
+    return u
+
+
+def current_editor(u: User = Depends(current_user_active)) -> User:
+    """current_user_active, mas bloqueia quem só tem papel `viewer` num acesso
+    compartilhado — usado em todo endpoint que grava ou apaga dado do workspace."""
+    if u.workspace_role == "viewer":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Você tem acesso somente leitura a esses dados.")
     return u
 
 
