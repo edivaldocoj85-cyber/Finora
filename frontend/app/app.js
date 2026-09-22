@@ -137,6 +137,7 @@ function showAuth() {
   $("#mfaCard").classList.add("hidden"); $("#mfaCard").innerHTML = "";
   startAuthCanvas();
   animateAuthCard();
+  window.FinoraAuth?.entrar();
 }
 function animateAuthCard() {
   if (window.gsap && !reducedMotion()) {
@@ -189,8 +190,9 @@ async function showMfaSetup() {
   const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `finora-${Date.now()}` });
   if (error) { card.innerHTML = `<p class="error">${esc(error.message)}</p>`; return; }
   card.innerHTML = `
-    <div class="brand big"><span class="logo">F</span> Finora</div>
-    <p class="muted">Proteja sua conta com um segundo fator. Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password...).</p>
+    <span class="fa-mono fa-eyebrow">Passo 2 de 2</span>
+    <h2 class="fa-h">Proteja sua conta</h2>
+    <p class="muted">Escaneie o QR code com um app autenticador (Google Authenticator, Authy, 1Password…) e digite o código que aparecer.</p>
     <img class="mfa-qr" id="mfaQr" src="${esc(data.totp.qr_code)}" alt="QR code para configurar o autenticador">
     <p class="small muted">Não consegue escanear? Digite manualmente: <code class="mfa-secret">${esc(data.totp.secret)}</code></p>
     <form id="mfaSetupForm">
@@ -218,7 +220,8 @@ function showMfaVerify(factorId) {
   const card = $("#mfaCard");
   card.classList.remove("hidden");
   card.innerHTML = `
-    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <span class="fa-mono fa-eyebrow">Passo 2 de 2</span>
+    <h2 class="fa-h">Confirme que é você</h2>
     <p class="muted">Digite o código de 6 dígitos do seu app autenticador.</p>
     <form id="mfaVerifyForm">
       <input type="text" id="mfaVerifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos" required autofocus>
@@ -347,7 +350,7 @@ async function initAuth() {
         } catch (e) { $("#authError").textContent = e.message; shakeEl("#googleCard"); }
       },
     });
-    window.google.accounts.id.renderButton($("#googleBtn"), { theme: "outline", size: "large", width: 320, locale: "pt-BR" });
+    window.google.accounts.id.renderButton($("#googleBtn"), { theme: "filled_black", shape: "rectangular", size: "large", text: "continue_with", width: 320, locale: "pt-BR" });
   } catch { $("#authError").textContent = "Não foi possível carregar o login do Google. Verifique sua conexão."; }
 }
 

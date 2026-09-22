@@ -4,131 +4,147 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0A0A0A">
-<meta name="description" content="Finora — conecte seus bancos e cartões uma vez; o extrato, os gastos e os avisos chegam organizados, em português claro.">
-<title>Finora — o extrato, reescrito</title>
+<meta name="description" content="Finora conecta seus bancos e cartões, organiza cada lançamento e explica, em português claro, para onde o seu dinheiro está indo.">
+<title>Finora — seu dinheiro, lido linha por linha</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/finora.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/finora.css">
 </head>
-<body>
+<body style="margin:0;background:#0A0A0A">
+<!-- =================== FINORA LANDING ===================
+     Cole este bloco onde a página inicial deve aparecer.
+     Configuração (atributos do div):
+       data-login  → destino dos links "Entrar" (ex.: #login, /login)
+       data-api    → endpoint POST do formulário de acesso.
+                     Deixe vazio (data-api="") para só mostrar a confirmação.
+     ======================================================= -->
+<div id="finora-landing" data-login="/app/" data-api="/api/acesso">
+<div class="pre" aria-hidden="true"><div class="pre-in">
+  <span class="pre-marca"><span>Finora</span></span>
+  <div class="pre-linha"><b></b></div>
+  <div class="pre-info mono"><span class="t">Conciliando lançamentos</span><span class="n">000</span></div>
+</div></div>
+<div class="progresso" aria-hidden="true"></div>
 
-<div class="cortina" aria-hidden="true"><span>Finora</span></div>
-
-<details class="indice" open>
-  <summary>Índice <span>/ Finora</span></summary>
-  <ol>
-    <li><a href="#inicio" aria-current="true">Início</a></li>
-    <li><a href="#extrato">O extrato, reescrito</a></li>
-    <li><a href="#contas">Contas conectadas</a></li>
-    <li><a href="#consultor">O consultor</a></li>
-    <li><a href="#acesso">Pedir acesso</a></li>
-  </ol>
-  <a class="entrar" href="/app">Já tem acesso? Entrar →</a>
+<details class="indice" data-r="fade" data-d="1400">
+  <summary><i aria-hidden="true"></i>Índice <span class="atual">/ Início</span></summary>
+  <nav aria-label="Índice"><ol>
+    <li><a href="#" data-alvo="fnl-inicio">Início</a></li>
+    <li><a href="#" data-alvo="fnl-extrato">O extrato, reescrito</a></li>
+    <li><a href="#" data-alvo="fnl-contas">Contas conectadas</a></li>
+    <li><a href="#" data-alvo="fnl-consultor">O consultor</a></li>
+    <li><a href="#" data-alvo="fnl-acesso">Pedir acesso</a></li>
+  </ol></nav>
+  <a class="entrar" href="/app/" data-entrar>Já tem acesso? Entrar →</a>
 </details>
 
 <main>
-  <section class="hero" id="inicio">
-    <header class="hero-top">
+  <!-- HERO -->
+  <section class="hero" id="fnl-inicio" data-nome="Início">
+    <div class="luz" aria-hidden="true" data-r="fade" data-d="300"></div>
+    <div class="brasas" aria-hidden="true"></div>
+    <header class="topo" data-r="fade" data-d="150">
       <span class="marca">Finora</span>
-      <span class="mono">Controle financeiro pessoal<br>Brasília — 2026</span>
+      <a class="lnk entrar-topo" href="/app/" data-entrar>Entrar</a>
+      <span class="mono">Controle financeiro pessoal<br>Feito em Brasília</span>
     </header>
-
-    <h1 class="manchete">
-      <span class="l l1">Todo mês</span>
-      <span class="l l2">deixa um</span>
-      <span class="l l3">rastro.</span>
-      <span class="l l4">A Finora lê cada linha dele por você.</span>
+    <h1 class="manchete split" data-auto>
+      <span class="l1">Todo mês deixa</span>
+      <span class="l2">um rastro.</span>
     </h1>
-
-    <div class="hero-pe">
+    <div class="hero-pe grade" data-r="up" data-d="900">
+      <span class="sub">A Finora lê cada linha dele por você.</span>
       <p>Conecte seus bancos e cartões uma vez. A Finora organiza os lançamentos sozinha e aponta, em português claro, para onde o seu dinheiro está indo.</p>
-      <a class="cta" href="#acesso">Pedir acesso antecipado</a>
+      <a class="lnk" href="#" data-alvo="fnl-acesso">Pedir acesso antecipado</a>
     </div>
-    <div class="scroll" aria-hidden="true"></div>
+    <div class="scroll" aria-hidden="true" data-r="fade" data-d="1600"></div>
   </section>
 
-  <section class="extrato" id="extrato">
-    <div class="extrato-cab">
-      <span class="mono">Setembro · conta corrente</span>
-      <h2>O extrato,<em>reescrito.</em></h2>
+  <!-- EXTRATO -->
+  <section class="sec extrato" id="fnl-extrato" data-nome="O extrato">
+    <div class="cab grade">
+      <h2 class="titulo split">O extrato,<br><em>reescrito.</em></h2>
+      <span class="mono" data-r="fade" data-d="400">Setembro · conta corrente</span>
     </div>
-
-    <div class="livro">
-      <div class="lanc"><span class="data">02 SET</span><span>Aluguel — transferência</span><span class="valor">− 1.850,00</span></div>
-      <div class="lanc"><span class="data">05 SET</span><span>Streaming · 4 assinaturas</span><span class="valor">− 127,60</span>
-        <p class="nota">Você assinou dois serviços com o mesmo catálogo. Um deles não é aberto desde junho.</p></div>
-      <div class="lanc"><span class="data">11 SET</span><span>Mercado — 6 compras</span><span class="valor">− 912,34</span></div>
-      <div class="lanc"><span class="data">15 SET</span><span>Salário</span><span class="valor">+ 6.400,00</span></div>
-      <div class="lanc"><span class="data">18 SET</span><span>Delivery — 9 pedidos</span><span class="valor">− 486,20</span>
-        <p class="nota">Nove pedidos, sete depois das 22h. Semanas de plantão custam em média R$ 140 a mais.</p></div>
+    <div class="livro" role="table" aria-label="Lançamentos de setembro">
+      <div class="livro-cab grade mono" role="row" data-r="fade"><span role="columnheader">Data</span><span class="v" role="columnheader">Valor (R$)</span><span class="n" role="columnheader">Nota do consultor</span></div>
+      <div class="lanc grade" role="row"><span class="data">02 SET</span><span class="desc">Aluguel — transferência</span><span class="valor" data-v="-1850">− 1.850,00</span></div>
+      <div class="lanc grade" role="row"><span class="data">05 SET</span><span class="desc">Streaming · 4 assinaturas</span><span class="valor" data-v="-127.6">− 127,60</span>
+        <p class="nota">Dois serviços com o mesmo catálogo. Um deles não é aberto desde junho.</p></div>
+      <div class="lanc grade" role="row"><span class="data">11 SET</span><span class="desc">Mercado — 6 compras</span><span class="valor" data-v="-912.34">− 912,34</span></div>
+      <div class="lanc grade" role="row"><span class="data">15 SET</span><span class="desc">Salário</span><span class="valor pos" data-v="6400">+ 6.400,00</span></div>
+      <div class="lanc grade" role="row"><span class="data">18 SET</span><span class="desc">Delivery — 9 pedidos</span><span class="valor" data-v="-486.2">− 486,20</span>
+        <p class="nota">Sete pedidos depois das 22h. Semanas de plantão custam R$ 140 a mais.</p></div>
     </div>
-
-    <div class="fecho">
-      <p><span class="mono">Sem planilha, sem categoria manual</span>Cada lançamento chega sincronizado do banco. O consultor escreve à margem só quando há algo que vale a sua atenção.</p>
-    </div>
+    <div class="saldo grade" data-r="fade"><span class="r mono">Sobra do mês até agora</span><span class="valor pos" data-v="3023.86">+ 3.023,86</span></div>
   </section>
 
-  <hr class="rule">
-
-  <section class="contas" id="contas">
-    <div class="contas-cab">
-      <span class="mono">Open Finance · autorização direta com seu banco</span>
-      <h2>Conecte uma vez.<em>Esqueça a planilha.</em></h2>
-    </div>
-
-    <div class="rede">
-      <div class="inst"><span>Nubank</span><span class="tipo">Conta corrente</span><span class="saldo">conectado</span></div>
-      <div class="inst"><span>Itaú</span><span class="tipo">Cartão de crédito</span><span class="saldo">conectado</span></div>
-      <div class="inst"><span>Inter</span><span class="tipo">Poupança</span><span class="saldo">conectado</span></div>
-      <div class="inst"><span>XP Investimentos</span><span class="tipo">Investimentos</span><span class="saldo">conectado</span></div>
-    </div>
-
-    <p class="legenda"><span class="mono">Padrão aberto, regulado pelo Banco Central</span>A autorização é direta com a sua instituição — a Finora nunca vê nem guarda sua senha do banco. Prefere não conectar? Também dá pra importar o extrato em CSV, à mão, quando quiser.</p>
-  </section>
-
-  <hr class="rule">
-
-  <section class="consultor" id="consultor">
-    <div class="consultor-cab">
-      <span class="mono">O consultor · linguagem simples, sem jargão</span>
-      <h2>Ele lê o mês<em>antes de você.</em></h2>
-    </div>
-
-    <div class="leitura">
-      <p class="fala">Você gastou 34% a mais com delivery esse mês — quase tudo depois da meia-noite. Dá pra cobrir isso sem cortar o essencial.</p>
-    </div>
-
-    <p class="legenda"><span class="mono">Regras claras primeiro, IA quando ajuda</span>O consultor compara seu mês com o anterior, avisa de gasto fora do padrão e sugere pra onde mandar o que sobrar — sem termo técnico, sem gráfico que não diz nada.</p>
-  </section>
-
-  <hr class="rule">
-
-  <section class="acesso" id="acesso">
-    <span class="mono">Acesso antecipado</span>
-    <h2>Sua vez de<br>organizar o mês.</h2>
-    <p class="sub">A Finora está em acesso fechado. Deixe seu e-mail e avisamos assim que liberar uma vaga.</p>
-
-    <form class="form-acesso" novalidate>
-      <div class="campo">
-        <label for="email-acesso">E-mail</label>
-        <input id="email-acesso" name="email" type="email" placeholder="seu@email.com" autocomplete="email" required>
-        <button type="submit">Pedir acesso</button>
+  <!-- CONTAS -->
+  <section class="sec contas" id="fnl-contas" data-nome="Contas">
+    <span class="rotulo mono" data-r="fade">Contas conectadas</span>
+    <div class="grade"><h2 class="titulo split">Todos os seus bancos<br><em>numa só leitura.</em></h2></div>
+    <div class="faixa" aria-label="Instituições compatíveis via Open Finance" data-r="fade">
+      <div class="faixa-trilho">
+        <span>Nubank</span><span>Itaú</span><span>Bradesco</span><span>Banco do Brasil</span><span>Caixa</span><span>Santander</span><span>Inter</span><span>C6 Bank</span><span>BTG</span><span>Sicoob</span>
+        <span aria-hidden="true">Nubank</span><span aria-hidden="true">Itaú</span><span aria-hidden="true">Bradesco</span><span aria-hidden="true">Banco do Brasil</span><span aria-hidden="true">Caixa</span><span aria-hidden="true">Santander</span><span aria-hidden="true">Inter</span><span aria-hidden="true">C6 Bank</span><span aria-hidden="true">BTG</span><span aria-hidden="true">Sicoob</span>
       </div>
-      <p class="msg-acesso" role="status" aria-live="polite"></p>
-    </form>
+    </div>
+    <div class="sync grade">
+      <div class="explica" data-r="up">
+        <p>A conexão é feita pelo Open Finance, com a sua autorização dentro do app do próprio banco. A Finora só lê: não movimenta dinheiro nem vê sua senha.</p>
+        <p>Você escolhe quais contas entram e pode desconectar qualquer uma a qualquer momento.</p>
+      </div>
+      <ul class="log" aria-label="Status de sincronização">
+        <li data-r="up"><span class="pt"></span><span>Conta corrente · 312 lançamentos</span><span class="q">há 2 min</span></li>
+        <li data-r="up" data-d="120"><span class="pt"></span><span>Cartão de crédito · fatura aberta</span><span class="q">há 2 min</span></li>
+        <li data-r="up" data-d="240"><span class="pt"></span><span>Poupança · rendimento de setembro</span><span class="q">há 1 h</span></li>
+        <li data-r="up" data-d="360"><span class="pt lendo"></span><span>Cartão adicional · lendo</span><span class="q">agora</span></li>
+      </ul>
+    </div>
   </section>
 
-  <hr class="rule">
+  <!-- CONSULTOR -->
+  <section class="sec consultor" id="fnl-consultor" data-nome="O consultor">
+    <span class="rotulo mono" data-r="fade">O consultor</span>
+    <div class="grade"><h2 class="titulo split">Pergunte como<br><em>a um amigo.</em></h2></div>
+    <div class="grade">
+      <div class="conversa">
+        <p class="pergunta" data-r="fade"><b>Você</b>Consigo trocar de carro em março sem mexer na reserva?</p>
+        <p class="resposta" aria-live="polite" data-texto="Consegue, se a entrada ficar em até R$ 9 mil. Nos últimos seis meses sobraram, em média, R$ 2.740 por mês. Cortando o streaming repetido, você chega em março com R$ 9.400 sem tocar na reserva."></p>
+        <div class="base mono" data-r="fade" data-d="200"><span>6 meses de extrato</span><span>Fatura de outubro</span><span>Reserva: R$ 18.200</span></div>
+      </div>
+      <p class="limite" data-r="fade">O consultor responde com base nos seus próprios lançamentos e mostra de onde tirou cada número. É uma ferramenta de organização, não uma recomendação de investimento.</p>
+    </div>
+  </section>
 
-  <footer class="rodape">
-    <span class="marca">Finora</span>
-    <span class="mono">© 2026 Finora — Brasília<br><a href="/app">Já tem acesso? Entrar</a></span>
-  </footer>
+  <!-- ACESSO -->
+  <section class="sec acesso" id="fnl-acesso" data-nome="Pedir acesso">
+    <span class="rotulo mono" data-r="fade">Acesso antecipado</span>
+    <div class="grade"><h2 class="titulo split">Comece pelo<br><em>próximo mês.</em></h2></div>
+    <div class="grade">
+      <form class="form" novalidate data-r="up">
+        <label class="mono" for="fnl-email">Seu e-mail</label>
+        <div class="campo">
+          <input id="fnl-email" name="email" type="email" autocomplete="email" placeholder="voce@email.com" required>
+          <button class="mono" type="submit">Pedir acesso →</button>
+        </div>
+        <p class="msg" role="status"></p>
+        <p class="aviso">Liberamos convites em pequenos grupos. Usamos seu e-mail só para enviar o convite.</p>
+      </form>
+    </div>
+  </section>
 </main>
 
-<script src="js/finora.js"></script>
+<footer class="rodape mono">
+  <span class="marca">Finora</span>
+  <span>© 2026 Finora · Brasília, DF</span>
+  <a class="lnk" href="#" data-alvo="fnl-inicio">Voltar ao início ↑</a>
+</footer>
+</div>
+<!-- ================= FIM FINORA LANDING ================= -->
+<script src="/js/finora.js"></script>
 </body>
 </html>
