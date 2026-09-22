@@ -133,6 +133,7 @@ $("#logout").onclick = logout;
 
 function showAuth() {
   $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
+  $("#trialExpired")?.classList.add("hidden");
   $("#googleCard").classList.remove("hidden");
   $("#mfaCard").classList.add("hidden"); $("#mfaCard").innerHTML = "";
   startAuthCanvas();
@@ -366,12 +367,35 @@ function buildNav() {
 }
 async function boot() {
   try { state.user = await api("/me"); } catch { return showAuth(); }
+  if (state.user.trial_expired) return showTrialExpired();
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#userName").textContent = state.user.name;
   if (!$("#monthRef").value) $("#monthRef").value = today().slice(0, 7);
   buildNav(); await refreshRefs(); route();
   if (!state.user.onboarded) startOnboarding();
   apCheckNudges();
+}
+function showTrialExpired() {
+  $("#auth").classList.add("hidden"); $("#app").classList.add("hidden");
+  let el = $("#trialExpired");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "trialExpired";
+    document.body.appendChild(el);
+  }
+  el.className = "";
+  el.innerHTML = `<div class="te-card">
+    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <h2>Seu período de teste acabou</h2>
+    <p class="muted">Foram 10 dias grátis com acesso completo. Pra continuar usando, é só assinar:</p>
+    <div class="te-planos">
+      <div class="te-plano"><div class="te-preco">R$ 14,90<span>/mês</span></div><div class="small muted">Cobrança mensal</div></div>
+      <div class="te-plano"><div class="te-preco">R$ 149,90<span>/ano</span></div><div class="small muted">Equivale a R$ 12,49/mês</div></div>
+    </div>
+    <a class="btn primary full" href="mailto:edivaldocoj85@gmail.com?subject=${encodeURIComponent("Quero assinar o Finora")}&body=${encodeURIComponent("Meu e-mail de acesso: " + state.user.email)}">Falar sobre a assinatura</a>
+    <button class="btn ghost full" id="teLogout" style="margin-top:8px">Sair</button>
+  </div>`;
+  $("#teLogout").onclick = logout;
 }
 async function refreshRefs() {
   [state.cats, state.accounts] = await Promise.all([api("/categories"), api("/accounts")]);

@@ -46,6 +46,8 @@ def _migrate(engine):
             if "supabase_uid" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN supabase_uid VARCHAR(36)"))
                 conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_uid ON users (supabase_uid)"))
+            if "trial_ends_at" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN trial_ends_at TIMESTAMP"))
             # Autenticação migrou pro Supabase Auth — essas colunas guardavam credenciais
             # do sistema de login caseiro (senha aleatória, segredo TOTP, códigos de backup)
             # e não têm mais uso; removidas para não deixar segredo morto no banco.

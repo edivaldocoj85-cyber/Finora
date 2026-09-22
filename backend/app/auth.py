@@ -1,6 +1,6 @@
 import time
 from collections import defaultdict, deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 
 import jwt
@@ -63,7 +63,8 @@ def _get_or_create_profile(db: Session, claims: dict) -> User:
         u = User(supabase_uid=uid, email=email,
                  name=meta.get("full_name") or meta.get("name") or (email.split("@")[0] if email else "Usuário"),
                  avatar_url=meta.get("avatar_url") or meta.get("picture"),
-                 lgpd_consent_at=datetime.utcnow())
+                 lgpd_consent_at=datetime.utcnow(),
+                 plan="trial", trial_ends_at=datetime.utcnow() + timedelta(days=10))
         db.add(u)
         db.flush()
         seed_categories(db, u.id)
@@ -85,6 +86,15 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     u = _get_or_create_profile(db, claims)
     if u.suspended_at:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta suspensa. Fale com o administrador.")
+    return u
+
+
+def current_user_active(u: User = Depends(current_user)) -> User:
+    """current_user + teste grátis ainda válido (ou plano pago, ou admin). Usado nos
+    endpoints que de fato dão acesso ao produto — /me continua em current_user puro, pra
+    o front sempre conseguir saber o status da conta mesmo com o teste vencido."""
+    if not u.is_admin and u.plan == "trial" and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at:
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "Seu período de teste acabou.")
     return u
 
 

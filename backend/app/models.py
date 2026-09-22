@@ -18,7 +18,10 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(180), unique=True, index=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500))
-    plan: Mapped[str] = mapped_column(String(20), default="free")  # free | pro
+    plan: Mapped[str] = mapped_column(String(20), default="trial")  # trial | free | pro
+    # 10 dias corridos a partir do primeiro login, só pra quem se cadastra a partir do teste
+    # grátis (contas que já existiam antes disso ficam com NULL = sem limite, "legado").
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     suspended_at: Mapped[datetime | None] = mapped_column(DateTime)  # admin pode suspender acesso sem apagar dados
     lgpd_consent_at: Mapped[datetime | None] = mapped_column(DateTime)

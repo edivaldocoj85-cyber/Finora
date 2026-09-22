@@ -4,7 +4,7 @@ import hmac
 import io
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 # Alias só pra anotar campos Pydantic chamados "date": quando um campo tem esse nome E um
@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..auth import current_admin, current_user, rate_limit
+from ..auth import current_admin, current_user, current_user_active, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
@@ -36,9 +36,13 @@ router = APIRouter(prefix="/api")
 # ver ../auth.py. O backend só lê o token de sessão já emitido; não existe mais endpoint
 # de login/registro/MFA aqui.
 def user_out(u: User):
+    trial_expired = bool(not u.is_admin and u.plan == "trial" and u.trial_ends_at
+                         and datetime.utcnow() > u.trial_ends_at)
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
-            "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin}
+            "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin,
+            "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
+            "trial_expired": trial_expired}
 
 
 # ---------------------------------------------------------------- acesso antecipado (landing pública)
@@ -97,9 +101,32 @@ def admin_user_out(u: User, db: Session):
         "avatar_url": u.avatar_url, "created_at": u.created_at.isoformat() if u.created_at else None,
         "onboarded": bool(u.onboarded_at), "linked": bool(u.supabase_uid),
         "suspended_at": u.suspended_at.isoformat() if u.suspended_at else None,
+        "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
         "accounts_count": db.query(Account).filter_by(user_id=u.id).count(),
         "transactions_count": db.query(Transaction).filter_by(user_id=u.id).count(),
     }
+
+
+class PlanIn(BaseModel):
+    plan: str = Field(pattern="^(trial|free|pro)$")
+    extend_trial_days: Optional[int] = Field(None, ge=1, le=365)
+
+
+@router.post("/admin/users/{uid}/plan")
+def admin_set_plan(uid: int, data: PlanIn, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """Marca manualmente o plano de alguém — usado depois de um pagamento fora do sistema
+    (Pix, transferência etc.), já que ainda não tem gateway de cobrança integrado."""
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Usuário não encontrado.")
+    u.plan = data.plan
+    if data.extend_trial_days:
+        base = u.trial_ends_at if (u.trial_ends_at and u.trial_ends_at > datetime.utcnow()) else datetime.utcnow()
+        u.trial_ends_at = base + timedelta(days=data.extend_trial_days)
+    elif data.plan != "trial":
+        u.trial_ends_at = None
+    db.commit()
+    return admin_user_out(u, db)
 
 
 @router.get("/admin/users")
@@ -342,14 +369,14 @@ def crud(path: str, Model, Schema, fks: dict | None = None, order=None):
     fks = fks or {}
 
     @router.get(f"/{path}", name=f"list_{path}")
-    def _list(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    def _list(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
         q = db.query(Model).filter_by(user_id=u.id)
         if order is not None:
             q = q.order_by(order)
         return [to_dict(o) for o in q.all()]
 
     @router.post(f"/{path}", name=f"create_{path}")
-    def _create(data: Schema, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    def _create(data: Schema, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
         vals = data.model_dump()
         for f, M in fks.items():
             _check_fk(db, u.id, M, vals.get(f))
@@ -359,7 +386,7 @@ def crud(path: str, Model, Schema, fks: dict | None = None, order=None):
         return to_dict(o)
 
     @router.put(f"/{path}/{{oid}}", name=f"update_{path}")
-    def _update(oid: int, data: Schema, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    def _update(oid: int, data: Schema, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
         o = db.query(Model).filter_by(id=oid, user_id=u.id).first()
         if not o:
             raise HTTPException(404, "Não encontrado")
@@ -372,7 +399,7 @@ def crud(path: str, Model, Schema, fks: dict | None = None, order=None):
         return to_dict(o)
 
     @router.delete(f"/{path}/{{oid}}", name=f"delete_{path}")
-    def _delete(oid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    def _delete(oid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
         n = db.query(Model).filter_by(id=oid, user_id=u.id).delete()
         db.commit()
         if not n:
@@ -410,22 +437,22 @@ def _fipe_get(path: str):
 
 
 @router.get("/fipe/marcas")
-def fipe_marcas(u: User = Depends(current_user)):
+def fipe_marcas(u: User = Depends(current_user_active)):
     return _fipe_get("/carros/marcas")
 
 
 @router.get("/fipe/modelos")
-def fipe_modelos(marca: str, u: User = Depends(current_user)):
+def fipe_modelos(marca: str, u: User = Depends(current_user_active)):
     return _fipe_get(f"/carros/marcas/{marca}/modelos")["modelos"]
 
 
 @router.get("/fipe/anos")
-def fipe_anos(marca: str, modelo: str, u: User = Depends(current_user)):
+def fipe_anos(marca: str, modelo: str, u: User = Depends(current_user_active)):
     return _fipe_get(f"/carros/marcas/{marca}/modelos/{modelo}/anos")
 
 
 @router.get("/fipe/valor")
-def fipe_valor(marca: str, modelo: str, ano: str, u: User = Depends(current_user)):
+def fipe_valor(marca: str, modelo: str, ano: str, u: User = Depends(current_user_active)):
     return _fipe_get(f"/carros/marcas/{marca}/modelos/{modelo}/anos/{ano}")
 
 
@@ -435,7 +462,7 @@ class ConfirmPaymentIn(BaseModel):
 
 
 @router.post("/contracts/{cid}/confirm-payment")
-def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends(current_user),
+def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends(current_user_active),
                              db: Session = Depends(get_db)):
     """Lança o pagamento de uma conta fixa com um clique — nunca automático e silencioso,
     porque isso mexe no saldo real; a pessoa confirma valor e data (ambos vêm preenchidos
@@ -460,7 +487,7 @@ def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends
 
 
 @router.post("/transactions/{tid}/receipt")
-async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_user),
+async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_user_active),
                          db: Session = Depends(get_db)):
     """Anexa o comprovante de pagamento a um lançamento — "dar baixa" com prova em mãos."""
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
@@ -481,7 +508,7 @@ async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_u
 
 
 @router.get("/transactions/{tid}/receipt")
-def get_receipt(tid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def get_receipt(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
     resolved = storage.resolve(t.receipt_path) if t and t.receipt_path else None
     if not resolved:
@@ -491,7 +518,7 @@ def get_receipt(tid: int, u: User = Depends(current_user), db: Session = Depends
 
 
 @router.delete("/transactions/{tid}/receipt")
-def delete_receipt(tid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_receipt(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
@@ -504,13 +531,13 @@ def delete_receipt(tid: int, u: User = Depends(current_user), db: Session = Depe
 
 # ---------------------------------------------------------------- regras de categoria
 @router.get("/rules")
-def list_rules(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def list_rules(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return [to_dict(r) for r in db.query(CategoryRule).filter_by(user_id=u.id)
             .order_by(CategoryRule.priority.desc())]
 
 
 @router.post("/rules")
-def create_rule(data: RuleIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_rule(data: RuleIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     _check_fk(db, u.id, Category, data.category_id)
     r = CategoryRule(user_id=u.id, pattern=data.pattern, category_id=data.category_id, priority=data.priority)
     db.add(r)
@@ -527,7 +554,7 @@ def create_rule(data: RuleIn, u: User = Depends(current_user), db: Session = Dep
 
 
 @router.delete("/rules/{rid}")
-def delete_rule(rid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_rule(rid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     db.query(CategoryRule).filter_by(id=rid, user_id=u.id).delete()
     db.commit()
     return {"ok": True}
@@ -551,7 +578,7 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
                       type: Optional[str] = None, q: Optional[str] = None,
                       min_amount: Optional[float] = None, max_amount: Optional[float] = None,
                       source: Optional[str] = None,
-                      limit: int = 500, u: User = Depends(current_user), db: Session = Depends(get_db)):
+                      limit: int = 500, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     qry = db.query(Transaction).filter(Transaction.user_id == u.id)
     if start: qry = qry.filter(Transaction.date >= start)
     if end: qry = qry.filter(Transaction.date <= end)
@@ -567,7 +594,7 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
 
 
 @router.post("/transactions")
-def create_transaction(data: TransactionIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_transaction(data: TransactionIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     _check_fk(db, u.id, Account, data.account_id)
     _check_fk(db, u.id, Category, data.category_id)
     if data.type == "transfer":
@@ -606,7 +633,7 @@ class TxPatch(BaseModel):
 
 
 @router.patch("/transactions/{tid}")
-def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
     if not t:
         raise HTTPException(404, "Não encontrado")
@@ -635,7 +662,7 @@ def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_user), 
 
 
 @router.delete("/transactions/{tid}")
-def delete_transaction(tid: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_transaction(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     t = db.query(Transaction).filter_by(id=tid, user_id=u.id).first()
     if not t:
         raise HTTPException(404, "Não encontrado")
@@ -647,7 +674,7 @@ def delete_transaction(tid: int, u: User = Depends(current_user), db: Session = 
 
 
 @router.post("/transactions/import")
-async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_user),
+async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_user_active),
                      db: Session = Depends(get_db)):
     """CSV com colunas: data;descricao;valor (valor negativo = gasto). Aceita , ou ; e data dd/mm/aaaa."""
     acc = db.query(Account).filter_by(id=account_id, user_id=u.id).first()
@@ -688,7 +715,7 @@ def _csv_safe(v: str) -> str:
 
 
 @router.get("/transactions/export")
-def export_csv(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def export_csv(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
     w.writerow(["data", "descricao", "valor", "tipo", "conta", "categoria", "parcela", "obs"])
@@ -703,31 +730,31 @@ def export_csv(u: User = Depends(current_user), db: Session = Depends(get_db)):
 # ---------------------------------------------------------------- painel, alertas, mercado, IA
 @router.get("/dashboard")
 def get_dashboard(ref: Optional[date] = None, months: int = Query(6, ge=1, le=24),
-                  u: User = Depends(current_user), db: Session = Depends(get_db)):
+                  u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     analytics.run_alerts(db, u.id, ref)
     return analytics.dashboard(db, u.id, ref, months)
 
 
 @router.get("/installments")
-def get_installments(ref: Optional[date] = None, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def get_installments(ref: Optional[date] = None, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return analytics.installment_plans(db, u.id, ref or date.today())
 
 
 @router.get("/alerts")
-def list_alerts(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def list_alerts(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return [to_dict(a) for a in db.query(Alert).filter_by(user_id=u.id)
             .order_by(Alert.created_at.desc()).limit(100)]
 
 
 @router.post("/alerts/read")
-def read_alerts(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def read_alerts(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     db.query(Alert).filter_by(user_id=u.id, read=False).update({"read": True})
     db.commit()
     return {"ok": True}
 
 
 @router.get("/market")
-def get_market(u: User = Depends(current_user)):
+def get_market(u: User = Depends(current_user_active)):
     return market.indicators()
 
 
@@ -739,7 +766,7 @@ class SimIn(BaseModel):
 
 
 @router.post("/simulate")
-def simulate(data: SimIn, u: User = Depends(current_user)):
+def simulate(data: SimIn, u: User = Depends(current_user_active)):
     return market.simulate(data.monthly, data.months, data.annual_rate, data.initial)
 
 
@@ -748,7 +775,7 @@ class AdvisorIn(BaseModel):
 
 
 @router.post("/advisor")
-def ask_advisor(data: AdvisorIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def ask_advisor(data: AdvisorIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     dash = analytics.dashboard(db, u.id)
     content = advisor.generate(dash, data.question)
     rep = AdvisorReport(user_id=u.id, content=content,
@@ -759,7 +786,7 @@ def ask_advisor(data: AdvisorIn, u: User = Depends(current_user), db: Session = 
 
 
 @router.get("/advisor")
-def list_reports(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def list_reports(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return [to_dict(r) for r in db.query(AdvisorReport).filter_by(user_id=u.id)
             .order_by(AdvisorReport.created_at.desc()).limit(20)]
 
@@ -770,12 +797,12 @@ class AssistantIn(BaseModel):
 
 
 @router.post("/assistant", dependencies=[Depends(rate_limit("assistant", 30, 60))])
-def ask_assistant(data: AssistantIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def ask_assistant(data: AssistantIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return assistant.answer(db, u, data.message)
 
 
 @router.get("/assistant/nudges")
-def assistant_nudges(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def assistant_nudges(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     """O que o assistente lembraria por conta própria (ex.: conta vencendo hoje) —
     checado quando o app abre, não precisa perguntar."""
     return assistant.nudges(db, u)
@@ -783,13 +810,13 @@ def assistant_nudges(u: User = Depends(current_user), db: Session = Depends(get_
 
 # ---------------------------------------------------------------- Pluggy
 @router.get("/pluggy/status")
-def pluggy_status(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def pluggy_status(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     return {"enabled": pluggy.enabled(),
             "items": [to_dict(i) for i in db.query(PluggyItem).filter_by(user_id=u.id)]}
 
 
 @router.post("/pluggy/connect-token")
-def pluggy_token(item_id: Optional[str] = None, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def pluggy_token(item_id: Optional[str] = None, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     if item_id and not db.query(PluggyItem).filter_by(user_id=u.id, item_id=item_id).first():
         raise HTTPException(404, "Conexão não encontrada")
     try:
@@ -803,7 +830,7 @@ class ItemIn(BaseModel):
 
 
 @router.post("/pluggy/items")
-def pluggy_add_item(data: ItemIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def pluggy_add_item(data: ItemIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     try:
         res = pluggy.sync_item(db, u.id, data.item_id)
     except pluggy.PluggyError as e:
@@ -813,7 +840,7 @@ def pluggy_add_item(data: ItemIn, u: User = Depends(current_user), db: Session =
 
 
 @router.post("/pluggy/sync")
-def pluggy_sync_all(u: User = Depends(current_user), db: Session = Depends(get_db)):
+def pluggy_sync_all(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     out = []
     for it in db.query(PluggyItem).filter_by(user_id=u.id).all():
         try:
@@ -825,7 +852,7 @@ def pluggy_sync_all(u: User = Depends(current_user), db: Session = Depends(get_d
 
 
 @router.delete("/pluggy/items/{item_id}")
-def pluggy_remove(item_id: str, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def pluggy_remove(item_id: str, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     row = db.query(PluggyItem).filter_by(user_id=u.id, item_id=item_id).first()
     if not row:
         raise HTTPException(404, "Não encontrado")
