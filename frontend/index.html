@@ -132,10 +132,10 @@
       <form class="form" novalidate data-r="up">
         <label class="mono" for="fnl-email">Seu e-mail</label>
         <div class="campo">
-          <input id="fnl-email" name="email" type="email" autocomplete="email" placeholder="voce@email.com" required>
+          <input id="fnl-email" name="email" type="email" autocomplete="email" placeholder="voce@email.com" aria-describedby="fnl-email-msg" required>
           <button class="mono" type="submit">Pedir acesso →</button>
         </div>
-        <p class="msg" role="status"></p>
+        <p class="msg" id="fnl-email-msg" role="status"></p>
         <p class="aviso">Liberamos convites em pequenos grupos. Usamos seu e-mail só para enviar o convite.</p>
       </form>
     </div>

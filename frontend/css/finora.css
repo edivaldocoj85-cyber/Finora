@@ -72,7 +72,7 @@
 /* fundo sólido (não o degradê cobre→brasa inteiro): perto da ponta clara (brasa) o texto
    osso cai pra ~1.9:1 de contraste — abaixo do mínimo de 4.5:1. Cobre sozinho garante ~8:1. */
 #finora-landing .cta-acesso{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--osso);
-  display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;background:var(--cobre);border:1px solid var(--oxido);
+  display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;background:var(--cobre);
   box-shadow:0 6px 20px -8px rgba(217,72,20,.55);transition:transform .3s var(--ease),box-shadow .3s var(--ease),background-color .3s var(--ease)}
 #finora-landing .cta-acesso:hover{transform:translateY(-2px);background:#7c3316;box-shadow:0 10px 26px -8px rgba(255,122,61,.6)}
 @media (max-width:640px){

@@ -77,20 +77,22 @@ addEventListener('scroll',onScroll,{passive:true});limpa.push(()=>removeEventLis
 
 /* formulário */
 const form=$('.form'),msg=$('.msg',form),inp=$('#fnl-email');
+const erro=t=>{msg.className='msg erro';msg.textContent=t;inp.setAttribute('aria-invalid','true')};
+const limpaErro=()=>{msg.textContent='';msg.className='msg';inp.removeAttribute('aria-invalid')};
 form.addEventListener('submit',ev=>{ev.preventDefault();const v=inp.value.trim();
-  if(!v){msg.className='msg erro';msg.textContent='Digite seu e-mail para receber o convite.';inp.focus();return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){msg.className='msg erro';msg.textContent='Esse e-mail parece incompleto. Confira o que vem depois do @.';inp.focus();return}
+  if(!v){erro('Digite seu e-mail para receber o convite.');inp.focus();return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){erro('Esse e-mail parece incompleto. Confira o que vem depois do @.');inp.focus();return}
   const api=root.dataset.api,btn=$('button',form);
-  const ok=()=>{msg.className='msg ok';msg.textContent='Pedido recebido. O convite chega em '+v+'.';form.reset()};
+  const ok=()=>{limpaErro();msg.className='msg ok';msg.textContent='Pedido recebido. O convite chega em '+v+'.';form.reset()};
   if(!api){ok();return}
-  btn.disabled=true;msg.className='msg';msg.textContent='Enviando…';
+  btn.disabled=true;msg.className='msg';msg.textContent='Enviando…';inp.removeAttribute('aria-invalid');
   fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v})})
     .then(r=>r.json().catch(()=>({ok:r.ok})).then(d=>{
       if(r.ok&&d.ok!==false)ok();
-      else{msg.className='msg erro';msg.textContent=d.erro||'Não foi possível enviar agora. Tente de novo em instantes.'}}))
-    .catch(()=>{msg.className='msg erro';msg.textContent='Sem conexão com o servidor. Confira sua internet e tente de novo.'})
+      else erro(d.erro||'Não foi possível enviar agora. Tente de novo em instantes.')}))
+    .catch(()=>erro('Sem conexão com o servidor. Confira sua internet e tente de novo.'))
     .finally(()=>{btn.disabled=false})});
-inp.addEventListener('input',()=>{if(msg.classList.contains('erro')){msg.textContent='';msg.className='msg'}});
+inp.addEventListener('input',()=>{if(msg.classList.contains('erro'))limpaErro()});
 
 /* abertura */
 const pre=$('.pre');
