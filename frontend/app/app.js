@@ -140,16 +140,12 @@ function showAuth() {
   window.FinoraAuth?.entrar();
 }
 function animateAuthCard() {
+  // Entrada do miolo estático (saudação, passos, botão do Google) já é feita via CSS
+  // (.fa-r/.fa-on, disparada por FinoraAuth.entrar() em showAuth()). Isso aqui cobre só o
+  // conteúdo do MFA, montado em runtime e sem essas classes.
   if (window.gsap && !reducedMotion()) {
-    gsap.fromTo("#auth .auth-card:not(.hidden)", { autoAlpha: 0, y: 16, scale: .98 },
-      { autoAlpha: 1, y: 0, scale: 1, duration: MOTION.slow, ease: MOTION.ease });
-    const mark = document.querySelector("#auth .auth-card:not(.hidden) .auth-mark");
-    if (mark) {
-      gsap.fromTo(mark.querySelectorAll(".auth-mark-shape"), { autoAlpha: 0, scale: .5, transformOrigin: "50% 50%" },
-        { autoAlpha: 1, scale: 1, duration: MOTION.standard, ease: MOTION.ease, stagger: .08, delay: .1 });
-      gsap.fromTo(mark.querySelector(".auth-mark-ring"), { autoAlpha: 0, rotate: -30, transformOrigin: "50% 50%" },
-        { autoAlpha: .35, rotate: 0, duration: MOTION.slow, ease: MOTION.ease, delay: .1 });
-    }
+    gsap.fromTo("#mfaCard:not(.hidden)", { autoAlpha: 0, y: 16 },
+      { autoAlpha: 1, y: 0, duration: MOTION.slow, ease: MOTION.ease });
   }
 }
 
