@@ -24,7 +24,7 @@ from ..auth import current_admin, current_user, current_user_active, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
-                      Goal, Income, PluggyItem, Transaction, User, WaitlistSignup)
+                      Goal, Income, PluggyItem, Receivable, Transaction, User, WaitlistSignup)
 from ..services import advisor, analytics, assistant, market, pluggy, storage
 from ..services.categorizer import categorize, seed_categories
 
@@ -287,6 +287,15 @@ class ContractIn(BaseModel):
     notes: str = ""
 
 
+class ReceivableIn(BaseModel):
+    client_name: str
+    description: str = ""
+    account_id: Optional[int] = None
+    amount: float = Field(gt=0)
+    due_date: date
+    notes: str = ""
+
+
 class IncomeIn(BaseModel):
     name: str
     kind: str = "salary"
@@ -413,6 +422,7 @@ crud("contracts", Contract, ContractIn, {"category_id": Category, "account_id": 
 crud("incomes", Income, IncomeIn, order=Income.pay_day)
 crud("goals", Goal, GoalIn)
 crud("assets", Asset, AssetIn, order=Asset.created_at)
+crud("receivables", Receivable, ReceivableIn, {"account_id": Account}, order=Receivable.due_date)
 
 
 # ---------------------------------------------------------------- FIPE (valor de mercado de veículos)
@@ -482,6 +492,38 @@ def confirm_contract_payment(cid: int, data: ConfirmPaymentIn, u: User = Depends
                     external_id=ext, source="manual", category_locked=bool(c.category_id))
     db.add(t)
     _apply_tx_effect(db, t, +1)
+    db.commit()
+    return tx_out(t)
+
+
+class ConfirmReceiptIn(BaseModel):
+    date: Optional[_Date] = None
+    amount: Optional[float] = None
+    account_id: Optional[int] = None
+
+
+@router.post("/receivables/{rid}/confirm-received")
+def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(current_user_active),
+                       db: Session = Depends(get_db)):
+    """Dá baixa numa conta a receber com um clique, lançando a receita na conta escolhida —
+    mesma lógica do 1-clique de contratos, só que na direção contrária (entrada, não saída)."""
+    r = db.query(Receivable).filter_by(id=rid, user_id=u.id).first()
+    if not r:
+        raise HTTPException(404, "Conta a receber não encontrada")
+    account_id = data.account_id or r.account_id
+    if not account_id:
+        raise HTTPException(400, "Escolha em qual conta o valor entrou.")
+    if r.received_at:
+        raise HTTPException(400, "Este recebível já foi baixado.")
+    recv_date = data.date or date.today()
+    amount = data.amount if data.amount is not None else r.amount
+    t = Transaction(user_id=u.id, account_id=account_id, category_id=None,
+                    date=recv_date, description=f"{r.client_name} — {r.description}".strip(" —"),
+                    amount=amount, type="income", source="manual")
+    db.add(t)
+    _apply_tx_effect(db, t, +1)
+    r.received_at = datetime.utcnow()
+    r.account_id = account_id
     db.commit()
     return tx_out(t)
 

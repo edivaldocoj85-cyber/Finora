@@ -7,7 +7,9 @@ import re
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Account, Asset, Transaction, Category, Contract, Income, Goal, Alert
+from ..config import get_settings
+from ..models import Account, Asset, Transaction, Category, Contract, Income, Goal, Alert, Receivable, User
+from . import email as email_service
 
 _INSTALLMENT_RE = re.compile(r"^(\d+)/(\d+)$")
 
@@ -143,6 +145,17 @@ def upcoming_bills(db: Session, user_id: int, ref: date, days: int = 10):
     return sorted(out, key=lambda x: x["due_date"])
 
 
+def receivables_summary(db: Session, user_id: int, ref: date, days: int = 30):
+    pending = db.query(Receivable).filter_by(user_id=user_id, received_at=None).all()
+    total = sum(r.amount for r in pending)
+    upcoming = sorted(
+        [{"id": r.id, "client_name": r.client_name, "description": r.description, "amount": r.amount,
+          "due_date": r.due_date.isoformat(), "overdue": r.due_date < ref}
+         for r in pending if r.due_date <= ref + timedelta(days=days)],
+        key=lambda x: x["due_date"])
+    return {"total_pending": round(total, 2), "count_pending": len(pending), "upcoming": upcoming}
+
+
 def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: int = 6):
     ref = ref or date.today()
     start, end = month_bounds(ref)
@@ -188,6 +201,7 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         "savings_rate": round(savings_rate, 1) if savings_rate is not None else None,
         "categories": cats, "cards": cards,
         "upcoming": upcoming_bills(db, user_id, ref),
+        "receivables": receivables_summary(db, user_id, ref),
         "accounts": [{"id": a.id, "name": a.name, "kind": a.kind, "balance": a.balance,
                       "color": a.color, "institution": a.institution} for a in accounts],
         "goals": [{"id": g.id, "name": g.name, "target": g.target_amount, "current": g.current_amount,

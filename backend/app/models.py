@@ -121,6 +121,19 @@ class Contract(Owned, Base):
     notes: Mapped[str] = mapped_column(Text, default="")
 
 
+class Receivable(Owned, Base):
+    """Contas a receber: cobrança de cliente, prestação de serviço — pontual, não recorrente
+    como as fontes de Income. Autônomo/pequeno negócio usa pra acompanhar o que falta cair."""
+    __tablename__ = "receivables"
+    client_name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(200), default="")
+    account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"))
+    amount: Mapped[float] = mapped_column(Float)
+    due_date: Mapped[date] = mapped_column(Date)
+    received_at: Mapped[datetime | None] = mapped_column(DateTime)
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+
 class Income(Owned, Base):
     """Fontes de renda: salário, pró-labore, aluguel recebido, freelas."""
     __tablename__ = "incomes"

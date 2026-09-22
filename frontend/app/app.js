@@ -40,6 +40,7 @@ const ICONS = {
   send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+  receivables: '<path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>',
 };
 const navIcon = (id) => `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id] || ""}</svg>`;
 
@@ -79,6 +80,7 @@ const ROUTES = [
   { id: "patrimonio", label: "Patrimônio", icon: "patrimonio", primary: true },
   { id: "market", label: "Mercado e simulador", icon: "market", primary: true },
   { id: "contracts", label: "Contratos e fixas", icon: "contracts" },
+  { id: "receivables", label: "Contas a receber", icon: "receivables" },
   { id: "incomes", label: "Renda", icon: "incomes" },
   { id: "categories", label: "Categorias e regras", icon: "categories" },
   { id: "goals", label: "Metas", icon: "goals" },
@@ -620,6 +622,8 @@ VIEWS.dashboard = async (v) => {
       ${d.goals.map((g) => `<div class="li" style="display:block"><div class="between"><strong>${esc(g.name)}</strong><span class="small">${brl(g.current)} / ${brl(g.target)}</span></div><div class="bar"><i style="${barFill(pct(g.current, g.target))}"></i></div></div>`).join("") || (d.emergency_fund ? "" : '<div class="empty"><a href="#goals">Crie uma meta</a> para acompanhar sua evolução.</div>')}
     </div></div>
   </div>
+  ${d.receivables.count_pending ? `<div class="card" style="margin-top:16px"><div class="between"><h2>Contas a receber</h2><span class="small muted">${brl(d.receivables.total_pending)} pendente</span></div>
+    <div class="list">${d.receivables.upcoming.map((r) => `<div class="li"><div class="grow"><div class="title">${esc(r.client_name)}${r.description ? " · " + esc(r.description) : ""}${r.overdue ? ' <span class="chip" style="color:var(--red)">atrasado</span>' : ""}</div><div class="small muted">Vencia ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div><button class="btn small" data-recv="${r.id}" style="margin-left:8px">Marcar recebido</button></div>`).join("") || '<div class="empty">Nada por enquanto.</div>'}</div></div>` : ""}
   ${(() => {
     const essTotal = d.categories.filter((c) => c.essential).reduce((s, c) => s + c.total, 0);
     const nonEss = d.categories.filter((c) => !c.essential);
@@ -641,6 +645,14 @@ VIEWS.dashboard = async (v) => {
       const t = await api(`/contracts/${b.dataset.pay}/confirm-payment`, { body: { date: b.dataset.due, amount: +b.dataset.amt } });
       toast("Pagamento lançado — anexe o comprovante pra dar baixa", "success");
       await refreshRefs(); route(); txForm(t);
+    } catch (e) { toast(e.message, "error"); b.disabled = false; b.classList.remove("loading"); }
+  }));
+  v.querySelectorAll("[data-recv]").forEach((b) => (b.onclick = async () => {
+    b.disabled = true; b.classList.add("loading");
+    try {
+      await api(`/receivables/${b.dataset.recv}/confirm-received`, { body: {} });
+      toast("Recebimento lançado", "success");
+      await refreshRefs(); route();
     } catch (e) { toast(e.message, "error"); b.disabled = false; b.classList.remove("loading"); }
   }));
   chart($("#cMonths"), {
@@ -807,6 +819,32 @@ VIEWS.contracts = async (v) => {
     items, empty: "Cadastre aluguel, financiamentos, seguros, escola, assinaturas…", newLabel: "+ Contrato", onNew: contractForm,
     intro: `Custos fixos ativos: <b>${brl(total)}</b>/mês`,
     render: (c) => `<div class="grow"><div class="title">${esc(c.name)} ${c.active ? "" : '<span class="chip">inativo</span>'} ${c.interest_rate_month > 2 ? '<span class="chip neg">juros altos</span>' : ""}</div><div class="small muted">Vence todo dia ${c.due_day}${c.provider ? " · " + esc(c.provider) : ""}${c.end_date ? " · até " + fdate(c.end_date) : ""}</div></div><div class="amount">${brl(c.amount)}</div>`,
+  });
+};
+
+function receivableForm(r = {}) {
+  return openForm({
+    title: r.id ? "Editar conta a receber" : "Nova conta a receber",
+    values: { due_date: today(), ...r },
+    fields: [
+      { name: "client_name", label: "Cliente", required: true, placeholder: "Nome do cliente ou empresa" },
+      { name: "description", label: "Descrição", placeholder: "Serviço prestado, referente a…" },
+      { row: [{ name: "amount", label: "Valor (R$)", type: "number", required: true }, { name: "due_date", label: "Vencimento", type: "date", required: true }] },
+      { name: "account_id", label: "Conta que vai receber (pra confirmar com 1 clique)", type: "select", options: [["", "Nenhuma"], ...accOptions()], num: true, nullable: true },
+      { name: "notes", label: "Observações", type: "textarea" },
+    ],
+    onSubmit: (d) => api(r.id ? `/receivables/${r.id}` : "/receivables", { method: r.id ? "PUT" : "POST", body: d }),
+    onDelete: r.id ? () => api(`/receivables/${r.id}`, { method: "DELETE" }) : null,
+  });
+}
+VIEWS.receivables = async (v) => {
+  const items = await api("/receivables");
+  const pending = items.filter((r) => !r.received_at);
+  const total = pending.reduce((s, r) => s + r.amount, 0);
+  simpleList(v, {
+    items, empty: "Cadastre valores que clientes ainda vão te pagar.", newLabel: "+ Conta a receber", onNew: receivableForm,
+    intro: `Pendente de recebimento: <b>${brl(total)}</b>`,
+    render: (r) => `<div class="grow"><div class="title">${esc(r.client_name)} ${r.received_at ? '<span class="chip">recebido</span>' : ""}</div><div class="small muted">${esc(r.description || "")}${r.description ? " · " : ""}Vence ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div>`,
   });
 };
 
@@ -1308,7 +1346,7 @@ function apAddMsg(text, who) {
   box.scrollTop = box.scrollHeight;
   return el;
 }
-const AP_FORMS = { transaction: txForm, account: accountForm, contract: contractForm, goal: goalForm, income: incomeForm };
+const AP_FORMS = { transaction: txForm, account: accountForm, contract: contractForm, goal: goalForm, income: incomeForm, receivable: receivableForm };
 function apAddAction(action) {
   if (action.kind === "navigate") { location.hash = action.route; return; }
   if (action.kind === "open_form") {
