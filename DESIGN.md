@@ -6,11 +6,52 @@
 
 Restrained Operate system: neutral surfaces, one indigo→cyan brand accent used only for primary actions, current state, and the brand mark. Inherited from the incumbent app and deliberately kept — this pass elevated finish (type, depth, states, motion), not identity. Name "Finora" and the indigo/cyan gradient mark are fixed brand commitments (see PRODUCT.md).
 
+## Surfaces: Operate vs. Editorial
+
+Two visual systems coexist by design, one per mode (see Impeccable's mode definitions):
+
+- **Operate** (this DESIGN.md, below) — the authenticated panel (`frontend/app/`, everything past login). Inter, neutral surfaces, single indigo→cyan accent, restrained motion. The visitor is completing a task; brand lives in precise details, not expression.
+- **Editorial** (`frontend/index.html` + `frontend/css/finora.css`, and the pre-login screen `frontend/app/auth-finora.css`) — the public landing and the login/MFA screen. **Redesigned 2026-09-23** at the owner's request to follow the pattern of a conventional Brazilian finance-SaaS site (reference: Contas Online `/empresarial`): light surfaces, sticky header with "Acessar conta" + "Criar conta grátis", hero with an HTML mockup of the real panel (greeting with "contas a pagar hoje", KPIs, vencimentos, saldo das contas, category donut — labelled "Valores ilustrativos"), icon feature cards, alternating "Como a Finora resolve" blocks with product mockups, security block, PWA/app band, plans (R$ 14,90/mês · R$ 149,90/ano, 10-day trial), tabbed FAQ (Para você / Para empresa) and a gradient closing CTA + full footer. It now shares the Finora brand with Operate (indigo `#4f46e5` → cyan `#0891b2`, deep ink `#15133a` for dark bands) instead of the old oxide/ember palette. Type: **Plus Jakarta Sans** (display) + **Inter** (body); the panel also uses Plus Jakarta Sans for `h1`/`h2`/brand/stat values (`--font-display`) so the two surfaces read as one product. The login screen is a split layout: brand gradient panel (headline + checklist + rotating note) on the left, an Operate-token card (follows light/dark) on the right. The previous oxide/ember Editorial system is retired; git history has it.
+
+**Revision 2026-09-23 (b) — more color + automations** (owner asked for a more colorful page and for the automation storytelling of meuplannerfinanceiro.com.br): support palette with fixed roles — verde `#047857` = income/ok, âmbar `#b45309` = attention/due, rosa `#be123c` = danger/overrun, violeta `#6d28d9` = analysis, ciano `#0e7490` = sync/info — each with a `-cl` tint for section/card backgrounds and a `-vivo` for dots/fills. Sections alternate tints (ciano, âmbar, verde, violeta) and dark ink bands. Heading emphasis is an amber **marker highlight** (`<mark>`, indigo on dark bands), replacing gradient text. New sections: facts band, "Se você se reconhece" situations, planilha × app do banco × Finora comparison, 4-step "Como funciona", and **Automações** (dark band, the page's one authored motion: an assistant conversation that plays message by message with a typing indicator on scroll-in, static under reduced motion). Automations shown are only the real ones (assistant text entry/queries/goals, due-today nudge with one-click pay, the 8 analytics alerts with their real titles, rules categorization, Open Finance sync every 6h, import reminders, receipt photo) — owner explicitly chose "só as reais": no WhatsApp, audio or receipt OCR claims until those exist. Eyebrow/kicker labels were removed.
+
+The reference site's own brand (green/yellow palette, names, copy) is deliberately **not** copied — only its structure and tone. All landing copy states only what Finora actually does (e.g. no nota fiscal/boleto, app = installable PWA, no store app).
+
 ## Theming
 
 Three modes: **Claro** (light), **Escuro** (dark), **Automático** (follows OS `prefers-color-scheme`, the default for new sessions). Controlled by `document.documentElement.dataset.theme` (`"light" | "dark" | "auto"`), persisted client-side in `localStorage` (per-device preference, not synced to the account — this is a display setting, not product data). Two entry points that stay in sync: the topbar icon button (`#themeBtn`, cycles light→dark→auto) and an explicit segmented control in Configurações.
 
 CSS pattern (standard token-override idiom): light values live directly on `:root`; dark values are defined twice with identical tokens — once under `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }` for the automatic case, and once under `:root[data-theme="dark"]` for the explicit override. No component ever branches on theme itself; everything reads the same custom properties.
+
+## Landing v3 — critique fixes (2026-09-23, after critique 23/36)
+
+Supersedes the section-level color and structure notes above where they conflict.
+- **Structure (13 → 10 blocks, page 9.7k → 6.9k px desktop, 16.6k → 12.3k mobile):** hero (with a 3-step "como funciona" line) · trust strip (10 dias grátis · Open Finance só leitura · duas etapas · LGPD) · "Isso soa familiar?" pains + comparison on one dark band · **Parcelas e faturas** showcase (the product's real differentiator: invoice with per-purchase "parcela X de N", remaining amount, and months already committed — visible on mobile) · Nora/automations (dark) · negócio · segurança (rows with concrete facts, Pluggy named) · planos (+ terms strip: teste, pós-teste, cancelamento) · FAQ in 3 tabs (Uso / Conta e pagamento / Empresa) · CTA · footer with legal row. Facts band, separate "Como funciona", Recursos 1/2 and the app band were removed.
+- **Color — "brilho sem cara de IA":** white/ice (`--gelo #f7f8fc`) section backgrounds, exactly one brand gradient token (`--grad`, used on the logo and the final CTA band), two flat ink bands (no radial halos, no colored glows). Light comes from one direction: `--realce` inset top highlight + offset soft shadows. Role colors appear only where they mean something (mock values, status chips, automation icons; violet = installments). Dark-band emphasis is amber text (`.real`), not a highlighter.
+- **Type:** h1 800/-.025em, h2 700/-.018em, h3 700; the marker highlight is limited to 3 headings (hero, parcelas, planos); brand lockup subtitle is lowercase muted Inter 12px ("controle financeiro").
+- **Honesty/consistency:** one "Ana" scenario whose numbers reconcile (saldo 36.218,95 = 31.240,50 + 4.883,45 + 95,00; hoje 198,90 = 119,90 + 79,00; próximos 10 dias 3.134,90 = fatura 1.284,90 + aluguel 1.850,00; fatura 1.284,90 = parcelas 1.022,30 + à vista 262,60). No push notification, no "por mensagem"; money always "R$" + no-break space. One CTA wording ("Testar grátis por 10 dias"; header shortens to "Testar grátis"); sticky CTA on phones after the hero.
+- **Trust/legal:** `/privacidade.html` and `/termos.html` (Read-mode pages sharing `finora.css` `.doc`), footer legal row. Unknown business facts are rendered as visible `.preencher` placeholders — never invented.
+- **Nora is the assistant** everywhere: landing chat header, app floating button and panel header (`.nora-ic` inline SVG), greeting, and the backend system prompt.
+- **Motion:** in the hero only Nora moves continuously (orbit, bobbing cards and bell removed). New scenes: invoice rows, installment bars and committed-months bars; cash-flow mini bars in negócio.
+
+## Landing motion identity and mascot (2026-09-23)
+
+Owner asked for landing animations "with their own identity", characters allowed, using contasonline.com.br/pessoal as the movement reference (floating cards, slowly rotating ring, scroll reveals, a mascot). Finora's version:
+
+- **Nora, the mascot** — the brand's "F" tile come alive: the indigo→teal rounded square, the icon's cyan dot as an antenna, eyes, cheeks, small arms and feet. Drawn once as inline SVG in `js/finora.js` (`nora(pose)`, poses `hero` / `mini` / `pula`) and injected into `[data-nora]` slots. Appears three times: standing on the hero mockup (drops in, squashes on landing, waves, then a speech bubble "Oi! Eu sou a Nora…"; pupils follow the pointer; click = little jump), as the assistant avatar in the Automações chat (nods on each reply), and hopping with a coin in the final CTA. Ambient life: breathing squash, blink, antenna sway.
+- **Two personalities, fixed:** UI = Corporate (`--m-ui` expo-out, ~200/400/700ms, entrance = rise 24px + fade, stagger 70ms via `--i`); Nora = Playful (`--m-pula` back-out, squash-and-stretch).
+- **Hero choreography on load:** copy rises in sequence, marker highlight sweeps in, mockup rises and its tiles cascade, KPI numbers count up, donut sweeps (`@property --arco`), floating cards slide in with a soft overshoot, then Nora arrives. Ambient layer: dashed orbit with three coins rotating (48s), floating cards bob out of phase, the alert bell rings every few seconds.
+- **Scenes on scroll (`[data-cena]` → `.on`):** fact numbers count up; situation cards pop with icon spin; comparison rows slide in and the Finora column lights up; the "Como funciona" line draws across and each number pops as it passes; cash-flow bars grow in a wave; due-date rows arrive from the right and the budget bar fills; phone rises and the notification drops; CTA Nora bounces in. Section headings get the same marker sweep.
+- Hidden starting states exist only under `html.js-anim` (added by JS when motion is allowed), so without JS or with `prefers-reduced-motion` the page renders complete and static. Horizontal slide-ins are clipped per section (`.sec{overflow-x:clip}`, keeps the sticky chat working).
+
+## Panel color roles and professional patterns (2026-09-23)
+
+The landing's color roles now also apply to the Operate panel, in both themes (tokens in `styles.css`: `--green/--red/--amber/--violet/--cyan` plus `-bg` tints, dark variants redefined in both dark blocks). Semantic colors were darkened for AA on white (`--green #047857`, `--red #be123c`, `--amber #b45309`). Applied as: dashboard stat tiles tinted by meaning (Receitas green, Despesas red, Resultado violet), greeting due chips (hoje = amber, próximos = cyan), status chips (`.chip.c-*`: parcela = violet, Open Finance = cyan, atrasado/juros/suspenso = red, recebido = green, pendente/lembrete = amber), alert list tinted by level with a colored title instead of a side stripe, active nav on `--primary-bg`.
+
+- **Confirmations:** `askConfirm({title, message, confirmLabel, danger, requireText})` in `app.js` opens `#confirmDlg` (styled, stacks over another dialog) and replaces every native `confirm()`/`prompt()`. Destructive actions use a solid red button; account deletion requires typing EXCLUIR. Rule deletion, which had no confirmation, now has one.
+- **Bulk review:** transactions table has row checkboxes + select-all (indeterminate state) and a sticky bulk bar (categorize / delete / clear), backed by `POST /api/transactions/bulk` (delete reverses each transaction's balance effect like the single DELETE). On phones the bar docks above the bottom nav.
+- **Keyboard:** `N` opens a new transaction, `/` focuses search on Lançamentos (ignored while typing or with a dialog open); advertised via `title` and `aria-keyshortcuts`.
+- Due-date alert titles read "Vence hoje / Vence amanhã / Vence em N dias" with dd/mm/aaaa dates (was "Vence em 0 dia(s)" + ISO date).
 
 ## Typography
 
@@ -79,5 +120,6 @@ Split deliberately: CSS for simple two-state toggles (dialog open/close via nati
 
 ## Open items
 
-- Inter remains the AI-generated-UI-detector's one standing flag — kept intentionally per the owner's explicit choice; revisit only if asked.
+- Inter remains the AI-generated-UI-detector's one standing flag for the **Operate** surface — kept intentionally per the owner's explicit choice; revisit only if asked.
+- The **Editorial** surface was rebuilt on 2026-09-23 (see "Surfaces"); the old detector flags for gradient-text/glow no longer apply except the one gradient-clipped phrase in the hero `h1`.
 - No DESIGN.md existed before this pass; this file was written from the built result, per the incumbent-world documentation path (not a new-world creation).

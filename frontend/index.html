@@ -3,161 +3,430 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0A0A0A">
-<meta name="description" content="Finora conecta seus bancos e cartões, organiza cada lançamento e explica, em português claro, para onde o seu dinheiro está indo.">
-<title>Finora — seu dinheiro, lido linha por linha</title>
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Finora é o controle financeiro online para você e para o seu negócio: parcelas, faturas, contas e vencimentos organizados, com Open Finance, alertas automáticos e a Nora, uma assistente que registra e responde dentro do app.">
+<title>Finora — Controle Financeiro pessoal e empresarial</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/finora.css">
 </head>
-<body style="margin:0;background:#0A0A0A">
-<!-- =================== FINORA LANDING ===================
-     Cole este bloco onde a página inicial deve aparecer.
-     Configuração (atributos do div):
-       data-login  → destino dos links "Entrar" (ex.: #login, /login)
-       data-api    → endpoint POST do formulário de acesso.
-                     Deixe vazio (data-api="") para só mostrar a confirmação.
-     ======================================================= -->
-<div id="finora-landing" data-login="/app/" data-api="/api/acesso">
-<div class="pre" aria-hidden="true"><div class="pre-in">
-  <span class="pre-marca"><span>Finora</span></span>
-  <div class="pre-linha"><b></b></div>
-  <div class="pre-info mono"><span class="t">Conciliando lançamentos</span><span class="n">000</span></div>
-</div></div>
-<div class="progresso" aria-hidden="true"></div>
+<body>
+<div id="finora-landing" data-login="/app/">
 
-<div class="cta-fixo" data-r="fade" data-d="1200">
-  <a class="cta-entrar" href="/app/" data-entrar>Entrar</a>
-  <a class="cta-acesso" href="#" data-alvo="fnl-acesso">Teste grátis</a>
-</div>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-<details class="indice" data-r="fade" data-d="1400">
-  <summary><i aria-hidden="true"></i>Índice <span class="atual">/ Início</span></summary>
-  <nav aria-label="Índice"><ol>
-    <li><a href="#" data-alvo="fnl-inicio">Início</a></li>
-    <li><a href="#" data-alvo="fnl-extrato">O extrato, reescrito</a></li>
-    <li><a href="#" data-alvo="fnl-contas">Contas conectadas</a></li>
-    <li><a href="#" data-alvo="fnl-consultor">O consultor</a></li>
-    <li><a href="#" data-alvo="fnl-acesso">Teste grátis</a></li>
-  </ol></nav>
-  <a class="entrar" href="/app/" data-entrar>Já tem acesso? Entrar →</a>
-</details>
-
-<main>
-  <!-- HERO -->
-  <section class="hero" id="fnl-inicio" data-nome="Início">
-    <div class="luz" aria-hidden="true" data-r="fade" data-d="300"></div>
-    <div class="brasas" aria-hidden="true"></div>
-    <header class="topo" data-r="fade" data-d="150">
-      <span class="marca">Finora</span>
-      <span class="mono">Controle financeiro pessoal ou empresarial<br>Feito em Brasília</span>
-    </header>
-    <h1 class="manchete split" data-auto>
-      <span class="l1">Todo mês deixa</span>
-      <span class="l2">um rastro.</span>
-    </h1>
-    <div class="hero-pe grade" data-r="up" data-d="900">
-      <span class="sub">A Finora lê cada linha dele por você — na sua vida pessoal ou no seu negócio.</span>
-      <p>Conecte seus bancos e cartões uma vez. A Finora organiza os lançamentos sozinha e aponta, em português claro, para onde o seu dinheiro está indo.</p>
-      <a class="lnk" href="#" data-alvo="fnl-acesso">Começar teste grátis de 10 dias</a>
+<!-- ============ CABEÇALHO ============ -->
+<header class="cab" id="topo">
+  <div class="cab-in">
+    <a class="marca" href="#topo" aria-label="Finora — Controle Financeiro, início"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+    <nav class="menu" id="menu" aria-label="Principal">
+      <a href="#parcelas">Parcelas</a>
+      <a href="#nora">Automações</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#planos">Planos</a>
+      <a href="#duvidas">Dúvidas</a>
+      <a class="menu-entrar" href="/app/" data-entrar>Acessar conta</a>
+    </nav>
+    <div class="cab-acoes">
+      <a class="lnk-entrar" href="/app/" data-entrar>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>Acessar conta</a>
+      <a class="btn btn-pri" href="/app/" data-entrar>Testar grátis</a>
+      <button class="menu-btn" type="button" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
-    <div class="scroll" aria-hidden="true" data-r="fade" data-d="1600"></div>
-  </section>
+  </div>
+</header>
 
-  <!-- EXTRATO -->
-  <section class="sec extrato" id="fnl-extrato" data-nome="O extrato">
-    <div class="cab grade">
-      <h2 class="titulo split">O extrato,<br><em>reescrito.</em></h2>
-      <span class="mono" data-r="fade" data-d="400">Setembro · conta corrente</span>
-    </div>
-    <div class="livro" role="table" aria-label="Lançamentos de setembro">
-      <div class="livro-cab grade mono" role="row" data-r="fade"><span role="columnheader">Data</span><span class="v" role="columnheader">Valor (R$)</span><span class="n" role="columnheader">Nota do consultor</span></div>
-      <div class="lanc grade" role="row"><span class="data">02 SET</span><span class="desc">Aluguel — transferência</span><span class="valor" data-v="-1850">− 1.850,00</span></div>
-      <div class="lanc grade" role="row"><span class="data">05 SET</span><span class="desc">Streaming · 4 assinaturas</span><span class="valor" data-v="-127.6">− 127,60</span>
-        <p class="nota">Dois serviços com o mesmo catálogo. Um deles não é aberto desde junho.</p></div>
-      <div class="lanc grade" role="row"><span class="data">11 SET</span><span class="desc">Mercado — 6 compras</span><span class="valor" data-v="-912.34">− 912,34</span></div>
-      <div class="lanc grade" role="row"><span class="data">15 SET</span><span class="desc">Salário</span><span class="valor pos" data-v="6400">+ 6.400,00</span></div>
-      <div class="lanc grade" role="row"><span class="data">18 SET</span><span class="desc">Delivery — 9 pedidos</span><span class="valor" data-v="-486.2">− 486,20</span>
-        <p class="nota">Sete pedidos depois das 22h. Semanas de plantão custam R$ 140 a mais.</p></div>
-    </div>
-    <div class="saldo grade" data-r="fade"><span class="r mono">Sobra do mês até agora</span><span class="valor pos" data-v="3023.86">+ 3.023,86</span></div>
-  </section>
+<main id="conteudo">
 
-  <!-- CONTAS -->
-  <section class="sec contas" id="fnl-contas" data-nome="Contas">
-    <span class="rotulo mono" data-r="fade">Contas conectadas</span>
-    <div class="grade"><h2 class="titulo split">Todos os seus bancos<br><em>numa só leitura.</em></h2></div>
-    <div class="faixa" aria-label="Instituições compatíveis via Open Finance" data-r="fade">
-      <div class="faixa-trilho">
-        <span>Nubank</span><span>Itaú</span><span>Bradesco</span><span>Banco do Brasil</span><span>Caixa</span><span>Santander</span><span>Inter</span><span>C6 Bank</span><span>BTG</span><span>Sicoob</span>
-        <span aria-hidden="true">Nubank</span><span aria-hidden="true">Itaú</span><span aria-hidden="true">Bradesco</span><span aria-hidden="true">Banco do Brasil</span><span aria-hidden="true">Caixa</span><span aria-hidden="true">Santander</span><span aria-hidden="true">Inter</span><span aria-hidden="true">C6 Bank</span><span aria-hidden="true">BTG</span><span aria-hidden="true">Sicoob</span>
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-txt">
+      <h1>Contas, cartões e parcelas. <mark>Tudo em ordem.</mark></h1>
+      <p class="lead">Organize as finanças da sua casa ou do seu negócio em um só lugar. A Finora avisa o que vence, mostra quanto falta de cada parcela e diz onde o orçamento apertou — no computador e no celular.</p>
+      <div class="hero-cta">
+        <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
+        <span class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão de crédito para testar</span>
+      </div>
+      <ol class="fluxo" aria-label="Como funciona">
+        <li><b>1</b>Conecte o banco ou importe o extrato</li>
+        <li><b>2</b>A Finora organiza sozinha</li>
+        <li><b>3</b>Você recebe os avisos</li>
+      </ol>
+    </div>
+
+    <!-- reprodução do painel real (cenário ilustrativo da Ana; os números fecham entre si) -->
+    <div class="hero-vis" aria-hidden="true">
+      <div class="nora-wrap" data-nora="hero" title="Oi! Eu sou a Nora."><span class="nora-balao">Oi! Eu sou a <b>Nora</b>, sua assistente. Eu lembro das suas contas.</span></div>
+      <div class="app-mock">
+        <div class="am-top">
+          <span class="am-marca"><span class="logo sm">F</span>Finora</span>
+          <span class="am-tabs"><b>Painel</b><span>Lançamentos</span><span>Cartões</span><span>Contas</span></span>
+        </div>
+        <div class="am-corpo">
+          <div class="am-ola">
+            <div><strong>Olá, Ana</strong><p>Você tem 2 contas a pagar hoje no total de <b>R$&nbsp;198,90</b>.</p></div>
+            <div class="am-venc">
+              <div class="am-v v-hoje"><span>Vencendo hoje</span><b>R$&nbsp;198,90</b></div>
+              <div class="am-v v-fut"><span>Próximos 10 dias</span><b>R$&nbsp;3.134,90</b></div>
+            </div>
+          </div>
+          <div class="am-kpis">
+            <div class="am-kpi k-saldo"><span>Saldo em contas</span><b data-conta="36218.95" data-dec="2" data-pre="R$ ">R$&nbsp;36.218,95</b></div>
+            <div class="am-kpi k-rec"><span>Receitas do mês</span><b data-conta="8546.10" data-dec="2" data-pre="R$ ">R$&nbsp;8.546,10</b></div>
+            <div class="am-kpi k-desp"><span>Despesas do mês</span><b data-conta="4898.09" data-dec="2" data-pre="R$ ">R$&nbsp;4.898,09</b></div>
+          </div>
+          <div class="am-baixo">
+            <div class="am-contas">
+              <span class="am-t">Contas</span>
+              <div class="am-c"><i style="--c:#f97316"></i>Itaú · corrente<b>R$&nbsp;31.240,50</b></div>
+              <div class="am-c"><i style="--c:#8b5cf6"></i>Nubank · conta<b>R$&nbsp;4.883,45</b></div>
+              <div class="am-c"><i style="--c:#0891b2"></i>Carteira<b>R$&nbsp;95,00</b></div>
+            </div>
+            <div class="am-cats">
+              <span class="am-t">Gastos por categoria</span>
+              <div class="donut"><span>R$&nbsp;4,9 mil</span></div>
+              <ul><li><i style="--c:#4f46e5"></i>Moradia</li><li><i style="--c:#0891b2"></i>Alimentação</li><li><i style="--c:#f59e0b"></i>Transporte</li><li><i style="--c:#10b981"></i>Educação</li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flutua f-alerta">
+        <span class="fl-ic"><svg viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
+        <div><b>Vence em 2 dias</b><span>Fatura Nubank · R$&nbsp;1.284,90</span></div>
       </div>
     </div>
-    <div class="sync grade">
-      <div class="explica" data-r="up">
-        <p>A conexão é feita pelo Open Finance, com a sua autorização dentro do app do próprio banco. A Finora só lê: não movimenta dinheiro nem vê sua senha.</p>
-        <p>Você escolhe quais contas entram e pode desconectar qualquer uma a qualquer momento.</p>
-      </div>
-      <ul class="log" aria-label="Status de sincronização">
-        <li data-r="up"><span class="pt"></span><span>Conta corrente · 312 lançamentos</span><span class="q">há 2 min</span></li>
-        <li data-r="up" data-d="120"><span class="pt"></span><span>Cartão de crédito · fatura aberta</span><span class="q">há 2 min</span></li>
-        <li data-r="up" data-d="240"><span class="pt"></span><span>Poupança · rendimento de setembro</span><span class="q">há 1 h</span></li>
-        <li data-r="up" data-d="360"><span class="pt lendo"></span><span>Cartão adicional · lendo</span><span class="q">agora</span></li>
+  </div>
+  <p class="wrap ilustra">Cenário ilustrativo.</p>
+</section>
+
+<!-- ============ FAIXA DE CONFIANÇA ============ -->
+<section class="confia" aria-label="Por que confiar na Finora" data-cena>
+  <ul class="wrap confia-in">
+    <li data-i="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg><span><b>10 dias grátis</b>sem cartão de crédito</span></li>
+    <li data-i="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M3 10h18"/><path d="m5 6 7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg><span><b>Open Finance</b>conexão só de leitura</span></li>
+    <li data-i="2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span><b>Duas etapas</b>em todo acesso</span></li>
+    <li data-i="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span><b>LGPD</b>exporte ou apague seus dados</span></li>
+  </ul>
+</section>
+
+<!-- ============ ISSO SOA FAMILIAR? + COMPARATIVO ============ -->
+<section class="sec escuro" id="pra-quem">
+  <div class="wrap comp">
+    <div class="comp-txt" data-cena>
+      <h2>Isso soa familiar?</h2>
+      <ul class="dores">
+        <li data-i="0">Parcela tudo no cartão e só descobre o estrago quando a fatura chega.</li>
+        <li data-i="1">Já pagou juros porque esqueceu uma conta no meio do mês.</li>
+        <li data-i="2">Já tentou planilha e aplicativo, mas nada durou mais de um mês.</li>
+        <li data-i="3">Mistura as contas da casa com as do negócio e perde a noção do lucro.</li>
       </ul>
+      <p class="comp-vira">Não é falta de disciplina. É que a planilha depende de você lembrar, e o app do banco só enxerga o próprio banco.</p>
     </div>
-  </section>
+    <div class="comp-tab" data-cena role="table" aria-label="Comparativo entre planilha, app do banco e Finora">
+      <div class="ct-row ct-cab" data-i="0" role="row"><span role="columnheader"><span class="sr">Recurso</span></span><span role="columnheader">Planilha</span><span role="columnheader">App do banco</span><span role="columnheader" class="ct-fin">Finora</span></div>
+      <div class="ct-row" data-i="1" role="row"><span role="rowheader">Junta todos os bancos e cartões</span><span role="cell" class="ct m">Manual</span><span role="cell" class="ct n">Só o dele</span><span role="cell" class="ct s ct-fin">Sim</span></div>
+      <div class="ct-row" data-i="2" role="row"><span role="rowheader">Mostra parcela X de N e quanto falta</span><span role="cell" class="ct m">Manual</span><span role="cell" class="ct m">Depende</span><span role="cell" class="ct s ct-fin">Sim</span></div>
+      <div class="ct-row" data-i="3" role="row"><span role="rowheader">Avisa antes de vencer ou estourar</span><span role="cell" class="ct n">Não</span><span role="cell" class="ct m">Só a fatura</span><span role="cell" class="ct s ct-fin">Sim</span></div>
+      <div class="ct-row" data-i="4" role="row"><span role="rowheader">Casa e negócio no mesmo lugar</span><span role="cell" class="ct m">Manual</span><span role="cell" class="ct n">Não</span><span role="cell" class="ct s ct-fin">Sim</span></div>
+    </div>
+  </div>
+</section>
 
-  <!-- CONSULTOR -->
-  <section class="sec consultor" id="fnl-consultor" data-nome="O consultor">
-    <span class="rotulo mono" data-r="fade">O consultor</span>
-    <div class="grade"><h2 class="titulo split">Pergunte como<br><em>a um amigo.</em></h2></div>
-    <div class="grade">
-      <div class="conversa">
-        <p class="pergunta" data-r="fade"><b>Você</b>Consigo trocar de carro em março sem mexer na reserva?</p>
-        <p class="resposta" aria-live="polite" data-texto="Consegue, se a entrada ficar em até R$ 9 mil. Nos últimos seis meses sobraram, em média, R$ 2.740 por mês. Cortando o streaming repetido, você chega em março com R$ 9.400 sem tocar na reserva."></p>
-        <div class="base mono" data-r="fade" data-d="200"><span>6 meses de extrato</span><span>Fatura de outubro</span><span>Reserva: R$ 18.200</span></div>
-      </div>
-      <p class="limite" data-r="fade">O consultor responde com base nos seus próprios lançamentos e mostra de onde tirou cada número. É uma ferramenta de organização, não uma recomendação de investimento.</p>
+<!-- ============ PARCELAS E FATURAS (o diferencial) ============ -->
+<section class="sec parcelas" id="parcelas">
+  <div class="wrap parc-in">
+    <div class="parc-txt" data-cena>
+      <h2>Parcelas e faturas, <mark>do jeito que o Brasil compra.</mark></h2>
+      <p class="parc-lead">Aplicativos de fora mostram só o total do mês. A Finora acompanha cada compra parcelada até a última parcela.</p>
+      <ul class="parc-pontos">
+        <li data-i="0"><b>Parcela X de N em cada compra</b>e quanto ainda falta pagar, sem conta de cabeça.</li>
+        <li data-i="1"><b>Fatura por ciclo</b>com a data de fechamento e de vencimento de cada cartão.</li>
+        <li data-i="2"><b>Quanto dos próximos meses já está comprometido</b>antes de você parcelar a próxima compra.</li>
+      </ul>
+      <a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
     </div>
-  </section>
 
-  <!-- ACESSO -->
-  <section class="sec acesso" id="fnl-acesso" data-nome="Pedir acesso">
-    <span class="rotulo mono" data-r="fade">Teste grátis · 10 dias · sem cartão de crédito</span>
-    <div class="grade"><h2 class="titulo split">Comece agora,<br><em>não no ano que vem.</em></h2></div>
-    <div class="grade">
-      <div class="comeca" data-r="up">
-        <p>Entre com sua conta Google e use o Finora inteiro — Open Finance, consultor, tudo — por 10 dias, sem pagar nada.</p>
-        <a class="cta-acesso comeca-btn" href="/app/" data-entrar>Começar teste grátis →</a>
-        <div class="planos mono">
-          <span><b>R$ 14,90</b>/mês</span>
-          <span><b>R$ 149,90</b>/ano <i>(R$ 12,49/mês)</i></span>
-        </div>
-        <p class="small">Só cobra depois dos 10 dias, se você quiser continuar.</p>
+    <div class="fatura" aria-hidden="true" data-cena>
+      <div class="ft-cab">
+        <div><span class="ft-cartao"><i></i>Nubank · fatura de setembro</span><span class="ft-ciclo">fechou 18/09 · vence 25/09</span></div>
+        <b class="ft-total">R$&nbsp;1.284,90</b>
       </div>
-      <form class="form" novalidate data-r="up">
-        <label class="mono" for="fnl-email">Prefere ser avisado antes? Deixe seu e-mail</label>
-        <div class="campo">
-          <input id="fnl-email" name="email" type="email" autocomplete="email" placeholder="voce@email.com" aria-describedby="fnl-email-msg" required>
-          <button class="mono" type="submit">Avisar →</button>
+      <div class="parc" data-i="0">
+        <div class="pc-lin"><b>Notebook</b><span class="pc-tag">parcela 4 de 10</span><em>R$&nbsp;312,40</em></div>
+        <div class="pc-bar" style="--p:40%"><i></i></div>
+        <span class="pc-falta">faltam 6 · R$&nbsp;1.874,40</span>
+      </div>
+      <div class="parc" data-i="1">
+        <div class="pc-lin"><b>Geladeira</b><span class="pc-tag">parcela 2 de 12</span><em>R$&nbsp;289,90</em></div>
+        <div class="pc-bar" style="--p:16.7%"><i></i></div>
+        <span class="pc-falta">faltam 10 · R$&nbsp;2.899,00</span>
+      </div>
+      <div class="parc" data-i="2">
+        <div class="pc-lin"><b>Passagem aérea</b><span class="pc-tag">parcela 1 de 3</span><em>R$&nbsp;420,00</em></div>
+        <div class="pc-bar" style="--p:33.3%"><i></i></div>
+        <span class="pc-falta">faltam 2 · R$&nbsp;840,00</span>
+      </div>
+      <div class="parc avista" data-i="3">
+        <div class="pc-lin"><b>Compras à vista</b><span class="pc-tag">14 lançamentos</span><em>R$&nbsp;262,60</em></div>
+      </div>
+      <div class="compromisso">
+        <span class="cp-t">Já comprometido com parcelas</span>
+        <div class="cp-barras">
+          <div style="--h:100%"><i></i><span>out</span></div>
+          <div style="--h:100%"><i></i><span>nov</span></div>
+          <div style="--h:59%"><i></i><span>dez</span></div>
+          <div style="--h:59%"><i></i><span>jan</span></div>
+          <div style="--h:59%"><i></i><span>fev</span></div>
+          <div style="--h:59%"><i></i><span>mar</span></div>
         </div>
-        <p class="msg" id="fnl-email-msg" role="status"></p>
-        <p class="aviso">Usamos seu e-mail só para isso.</p>
-      </form>
+        <span class="cp-leg">R$&nbsp;1.022,30 em out e nov · R$&nbsp;602,30 de dez a mar</span>
+      </div>
     </div>
-  </section>
+  </div>
+  <p class="wrap ilustra">Cenário ilustrativo.</p>
+</section>
+
+<!-- ============ NORA / AUTOMAÇÕES ============ -->
+<section class="sec escuro auto" id="nora">
+  <div class="wrap">
+    <div class="sec-cab centro" data-cena>
+      <h2>A Nora cuida da rotina. <span class="real">Você só confirma.</span></h2>
+      <p>Escreva do jeito que você fala, dentro do app. A Nora registra, responde e lembra — e nada que mexe no seu dinheiro acontece sem a sua confirmação.</p>
+    </div>
+
+    <div class="auto-grid">
+      <figure class="chat-fone" aria-label="Exemplo de conversa com a Nora">
+        <div class="cf-top"><span class="cf-nora" data-nora="mini"></span><div><b>Nora</b><span>sua assistente no Finora</span></div></div>
+        <ol class="chat" id="chat">
+          <li class="msg eu">gastei 280 no mercado</li>
+          <li class="msg ela">Vou lançar uma despesa: <b>Mercado · Conta corrente · Alimentação</b>.
+            <span class="acao">Lançar despesa de R$&nbsp;280,00</span></li>
+          <li class="msg eu">quanto gastei com alimentação?</li>
+          <li class="msg ela">Este mês você gastou <b>R$&nbsp;912,34 em Alimentação</b> até agora.</li>
+          <li class="msg ela aviso"><b>Internet fibra vence hoje (R$&nbsp;119,90).</b> Quer que eu já lance o pagamento? Depois é só anexar o comprovante pra dar baixa.
+            <span class="acao">Marcar Internet fibra como pago</span></li>
+          <li class="msg alerta"><span class="al-t">80% do orçamento: Restaurantes</span>Já foram R$&nbsp;480,00 de R$&nbsp;600,00. Segure os gastos até o fim do mês.</li>
+        </ol>
+        <figcaption class="cf-nota">Conversa ilustrativa, com as mesmas mensagens que a Nora usa no app.</figcaption>
+      </figure>
+
+      <div class="auto-cols" data-cena>
+        <div class="auto-grupo" data-i="0">
+          <h3>Fale com a Nora</h3>
+          <ul>
+            <li class="a-indigo"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span><div><b>Registro por texto</b><span>“gastei 50 no mercado” vira lançamento, com conta e categoria sugeridas.</span></div></li>
+            <li class="a-ciano"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><div><b>Consulta na hora</b><span>“Quanto gastei com alimentação?” ou “qual meu saldo?”.</span></div></li>
+            <li class="a-ambar"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></span><div><b>Lembrete do dia</b><span>Conta fixa vencendo hoje aparece sozinha, com “marcar como pago” em um clique.</span></div></li>
+            <li class="a-verde"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><div><b>Metas por texto</b><span>“Criar meta viagem de 3000” e ela passa a acompanhar.</span></div></li>
+          </ul>
+        </div>
+        <div class="auto-grupo" data-i="1">
+          <h3>8 alertas automáticos <small>no app, e os importantes também por e-mail</small></h3>
+          <ul class="chips">
+            <li class="a-ambar">80% do orçamento</li>
+            <li class="a-rosa">Orçamento estourado</li>
+            <li class="a-violeta">Gasto acima do normal</li>
+            <li class="a-rosa">Limite do cartão</li>
+            <li class="a-ambar">Vence em até 3 dias</li>
+            <li class="a-rosa">Mês projetado no vermelho</li>
+            <li class="a-rosa">Saldo negativo</li>
+            <li class="a-ciano">Revise suas assinaturas</li>
+          </ul>
+        </div>
+        <div class="auto-grupo" data-i="2">
+          <h3>Sem você precisar lembrar</h3>
+          <ul>
+            <li class="a-violeta"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/></svg></span><div><b>Categorização automática</b><span>Suas regras organizam cada lançamento que chega.</span></div></li>
+            <li class="a-ciano"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span><div><b>Bancos sincronizados</b><span>O Open Finance atualiza os lançamentos a cada 6 horas.</span></div></li>
+            <li class="a-indigo"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span><div><b>Lembrete de importar extrato</b><span>Diário, semanal ou mensal, para as contas que você importa à mão.</span></div></li>
+            <li class="a-verde"><span class="a-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 7v5l3 2"/></svg></span><div><b>Contas fixas no vencimento</b><span>Aluguel e assinaturas aparecem na data certa e viram lançamento com um clique.</span></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEGÓCIO ============ -->
+<section class="sec tom-claro">
+  <div class="wrap">
+    <div class="sec-cab centro" data-cena>
+      <h2>Também para o seu negócio.</h2>
+      <p>Para autônomos e pequenas empresas que querem separar a casa do caixa.</p>
+    </div>
+    <div class="cards3" data-cena>
+      <article class="rc2" data-i="0">
+        <div class="rc2-vis v-a" aria-hidden="true">
+          <div class="v-fluxo"><div style="--h:62%"><i class="r"></i><i class="d" style="--d:48%"></i></div><div style="--h:78%"><i class="r"></i><i class="d" style="--d:52%"></i></div><div style="--h:84%"><i class="r"></i><i class="d" style="--d:50%"></i></div><div style="--h:100%"><i class="r"></i><i class="d" style="--d:55%"></i></div></div>
+        </div>
+        <h3>Fluxo de caixa claro</h3>
+        <p>Entradas, saídas e resultado mês a mês, com projeção das despesas do mês atual.</p>
+      </article>
+      <article class="rc2" data-i="1">
+        <div class="rc2-vis v-b" aria-hidden="true">
+          <div class="v-rec"><div><b>Cliente Silva ME</b><span>Consultoria · set</span></div><em>+R$&nbsp;2.400,00</em><span class="mini-btn">Receber</span></div>
+          <div class="v-rec"><div><b>Loja Horizonte</b><span>vencia 18/09</span></div><em>+R$&nbsp;860,00</em><span class="chip-atr">atrasado</span></div>
+        </div>
+        <h3>Contas a receber</h3>
+        <p>Controle o que clientes devem a você e dê baixa em um clique quando o dinheiro cair.</p>
+      </article>
+      <article class="rc2" data-i="2">
+        <div class="rc2-vis v-c" aria-hidden="true">
+          <div class="v-share"><span class="av" style="--c:#4f46e5">A</span><span class="av" style="--c:#0e7490">M</span><span class="av" style="--c:#b45309">C</span><div><b>Acesso compartilhado</b><span>2 convites ativos</span></div></div>
+        </div>
+        <h3>Família, sócio ou contador</h3>
+        <p>Convide alguém para ver e lançar junto com você. Revogue o acesso quando quiser.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SEGURANÇA ============ -->
+<section class="sec" id="seguranca">
+  <div class="wrap seg-in">
+    <div class="sec-cab" data-cena>
+      <h2>Seu dinheiro fica no banco. A Finora só lê.</h2>
+      <p>Você decide o que conecta, e pode desconectar a qualquer momento.</p>
+    </div>
+    <ul class="seg" data-cena>
+      <li data-i="0"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M3 10h18"/><path d="m5 6 7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg></span>
+        <div><h3>Open Finance só leitura</h3><p>A conexão é feita pela Pluggy, integradora de Open Finance, e autorizada por você dentro do app do seu banco. A Finora não movimenta dinheiro e nunca vê a senha do banco.</p></div></li>
+      <li data-i="1"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <div><h3>Verificação em duas etapas</h3><p>Todo acesso exige a sua conta Google e um código do seu app autenticador. Não existe senha da Finora para vazar.</p></div></li>
+      <li data-i="2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></span>
+        <div><h3>Seus dados, suas regras</h3><p>Exporte seus lançamentos ou apague a conta e todos os dados direto nas configurações, como prevê a LGPD. Veja a <a href="/privacidade.html">Política de Privacidade</a>.</p></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PLANOS ============ -->
+<section class="sec tom-claro" id="planos">
+  <div class="wrap">
+    <div class="sec-cab centro" data-cena>
+      <h2>Um plano, <mark>dois jeitos de pagar.</mark></h2>
+      <p>Todos os recursos e a Nora em qualquer um. Teste 10 dias grátis e só assine se fizer sentido.</p>
+    </div>
+    <div class="planos" data-cena>
+      <article class="plano" data-i="0">
+        <h3>Mensal</h3>
+        <p class="preco"><small>R$</small>14<small>,90</small><span>/mês</span></p>
+        <p class="p-desc">Sem fidelidade. Para começar a organizar sem compromisso.</p>
+        <a class="btn btn-sec" href="/app/" data-entrar>Testar grátis por 10 dias</a>
+      </article>
+      <article class="plano dest" data-i="1">
+        <span class="p-tag">Economize R$&nbsp;28,90</span>
+        <h3>Anual</h3>
+        <p class="preco"><small>R$</small>12<small>,49</small><span>/mês</span></p>
+        <p class="p-desc">R$&nbsp;149,90 cobrados uma vez por ano, em vez de R$&nbsp;178,80.</p>
+        <a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias</a>
+      </article>
+      <div class="p-inclui" data-i="2">
+        <h3>Incluído nos dois</h3>
+        <ul class="check">
+          <li>Open Finance e importação de extrato</li>
+          <li>Cartões, faturas e parcelamentos</li>
+          <li>Contas fixas, a pagar e a receber</li>
+          <li>A Nora, que registra e responde</li>
+          <li>8 alertas automáticos</li>
+          <li>Orçamentos, metas e reserva</li>
+          <li>Acesso compartilhado por convite</li>
+        </ul>
+      </div>
+    </div>
+    <ul class="termos-planos">
+      <li><b>Teste:</b> 10 dias com tudo liberado, sem cartão.</li>
+      <li><b>Depois do teste:</b> o acesso fica pausado até você assinar. Seus dados continuam guardados.</li>
+      <li><b>Cancelamento:</b> quando quiser, sem multa. Detalhes nos <a href="/termos.html">Termos de Uso</a>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ DÚVIDAS ============ -->
+<section class="sec" id="duvidas">
+  <div class="wrap estreito">
+    <div class="sec-cab centro" data-cena>
+      <h2>Perguntas frequentes</h2>
+    </div>
+    <div class="abas" role="tablist" aria-label="Perguntas por assunto">
+      <button role="tab" id="aba-uso" aria-controls="faq-uso" aria-selected="true" type="button">Uso</button>
+      <button role="tab" id="aba-conta" aria-controls="faq-conta" aria-selected="false" type="button" tabindex="-1">Conta e pagamento</button>
+      <button role="tab" id="aba-emp" aria-controls="faq-emp" aria-selected="false" type="button" tabindex="-1">Empresa</button>
+    </div>
+    <div class="faq" id="faq-uso" role="tabpanel" aria-labelledby="aba-uso">
+      <details><summary>O que é Open Finance?</summary>
+        <p>É o sistema oficial do Banco Central que permite, com a sua autorização, que um aplicativo leia os dados das suas contas em outros bancos. Na Finora, a conexão é só de leitura: seus lançamentos chegam sozinhos, atualizados a cada 6 horas, e você pode desconectar quando quiser.</p></details>
+      <details><summary>Não quero conectar o banco. Dá para usar?</summary>
+        <p>Dá. Você pode lançar à mão, pedir para a Nora registrar por texto ou importar o extrato em arquivo CSV (a planilha que o banco exporta). Dá até para receber um lembrete diário, semanal ou mensal para importar.</p></details>
+      <details><summary>Quem é a Nora?</summary>
+        <p>É a assistente dentro do app. Você escreve como falaria — “gastei 50 no mercado”, “quanto gastei com alimentação?”, “criar meta viagem de 3000” — e ela registra, responde ou abre o formulário já preenchido. Tudo que mexe no seu dinheiro pede sua confirmação antes.</p></details>
+      <details><summary>Quais alertas eu recebo?</summary>
+        <p>Orçamento em 80% ou estourado, gasto acima do normal, limite do cartão, conta vencendo em até 3 dias, mês projetado no vermelho, saldo negativo e assinaturas acima de 5% da renda. Os mais importantes também chegam por e-mail.</p></details>
+      <details><summary>Tem aplicativo para celular?</summary>
+        <p>A Finora funciona no navegador do celular e pode ser instalada na tela inicial como um aplicativo, sem passar por loja.</p></details>
+    </div>
+    <div class="faq" id="faq-conta" role="tabpanel" aria-labelledby="aba-conta" hidden>
+      <details><summary>Preciso de cartão de crédito para testar?</summary>
+        <p>Não. Você entra com sua conta Google e usa tudo por 10 dias, sem informar nenhum dado de pagamento.</p></details>
+      <details><summary>O que acontece quando o teste acaba?</summary>
+        <p>O acesso fica pausado até você escolher um plano. Nada é apagado: quando você assinar, tudo está do jeito que você deixou.</p></details>
+      <details><summary>Como é feito o pagamento?</summary>
+        <p><span class="preencher">[PREENCHER: formas de pagamento aceitas — ex.: Pix e cartão de crédito]</span></p></details>
+      <details><summary>Posso cancelar quando quiser?</summary>
+        <p>Pode, sem multa. Você mantém o acesso até o fim do período já pago. As regras completas estão nos <a href="/termos.html">Termos de Uso</a>.</p></details>
+      <details><summary>Posso levar meus dados embora?</summary>
+        <p>Pode. Você exporta seus lançamentos na tela de Lançamentos e pode apagar a conta e todos os dados em Configurações. Veja a <a href="/privacidade.html">Política de Privacidade</a>.</p></details>
+    </div>
+    <div class="faq" id="faq-emp" role="tabpanel" aria-labelledby="aba-emp" hidden>
+      <details><summary>A Finora serve para o meu negócio?</summary>
+        <p>Sim, para autônomos e pequenos negócios: contas a pagar e a receber, contratos e despesas fixas, renda PJ e uma seção de impostos. Ela não emite nota fiscal nem boletos.</p></details>
+      <details><summary>Consigo controlar o que meus clientes me devem?</summary>
+        <p>Sim. Em Contas a receber você registra cada valor com cliente e vencimento, vê o que está atrasado e dá baixa em um clique quando receber.</p></details>
+      <details><summary>Meu sócio ou contador pode acessar?</summary>
+        <p>Sim. Envie um convite de acesso compartilhado: a pessoa entra com a própria conta Google e verificação em duas etapas, e você revoga quando quiser.</p></details>
+      <details><summary>Tem relatório de fluxo de caixa?</summary>
+        <p>Sim. O painel mostra receitas, despesas e resultado mês a mês em janelas de 6 ou 12 meses, com projeção de despesas do mês atual.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA FINAL ============ -->
+<section class="cta-final" data-cena>
+  <div class="wrap cf-in">
+    <div class="cf-nora-pula" data-nora="pula"></div>
+    <div class="cf-txt">
+      <h2>Sua vida não é só pagar boleto.</h2>
+      <p>Deixe a Nora cuidar dos lembretes e das contas, e use o seu tempo para o que importa.</p>
+    </div>
+    <a class="btn btn-branco btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
 </main>
 
-<footer class="rodape mono">
-  <span class="marca">Finora</span>
-  <span>© 2026 Finora · Brasília, DF</span>
-  <a class="lnk" href="#" data-alvo="fnl-inicio">Voltar ao início ↑</a>
+<!-- ============ RODAPÉ ============ -->
+<footer class="rodape">
+  <div class="wrap rd-in">
+    <div class="rd-marca">
+      <a class="marca" href="#topo" aria-label="Finora — Controle Financeiro, voltar ao topo"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+      <p>Controle financeiro online para uso pessoal e empresarial: parcelas, faturas, contas e vencimentos organizados, com a Nora cuidando da rotina.</p>
+    </div>
+    <nav class="rd-col" aria-label="Produto"><h3>Produto</h3><a href="#parcelas">Parcelas e faturas</a><a href="#nora">Automações</a><a href="#planos">Planos</a><a href="#duvidas">Perguntas frequentes</a></nav>
+    <nav class="rd-col" aria-label="Conta"><h3>Conta</h3><a href="/app/" data-entrar>Acessar conta</a><a href="/app/" data-entrar>Testar grátis</a><a href="#seguranca">Segurança</a></nav>
+    <nav class="rd-col" aria-label="Legal e contato"><h3>Legal e contato</h3><a href="/privacidade.html">Política de Privacidade</a><a href="/termos.html">Termos de Uso</a><span class="rd-contato">Contato: <span class="preencher">[PREENCHER: e-mail]</span></span></nav>
+  </div>
+  <div class="wrap rd-base">
+    <span>© 2026 Finora · <span class="preencher">[PREENCHER: razão social]</span> · CNPJ <span class="preencher">[PREENCHER]</span> · Brasília, DF</span>
+    <a href="#topo">Voltar ao topo ↑</a>
+  </div>
 </footer>
+
+<!-- CTA fixo no celular: aparece depois do topo e some perto da chamada final -->
+<div class="cta-movel"><a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a></div>
 </div>
-<!-- ================= FIM FINORA LANDING ================= -->
 <script src="/js/finora.js"></script>
 </body>
 </html>

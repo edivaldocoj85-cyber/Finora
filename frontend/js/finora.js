@@ -1,120 +1,201 @@
 /* =====================================================================
    FINORA LANDING — JS isolado (sem dependências)
-   • Monta sozinho quando existe #finora-landing na página.
-   • Em sistema com rotas por # (SPA): chame FinoraLanding.mount() quando a
-     página inicial for exibida e FinoraLanding.unmount() ao sair dela.
-   • A abertura animada aparece uma vez por sessão do navegador.
+   Cabeçalho fixo, menu mobile, abas do FAQ e o sistema de movimento:
+   a mascote Nora, a coreografia do hero, revelações por seção e a
+   conversa animada do assistente.
+   data-login no #finora-landing define o destino de "Acessar conta".
+
+   Identidade de movimento (ver DESIGN.md):
+   • UI  — "Corporate": expo-out cubic-bezier(.16,1,.3,1), 200/400/700ms.
+   • Nora — "Playful": back-out cubic-bezier(.34,1.56,.64,1), com quique.
+   Tudo respeita prefers-reduced-motion (estado final, sem movimento).
    ===================================================================== */
-(function(){
-'use strict';
-let limpa=[],obs=[],montado=null;
-function jaViu(){try{return sessionStorage.getItem('fnl-abertura')==='1'}catch(e){return false}}
-function marcaVisto(){try{sessionStorage.setItem('fnl-abertura','1')}catch(e){}}
-const IO=window.IntersectionObserver;
-function mount(root){
-root=root||document.getElementById('finora-landing');
-if(!root||root===montado||root.dataset.montado)return;
-unmount();montado=root;root.dataset.montado='1';
-const IntersectionObserver=function(cb,o){const x=new IO(cb,o);obs.push(x);return x};
+(function () {
+  "use strict";
+  const root = document.getElementById("finora-landing");
+  if (!root) return;
+  const $ = (q, c = root) => c.querySelector(q), $$ = (q, c = root) => [...c.querySelectorAll(q)];
+  const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const temIO = "IntersectionObserver" in window;
 
-const reduz=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const $=(q,c=root)=>c.querySelector(q), $$=(q,c=root)=>[...c.querySelectorAll(q)];
+  /* links de entrada */
+  $$("[data-entrar]").forEach((a) => a.setAttribute("href", root.dataset.login || "/app/"));
 
-/* divide títulos em palavras mascaradas */
-$$('.split').forEach(h=>{let i=0;const base=h.hasAttribute('data-auto')?250:0;
-  const walk=node=>[...node.childNodes].forEach(n=>{
-    if(n.nodeType===3&&n.textContent.trim()){const f=document.createDocumentFragment();
-      n.textContent.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p)){f.append(' ');return}
-        const w=document.createElement('span');w.className='w';const s=document.createElement('span');
-        s.textContent=p;s.style.transitionDelay=(base+(i++)*90)+'ms';w.append(s);f.append(w)});n.replaceWith(f)}
-    else if(n.nodeType===1&&n.tagName!=='BR')walk(n)});walk(h)});
+  /* cabeçalho: sombra ao rolar */
+  const cab = $(".cab");
+  const onScroll = () => cab.classList.toggle("rolou", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
-/* revelação por scroll */
-const ro=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target;
-  setTimeout(()=>{el.classList.add('on');el.dispatchEvent(new Event('revelado'))},+(el.dataset.d||0));ro.unobserve(el)}),{threshold:.15,rootMargin:'0px 0px -5% 0px'});
-const alvos=()=>$$('[data-r],.split,.lanc,.resposta,.lanc .valor,.saldo .valor');
+  /* menu mobile */
+  const btn = $(".menu-btn"), menu = $("#menu");
+  const fecha = () => { menu.classList.remove("aberto"); btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-label", "Abrir menu"); };
+  btn.addEventListener("click", () => {
+    const abre = !menu.classList.contains("aberto");
+    menu.classList.toggle("aberto", abre);
+    btn.setAttribute("aria-expanded", String(abre)); btn.setAttribute("aria-label", abre ? "Fechar menu" : "Abrir menu");
+  });
+  $$("a", menu).forEach((a) => a.addEventListener("click", fecha));
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && menu.classList.contains("aberto")) { fecha(); btn.focus(); } });
 
-/* brasas */
-const br=$('.brasas');
-if(!reduz)for(let i=0;i<26;i++){const e=document.createElement('i'),z=1+Math.random()*2;
-  Object.assign(e.style,{left:Math.random()*100+'%',width:z+'px',height:z+'px',animationDuration:(7+Math.random()*9)+'s',animationDelay:(-Math.random()*14)+'s'});
-  e.style.setProperty('--dx',(Math.random()*120-60)+'px');br.append(e)}
+  /* abas do FAQ (padrão WAI-ARIA tabs) */
+  const abas = $$('[role="tab"]');
+  const ativa = (t) => {
+    abas.forEach((x) => {
+      const on = x === t;
+      x.setAttribute("aria-selected", String(on)); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    });
+  };
+  abas.forEach((t, i) => {
+    t.addEventListener("click", () => ativa(t));
+    t.addEventListener("keydown", (e) => {
+      const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!d) return;
+      const n = abas[(i + d + abas.length) % abas.length]; ativa(n); n.focus();
+    });
+  });
 
-/* luz segue o cursor (com rAF) */
-const hero=$('.hero');let raf;
-hero.addEventListener('pointermove',ev=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const r=hero.getBoundingClientRect();
-  hero.style.setProperty('--mx',(ev.clientX-r.left)+'px');hero.style.setProperty('--my',(ev.clientY-r.top)+'px')})});
+  /* menu marca a seção atual */
+  const secoes = $$("a[href^='#']", menu).map((a) => [a, document.querySelector(a.getAttribute("href"))]).filter(([, s]) => s);
+  if ("IntersectionObserver" in window) {
+    const ioNav = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      secoes.forEach(([a, s]) => a.setAttribute("aria-current", String(s === e.target)));
+    }), { rootMargin: "-45% 0px -50% 0px" });
+    secoes.forEach(([, s]) => ioNav.observe(s));
+  }
 
-/* linhas do extrato em cascata */
-$$('.lanc').forEach((l,i)=>l.dataset.d=i*110);
+  /* CTA fixo no celular: aparece depois do topo, some na chamada final e no rodapé */
+  const ctaMovel = $(".cta-movel"), heroEl = $(".hero"), fim = $(".cta-final"), rod = root.querySelector(".rodape");
+  if (ctaMovel && "IntersectionObserver" in window) {
+    const vis = new Map();
+    const atualiza = () => ctaMovel.classList.toggle("on", !vis.get(heroEl) && !vis.get(fim) && !vis.get(rod));
+    const ioCta = new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); atualiza(); });
+    [heroEl, fim, rod].forEach((el) => el && ioCta.observe(el));
+  }
 
-/* contagem dos valores */
-const fmt=v=>(v<0?'− ':'+ ')+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-$$('.valor[data-v]').forEach(el=>{el.dataset.d=el.closest('.lanc')?.dataset.d||0;
-  el.addEventListener('revelado',()=>{if(reduz)return;const alvo=+el.dataset.v,t0=performance.now();
-    (function f(t){const p=Math.min((t-t0)/1200,1),k=1-Math.pow(1-p,3);el.textContent=fmt(alvo*k);if(p<1)requestAnimationFrame(f)})(t0)})});
+  /* compatibilidade com links antigos (#acesso, #consultor…) */
+  const antigos = { "#acesso": "#planos", "#consultor": "#nora", "#automacoes": "#nora", "#contas": "#parcelas", "#extrato": "#parcelas", "#recursos": "#parcelas", "#como-resolve": "#parcelas", "#como-funciona": "#topo" };
+  const novo = antigos[location.hash];
+  if (novo) {
+    history.replaceState(null, "", novo);
+    addEventListener("load", () => document.querySelector(novo)?.scrollIntoView());
+  }
 
-/* consultor digitando */
-const resp=$('.resposta'),txt=resp.dataset.texto;
-if(reduz){resp.textContent=txt}else{
-  resp.addEventListener('revelado',()=>{let i=0;const cur='<span class="cur" aria-hidden="true"></span>';
-    (function d(){i+=2;resp.innerHTML=txt.slice(0,i)+cur;if(i<txt.length)setTimeout(d,22);else setTimeout(()=>resp.textContent=txt,1600)})()});
-  resp.dataset.d=500}
+  /* ------------------------------------------------------------------
+     NORA — a mascote. É o próprio ícone "F" da marca ganhando corpo:
+     o quadrado arredondado em degradê, a bolinha ciano virando antena.
+     Desenhada em SVG aqui (uma fonte só para todas as aparições).
+     ------------------------------------------------------------------ */
+  let noraN = 0;
+  function nora(pose) {
+    const id = "noraG" + (++noraN);
+    const moeda = pose === "pula"
+      ? `<g class="n-moeda"><circle cx="134" cy="58" r="15" fill="#fbbf24"/><circle cx="134" cy="58" r="10.5" fill="none" stroke="#b45309" stroke-width="2.5"/><path d="M134 51v14M130.5 54.5h5a2.5 2.5 0 0 1 0 5h-3a2.5 2.5 0 0 0 0 5h5" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round"/></g>` : "";
+    return `<svg class="nora nora-${pose}" viewBox="0 0 160 170" aria-hidden="true" focusable="false">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#4f46e5"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
+      <ellipse class="n-sombra" cx="80" cy="160" rx="36" ry="6" fill="#15133a" opacity=".16"/>
+      <g class="n-tudo">
+        <g class="n-antena"><path d="M80 36 Q83 22 93 15" fill="none" stroke="#312e81" stroke-width="4.5" stroke-linecap="round"/><circle cx="94" cy="14" r="8" fill="#67e8f9"/><circle cx="91.5" cy="11.5" r="2.4" fill="#fff" opacity=".8"/></g>
+        <path class="n-braco-e" d="M34 100 q-16 6 -18 22" fill="none" stroke="#4338ca" stroke-width="10" stroke-linecap="round"/>
+        <g class="n-braco-d"><path d="M126 96 q18 -6 22 -26" fill="none" stroke="#0e7490" stroke-width="10" stroke-linecap="round"/>${moeda}</g>
+        <ellipse cx="60" cy="143" rx="13" ry="7" fill="#312e81"/><ellipse cx="100" cy="143" rx="13" ry="7" fill="#312e81"/>
+        <rect x="30" y="36" width="100" height="104" rx="32" fill="url(#${id})"/>
+        <path d="M44 52 q10 -9 26 -9" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="5" stroke-linecap="round"/>
+        <g class="n-olhos">
+          <ellipse cx="62" cy="80" rx="12" ry="14" fill="#fff"/><ellipse cx="98" cy="80" rx="12" ry="14" fill="#fff"/>
+          <g class="n-pupilas"><circle cx="64" cy="82" r="6.5" fill="#15133a"/><circle cx="100" cy="82" r="6.5" fill="#15133a"/><circle cx="66.5" cy="79" r="2.2" fill="#fff"/><circle cx="102.5" cy="79" r="2.2" fill="#fff"/></g>
+        </g>
+        <ellipse cx="48" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/><ellipse cx="112" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/>
+        <path class="n-boca" d="M70 102 q10 11 20 0" fill="none" stroke="#15133a" stroke-width="4.5" stroke-linecap="round"/>
+      </g>
+    </svg>`;
+  }
+  $$("[data-nora]").forEach((el) => el.insertAdjacentHTML("afterbegin", nora(el.dataset.nora)));
 
-/* índice: seção atual */
-const idx=$('.indice'),atual=$('.atual',idx),links=$$('a',idx);
-const so=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;
-  atual.textContent='/ '+e.target.dataset.nome;links.forEach(a=>a.setAttribute('aria-current',a.dataset.alvo===e.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
-$$('section[id]').forEach(s=>so.observe(s));
-const vai=id=>{const al=root.querySelector('#'+id);al&&al.scrollIntoView({behavior:reduz?'auto':'smooth'})};
-$$('[data-alvo]').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();idx.open=false;vai(a.dataset.alvo)}));
-$$('[data-entrar]').forEach(a=>a.setAttribute('href',root.dataset.login||'#login'));
+  if (reduz) return; // daqui pra baixo é só movimento
+  document.documentElement.classList.add("js-anim");
 
-/* progresso */
-const pg=$('.progresso');
-const onScroll=()=>{const h=document.documentElement;pg.style.transform=`scaleX(${h.scrollTop/(h.scrollHeight-h.clientHeight)||0})`};
-addEventListener('scroll',onScroll,{passive:true});limpa.push(()=>removeEventListener('scroll',onScroll));
+  /* olhos da Nora do hero seguem o cursor (no máximo 3.5px, com rAF) */
+  const noraHero = $(".nora-hero");
+  if (noraHero) {
+    const pup = $(".n-pupilas", noraHero); let raf = 0, alvo = [0, 0];
+    addEventListener("pointermove", (e) => {
+      const r = noraHero.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height * .45);
+      const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
+      alvo = [dx / d * 3.5 * k, dy / d * 3.5 * k];
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => (pup.style.transform = `translate(${alvo[0]}px,${alvo[1]}px)`));
+    }, { passive: true });
+    // clicar/tocar na Nora: ela dá um pulinho e acena de novo
+    noraHero.closest("[data-nora]").addEventListener("click", () => {
+      const w = noraHero.closest("[data-nora]");
+      w.classList.remove("festa"); void w.offsetWidth; w.classList.add("festa");
+    });
+  }
 
-/* formulário */
-const form=$('.form'),msg=$('.msg',form),inp=$('#fnl-email');
-const erro=t=>{msg.className='msg erro';msg.textContent=t;inp.setAttribute('aria-invalid','true')};
-const limpaErro=()=>{msg.textContent='';msg.className='msg';inp.removeAttribute('aria-invalid')};
-form.addEventListener('submit',ev=>{ev.preventDefault();const v=inp.value.trim();
-  if(!v){erro('Digite seu e-mail para receber o convite.');inp.focus();return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){erro('Esse e-mail parece incompleto. Confira o que vem depois do @.');inp.focus();return}
-  const api=root.dataset.api,btn=$('button',form);
-  const ok=()=>{limpaErro();msg.className='msg ok';msg.textContent='Pedido recebido. O convite chega em '+v+'.';form.reset()};
-  if(!api){ok();return}
-  btn.disabled=true;msg.className='msg';msg.textContent='Enviando…';inp.removeAttribute('aria-invalid');
-  fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:v})})
-    .then(r=>r.json().catch(()=>({ok:r.ok})).then(d=>{
-      if(r.ok&&d.ok!==false)ok();
-      else erro(d.erro||'Não foi possível enviar agora. Tente de novo em instantes.')}))
-    .catch(()=>erro('Sem conexão com o servidor. Confira sua internet e tente de novo.'))
-    .finally(()=>{btn.disabled=false})});
-inp.addEventListener('input',()=>{if(msg.classList.contains('erro'))limpaErro()});
+  /* contadores (valores em pt-BR; data-conta = alvo, data-dec = casas) */
+  const fmt = (v, dec) => v.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  function conta(el, dur = 1100) {
+    const alvo = parseFloat(el.dataset.conta), dec = +(el.dataset.dec || 0), suf = el.dataset.suf || "";
+    const pre = (el.dataset.pre || "").replace(/ /g, " "); // "R$ 1,00" nunca quebra linha
+    const t0 = performance.now();
+    (function passo(t) {
+      const p = Math.min(1, (t - t0) / dur), k = 1 - Math.pow(1 - p, 4);
+      el.textContent = pre + fmt(alvo * k, dec) + suf;
+      if (p < 1) requestAnimationFrame(passo);
+    })(t0);
+  }
 
-/* abertura */
-const pre=$('.pre');
-function inicia(){alvos().forEach(el=>ro.observe(el))}
-if(!pre||reduz||jaViu()){pre&&pre.remove();inicia();return}
-marcaVisto();
-document.documentElement.style.overflow='hidden';limpa.push(()=>{document.documentElement.style.overflow=''});
-const n=$('.n',pre),b=$('.pre-linha b',pre),t=$('.t',pre),T=1500,t0=performance.now();
-const fases=['Conciliando lançamentos','Lendo o extrato','Escrevendo notas'];
-(function f(now){const p=Math.min((now-t0)/T,1),k=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
-  n.textContent=String(Math.round(k*100)).padStart(3,'0');b.style.transform=`scaleX(${k})`;t.textContent=fases[Math.min(2,Math.floor(p*3))];
-  if(p<1)requestAnimationFrame(f);else setTimeout(()=>{pre.classList.add('sai');inicia();
-    setTimeout(()=>{pre.remove();document.documentElement.style.overflow=''},1100)},250)})(t0);
+  /* hero: coreografia de entrada no carregamento (não depende de rolagem) */
+  const hero = $(".hero");
+  requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add("entra")));
+  setTimeout(() => $$(".hero [data-conta]").forEach((el) => conta(el, 1200)), 650);
+  const noraBalao = $(".nora-balao");
+  if (noraBalao) {
+    setTimeout(() => noraBalao.classList.add("on"), 2300);
+    setTimeout(() => noraBalao.classList.remove("on"), 7800);
+  }
 
-}
-function unmount(){
-obs.forEach(o=>o.disconnect());obs=[];limpa.forEach(f=>f());limpa=[];
-if(montado)delete montado.dataset.montado;montado=null;
-}
-window.FinoraLanding={mount,unmount};
-function porHash(){const m={'#acesso':'fnl-acesso','#consultor':'fnl-consultor','#contas':'fnl-contas','#extrato':'fnl-extrato'}[location.hash];
-  const el=m&&document.getElementById(m);if(el)setTimeout(()=>el.scrollIntoView(),60)}
-addEventListener('load',porHash);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount());else mount();
+  if (!temIO) { $$("[data-cena]").forEach((c) => c.classList.add("on")); return; }
+
+  /* revelação por cena: cada seção marcada com data-cena ganha .on ao entrar na tela;
+     o CSS decide a coreografia específica de cada uma (e o stagger via --i). */
+  $$("[data-cena]").forEach((cena) => {
+    const filhos = $$("[data-i]", cena);
+    filhos.forEach((f, i) => f.style.setProperty("--i", f.dataset.i || i));
+  });
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    const c = e.target; c.classList.add("on"); io.unobserve(c);
+    $$("[data-conta]", c).forEach((el) => conta(el));
+  }), { threshold: .22, rootMargin: "0px 0px -8% 0px" });
+  $$("[data-cena]").forEach((c) => io.observe(c));
+
+  /* a conversa do assistente acontece mensagem por mensagem; a Nora do cabeçalho
+     "fala" (balança) a cada resposta dela */
+  const chat = $("#chat");
+  if (chat) {
+    const msgs = $$(".msg", chat), avatar = $(".cf-nora");
+    root.classList.add("js-chat");
+    const digitando = document.createElement("li");
+    digitando.className = "digitando"; digitando.setAttribute("aria-hidden", "true");
+    digitando.innerHTML = "<i></i><i></i><i></i>";
+    const fala = () => { if (!avatar) return; avatar.classList.remove("fala"); void avatar.offsetWidth; avatar.classList.add("fala"); };
+    const toca = () => {
+      let t = 200;
+      msgs.forEach((m) => {
+        const dela = !m.classList.contains("eu");
+        if (dela) { setTimeout(() => m.before(digitando), t); t += 700; }
+        setTimeout(() => { digitando.remove(); m.classList.add("on"); if (dela) fala(); }, t);
+        t += dela ? 900 : 650;
+      });
+    };
+    const ioc = new IntersectionObserver((es) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      ioc.disconnect(); toca();
+    }, { threshold: .35 });
+    ioc.observe(chat);
+  }
 })();

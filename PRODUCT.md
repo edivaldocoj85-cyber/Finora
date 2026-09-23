@@ -12,7 +12,7 @@ Existing codebase: vanilla JS SPA frontend (`frontend/app.js`, no framework/buil
 Also deployable to Vercel (added 2026-09-20, user's chosen path): `api/index.py` exposes the same FastAPI app as an ASGI serverless function, `vercel.json` routes `/api/*` there and serves `frontend/` as static assets directly. Two things that don't exist in Docker mode had to change for this: the background Pluggy sync loop becomes a Vercel Cron hitting `GET /api/cron/sync` (guarded by `CRON_SECRET`), and payment-receipt storage moves from local disk to Supabase Storage (`backend/app/services/storage.py` picks whichever backend is configured — local disk when `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` are unset, Supabase otherwise). Postgres itself has to be external on Vercel (the user picked Supabase for that too, so DB + file storage share one account). Both deploy paths stay supported from the same codebase.
 
 ## Users
-Primary user: Edivaldo, using Finora for his own personal/family financial life — not building it as a product for other people (confirmed). Single-tenant-per-deployment self-hosted tool, not a commercial multi-tenant SaaS today.
+Updated 2026-09-23: Finora is **becoming a public SaaS** (owner's decision: "vai virar SaaS em breve"). It started as the owner's own personal/family tool and the owner still uses it that way, but the public landing now sells two plans (R$ 14,90/mês, R$ 149,90/ano) with a 10-day free trial, for Brazilian individuals and small businesses/autônomos. Multi-user already exists (per-user workspaces, shared access by invite, trial gating, admin backoffice). Not yet built: billing/checkout. Legal pages (Privacidade, Termos) exist as templates with `[PREENCHER]` fields for company name, CNPJ, contact e-mail, payment methods and refund policy — the owner must fill them before launch.
 
 ## Product Purpose
 Personal financial control for Brazilians: track accounts and credit cards, understand installment purchases (parcelamentos) month to month, get automatic alerts about overspending, and receive savings/investment guidance. Success = the user opens it regularly, trusts the numbers, and actually changes spending behavior because of what it shows.
@@ -32,14 +32,15 @@ Constraint: single-process container, no CDN/edge; keep payload and dependencies
 Name "Finora" and the indigo→cyan gradient mark stay (user confirmed: keep name and palette, elevate finish rather than reinvent identity). Portuguese (pt-BR) is the product's only language.
 
 ## Evidence on Hand
-No real user content beyond the owner's own live data. No customers, testimonials, or marketing claims — this product doesn't have or need them; nothing here should imply otherwise.
+No real customers yet, so no testimonials, user counts or ratings — the landing must not imply any. Demo figures on the landing are one consistent illustrative scenario ("Ana") labelled as such. Only real features may be claimed (no WhatsApp, audio, receipt OCR or push notifications until built).
 
 ## Product Principles
 - Installments and invoices are first-class, not an afterthought bolted onto a generic transaction list.
 - The advisor and alerts must stay honest: no invented numbers, no advice framed as certainty, always something the user can act on this month.
 - Never require Open Finance or AI to be useful — manual CSV import and the rule-based advisor are the floor, not a degraded fallback.
 - Respect for the data: LGPD consent, exportable, deletable, no dark patterns around sharing financial data.
-- Operate, don't persuade: this is a tool the owner already chose to use — clarity and speed beat marketing polish.
+- Operate, don't persuade — inside the app. The public landing is a Persuade surface, but it persuades only with true statements.
+- The assistant is **Nora** (the brand mascot built from the F mark): one name and one face on the landing, in the app and in future e-mails.
 
 ## Accessibility & Inclusion
 No user-specific requirement stated; hold the general WCAG AA bar (contrast, keyboard access, focus visibility) as the floor.
