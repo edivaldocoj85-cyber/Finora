@@ -3,46 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
+<meta name="theme-color" content="#1e1b4b">
 <meta name="description" content="Finora — controle financeiro pessoal com Open Finance e consultor inteligente">
-<title>Finora</title>
+<title>Finora — Controle Financeiro</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="auth-finora.css">
 </head>
 <body>
 <div id="auth" class="auth fn-auth hidden">
   <canvas id="authCanvas" aria-hidden="true"></canvas>
   <aside class="fa-lado">
-    <div class="fa-luz" aria-hidden="true"></div><div class="fa-brasas" aria-hidden="true"></div>
-    <header class="fa-topo fa-r">
-      <span class="fa-marca">Finora</span>
-      <a class="fa-voltar fa-mono" href="/">← Voltar ao site</a>
+    <header class="fa-topo">
+      <a class="fa-marca" href="/" aria-label="Finora — Controle Financeiro, voltar ao site"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>Controle Financeiro</small></span></a>
     </header>
-    <h1 class="fa-saud"><span class="fa-l">Bem-vindo</span> <em class="fa-l">de volta.</em></h1>
-    <div class="fa-rodape fa-r">
-      <p class="fa-frase" id="faFrase">Seu extrato continuou sendo lido enquanto você esteve fora.</p>
-      <span class="fa-mono">Área do cliente</span>
+    <div class="fa-meio fa-r">
+      <h1 class="fa-saud">Bem-vindo de volta.</h1>
+      <p class="fa-sub">Suas contas, cartões e parcelas organizados em um só lugar.</p>
+      <ul class="fa-check">
+        <li>Contas a vencer sempre à vista</li>
+        <li>Cartões, faturas e parcelamentos</li>
+        <li>Open Finance ou importação de CSV</li>
+        <li>Alertas no app e por e-mail</li>
+      </ul>
+    </div>
+    <div class="fa-mini fa-r" aria-hidden="true">
+      <span class="logo sm">F</span>
+      <div><b id="faFrase">Suas contas continuaram organizadas enquanto você esteve fora.</b><span>Finora</span></div>
     </div>
   </aside>
   <main class="fa-painel">
     <div class="auth-card" id="googleCard">
-      <h2 class="fa-h fa-r">Entrar na sua conta</h2>
-      <p class="fa-lead fa-r">Use a conta Google do seu convite.</p>
+      <span class="fa-eyebrow fa-r">Área do cliente</span>
+      <h2 class="fa-h fa-r">Acessar conta</h2>
+      <p class="fa-lead fa-r">Entre com sua conta Google. É a primeira vez? Você ganha <b>10 dias grátis</b>, sem cartão de crédito.</p>
       <ol class="fa-passos fa-r" aria-label="Como funciona o acesso">
-        <li><span class="fa-mono">Passo 1</span>Entre com o Google</li>
-        <li><span class="fa-mono">Passo 2</span>Confirme com o código do seu app autenticador</li>
+        <li><span>1</span>Entre com o Google</li>
+        <li><span>2</span>Confirme com o código do seu app autenticador</li>
       </ol>
       <div class="fa-google fa-r"><div id="googleBtn"></div></div>
       <p class="error fa-erro" id="authError" role="alert"></p>
       <div class="fa-pe fa-r">
-        Ainda não tem convite? <a class="fa-lnk" href="/#acesso">Pedir acesso</a>
-        <div class="fa-seg fa-mono"><i aria-hidden="true"></i>Conexão protegida · a Finora nunca pede sua senha do banco</div>
+        <div class="fa-seg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>Conexão protegida · a Finora nunca pede a senha do seu banco</div>
+        <a class="fa-voltar" href="/">← Voltar ao site</a>
       </div>
     </div>
     <div class="auth-card hidden" id="mfaCard"></div>
@@ -51,7 +59,7 @@
 
 <div id="app" class="app hidden">
   <aside class="sidebar">
-    <div class="brand"><span class="logo">F</span> Finora</div>
+    <div class="brand"><span class="logo" aria-hidden="true">F</span><span class="brand-txt"><b>Finora</b><small>Controle Financeiro</small></span></div>
     <nav id="nav"></nav>
     <div class="side-foot">
       <div id="userName" class="muted small"></div>
@@ -65,16 +73,16 @@
         <input type="month" id="monthRef" title="Mês de referência">
         <button class="icon-btn" id="themeBtn" title="Aparência"></button>
         <button class="icon-btn" id="alertsBtn" title="Alertas"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg><span id="alertBadge" class="badge hidden"></span></button>
-        <button class="btn primary" id="quickAdd">+ Lançamento</button>
+        <button class="btn primary" id="quickAdd" title="Novo lançamento (atalho: N)" aria-keyshortcuts="N">+ Lançamento</button>
       </div>
     </header>
     <div id="workspaceBanner" class="workspace-banner hidden"></div>
     <section id="view"></section>
   </main>
   <nav class="bottom-nav" id="bottomNav"></nav>
-  <button id="assistantBtn" title="Assistente Finora"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span id="apBadge" class="badge hidden"></span></button>
+  <button id="assistantBtn" title="Falar com a Nora, sua assistente" aria-label="Falar com a Nora, sua assistente"><svg class="nora-ic" viewBox="0 0 40 42" aria-hidden="true"><path d="M20 9 Q21 4 25.5 2.5" fill="none" stroke="#312e81" stroke-width="2" stroke-linecap="round"/><circle cx="26" cy="2.8" r="2.6" fill="#67e8f9"/><rect x="4" y="8" width="32" height="32" rx="11" fill="#4f46e5"/><rect x="4" y="8" width="32" height="32" rx="11" fill="url(#noraAppG)"/><defs><linearGradient id="noraAppG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs><ellipse cx="14.5" cy="22" rx="4" ry="4.6" fill="#fff"/><ellipse cx="25.5" cy="22" rx="4" ry="4.6" fill="#fff"/><circle cx="15.2" cy="22.6" r="2.2" fill="#14123a"/><circle cx="26.2" cy="22.6" r="2.2" fill="#14123a"/><ellipse cx="10" cy="29" rx="2.4" ry="1.4" fill="#f9a8d4" opacity=".8"/><ellipse cx="30" cy="29" rx="2.4" ry="1.4" fill="#f9a8d4" opacity=".8"/><path d="M17 29.5 q3 3.2 6 0" fill="none" stroke="#14123a" stroke-width="1.8" stroke-linecap="round"/></svg><span id="apBadge" class="badge hidden"></span></button>
   <div id="assistantPanel" class="hidden">
-    <div class="ap-head"><strong><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg> Assistente Finora</strong><button class="ap-close" id="apClose" type="button" aria-label="Fechar"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+    <div class="ap-head"><strong class="ap-nome"><svg class="nora-ic" viewBox="0 0 40 42" aria-hidden="true"><path d="M20 9 Q21 4 25.5 2.5" fill="none" stroke="#312e81" stroke-width="2" stroke-linecap="round"/><circle cx="26" cy="2.8" r="2.6" fill="#67e8f9"/><rect x="4" y="8" width="32" height="32" rx="11" fill="#4f46e5"/><rect x="4" y="8" width="32" height="32" rx="11" fill="url(#noraAppG2)"/><defs><linearGradient id="noraAppG2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs><ellipse cx="14.5" cy="22" rx="4" ry="4.6" fill="#fff"/><ellipse cx="25.5" cy="22" rx="4" ry="4.6" fill="#fff"/><circle cx="15.2" cy="22.6" r="2.2" fill="#14123a"/><circle cx="26.2" cy="22.6" r="2.2" fill="#14123a"/><ellipse cx="10" cy="29" rx="2.4" ry="1.4" fill="#f9a8d4" opacity=".8"/><ellipse cx="30" cy="29" rx="2.4" ry="1.4" fill="#f9a8d4" opacity=".8"/><path d="M17 29.5 q3 3.2 6 0" fill="none" stroke="#14123a" stroke-width="1.8" stroke-linecap="round"/></svg><span>Nora<small>sua assistente no Finora</small></span></strong><button class="ap-close" id="apClose" type="button" aria-label="Fechar"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div id="ap-msgs"></div>
     <div class="ap-chips" id="apChips"></div>
     <form id="apForm"><input id="apInput" placeholder="Pergunte ou peça algo…" autocomplete="off"><button class="btn primary small" type="submit" aria-label="Enviar"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></button></form>
@@ -82,6 +90,7 @@
 </div>
 
 <dialog id="modal"><form method="dialog" id="modalForm"></form></dialog>
+<dialog id="confirmDlg" class="confirm-dlg" aria-labelledby="cfTitle"></dialog>
 <div id="toast" class="toast hidden"></div>
 <div id="onboarding" class="onboarding hidden"></div>
 

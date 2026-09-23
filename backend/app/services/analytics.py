@@ -262,8 +262,11 @@ def run_alerts(db: Session, user_id: int, ref: date | None = None):
 
     for b in d["upcoming"]:
         if b["days_left"] <= 3:
-            _alert(db, user_id, f"due-{b['name']}-{b['due_date']}", "warning", f"Vence em {b['days_left']} dia(s)",
-                   f"{b['name']}: {brl(b['amount'])} em {b['due_date']}.")
+            dl = b["days_left"]
+            quando = "Vence hoje" if dl == 0 else "Vence amanhã" if dl == 1 else f"Vence em {dl} dias"
+            data_br = date.fromisoformat(b["due_date"]).strftime("%d/%m/%Y")
+            _alert(db, user_id, f"due-{b['name']}-{b['due_date']}", "warning", quando,
+                   f"{b['name']}: {brl(b['amount'])} em {data_br}.")
 
     if d["expected_income"] and d["projected_expense"] > d["expected_income"]:
         _alert(db, user_id, f"deficit-{ym}", "danger", "Mês projetado no vermelho",

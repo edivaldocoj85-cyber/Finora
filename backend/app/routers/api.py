@@ -828,6 +828,34 @@ def delete_transaction(tid: int, u: User = Depends(current_editor), db: Session 
     return {"ok": True}
 
 
+class TxBulk(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=500)
+    action: str = Field(pattern="^(categorize|delete)$")
+    category_id: Optional[int] = None
+
+
+@router.post("/transactions/bulk")
+def bulk_transactions(data: TxBulk, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    """Revisão do mês em lote: categorizar ou excluir vários lançamentos de uma vez. Excluir
+    desfaz o efeito de caixa de cada um, igual ao DELETE individual."""
+    txs = db.query(Transaction).filter(Transaction.user_id == u.workspace_id,
+                                       Transaction.id.in_(data.ids)).all()
+    if data.action == "categorize":
+        if not data.category_id:
+            raise HTTPException(400, "Escolha a categoria.")
+        _check_fk(db, u.workspace_id, Category, data.category_id)
+        for t in txs:
+            t.category_id = data.category_id
+            t.category_locked = True
+    else:
+        for t in txs:
+            _apply_tx_effect(db, t, -1)
+            storage.delete(t.receipt_path)
+            db.delete(t)
+    db.commit()
+    return {"ok": True, "count": len(txs)}
+
+
 @router.post("/transactions/import")
 async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_editor),
                      db: Session = Depends(get_db)):

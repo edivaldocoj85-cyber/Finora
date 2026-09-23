@@ -1,6 +1,6 @@
 // Service worker do app autenticado — escopo /app (registrado com caminho relativo em
 // app.js, então por padrão só controla essa pasta; a landing em / fica de fora).
-const CACHE = "finora-v5";
+const CACHE = "finora-v9";
 const SHELL = ["/app/", "/app/index.html", "/app/styles.css", "/app/app.js", "/app/auth-finora.css", "/app/auth-finora.js", "/app/manifest.json", "/icon.svg",
   "/app/vendor/chart.umd.min.js", "/app/vendor/marked.min.js", "/app/vendor/purify.min.js", "/app/vendor/gsap.min.js",
   "/app/vendor/supabase.min.js"];

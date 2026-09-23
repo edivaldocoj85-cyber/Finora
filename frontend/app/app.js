@@ -11,6 +11,12 @@ const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOff
 function localGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
 const canEdit = () => state.user?.workspace_role !== "viewer";
+// Torna um elemento clicável também acionável por teclado (Enter/Espaço), sem duplicar a lógica em cada tela.
+function clickable(el, fn) {
+  el.tabIndex = 0; el.setAttribute("role", "button");
+  el.onclick = fn;
+  el.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); fn(); } };
+}
 
 // Ícones: Lucide (traço único, peso consistente — nunca emoji como substituto de sistema
 // de ícones). Cada entrada é o miolo do SVG (paths/shapes), envolvido por navIcon() abaixo.
@@ -44,6 +50,9 @@ const ICONS = {
   receivables: '<path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>',
   taxes: '<path d="M14.5 3.5a2.12 2.12 0 0 1 3 3L6 18l-4 1 1-4Z"/><path d="m14.5 6.5 3 3"/><path d="M3 21h18"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
 };
 const navIcon = (id) => `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id] || ""}</svg>`;
 
@@ -124,6 +133,25 @@ function toast(msg, type = "info") {
   const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden", "success", "error");
   if (type !== "info") t.classList.add(type);
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add("hidden"), 3200);
+}
+
+/* confirmação no visual do Finora (substitui confirm()/prompt() do navegador). Abre por cima
+   de outro <dialog> se preciso — showModal empilha na top layer. `requireText` exige digitar
+   a palavra antes de liberar ações irreversíveis. Resolve true/false. */
+function askConfirm({ title, message = "", confirmLabel = "Confirmar", danger = false, requireText = "" }) {
+  const dlg = $("#confirmDlg");
+  dlg.innerHTML = `<form method="dialog" class="cf-form">
+    <div class="cf-head"><span class="cf-ic ${danger ? "danger" : ""}">${navIcon(danger ? "trash" : "info")}</span><h2 id="cfTitle">${esc(title)}</h2></div>
+    ${message ? `<p class="cf-msg">${esc(message)}</p>` : ""}
+    ${requireText ? `<label>Digite <b>${esc(requireText)}</b> para confirmar<input id="cfTxt" autocomplete="off" spellcheck="false"></label>` : ""}
+    <div class="modal-actions"><button class="btn" value="no" type="submit">Cancelar</button>
+    <button class="btn ${danger ? "danger-solid" : "primary"}" value="yes" type="submit" id="cfOk" ${requireText ? "disabled" : ""}>${esc(confirmLabel)}</button></div></form>`;
+  if (requireText) $("#cfTxt").oninput = (e) => ($("#cfOk").disabled = e.target.value.trim().toUpperCase() !== requireText);
+  return new Promise((resolve) => {
+    dlg.onclose = () => resolve(dlg.returnValue === "yes");
+    dlg.returnValue = ""; dlg.showModal();
+    (requireText ? $("#cfTxt") : $("#cfOk")).focus();
+  });
 }
 
 /* ------------------------------------------------------------------ auth */
@@ -389,7 +417,7 @@ function renderWorkspaceBanner() {
   el.innerHTML = `${navIcon("users")} Você está vendo os dados de <strong>${esc(owner.name)}</strong> (${roleLabel}) <button class="btn small ghost" id="wbLeave" style="margin-left:auto">Sair desse acesso</button>`;
   el.classList.remove("hidden");
   $("#wbLeave").onclick = async () => {
-    if (!confirm("Sair do acesso compartilhado? Você volta a ver só os seus próprios dados.")) return;
+    if (!await askConfirm({ title: "Sair do acesso compartilhado?", message: "Você volta a ver só os seus próprios dados.", confirmLabel: "Sair do acesso" })) return;
     await api("/shared-access/leave", { method: "POST" });
     state.user = await api("/me");
     renderWorkspaceBanner();
@@ -407,7 +435,7 @@ function showTrialExpired() {
   }
   el.className = "";
   el.innerHTML = `<div class="te-card">
-    <div class="brand big"><span class="logo">F</span> Finora</div>
+    <div class="brand big"><span class="logo" aria-hidden="true">F</span><span class="brand-txt" style="text-align:left"><b>Finora</b><small>Controle Financeiro</small></span></div>
     <h2>Seu período de teste acabou</h2>
     <p class="muted">Foram 10 dias grátis com acesso completo. Pra continuar usando, é só assinar:</p>
     <div class="te-planos">
@@ -500,7 +528,10 @@ function openForm({ title, fields, values = {}, onSubmit, onDelete, extra = "" }
     <button type="button" class="btn" id="fCancel">Cancelar</button><button class="btn primary" id="fSave">Salvar</button></div>`;
   const all = fields.flatMap((f) => f.row || [f]);
   $("#fCancel").onclick = () => dlg.close();
-  if (onDelete) $("#fDel").onclick = async () => { if (confirm("Confirma a exclusão?")) { await onDelete(); dlg.close(); route(); } };
+  if (onDelete) $("#fDel").onclick = async () => {
+    if (!await askConfirm({ title: `Excluir ${title.replace(/^(Editar|Novo|Nova)\s+/i, "").toLowerCase()}?`, message: "Essa ação não pode ser desfeita.", confirmLabel: "Excluir", danger: true })) return;
+    await onDelete(); dlg.close(); toast("Excluído", "success"); route();
+  };
   form.onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(form), data = {};
@@ -569,6 +600,14 @@ function txForm(values = {}) {
   }
 }
 $("#quickAdd").onclick = () => txForm();
+// atalhos de teclado: N = novo lançamento, / = buscar (na tela de lançamentos).
+// Ignorados enquanto se digita ou com algum diálogo aberto.
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || $("#app").classList.contains("hidden")) return;
+  if (e.target.closest("input, select, textarea, [contenteditable]") || document.querySelector("dialog[open]")) return;
+  if (e.key === "n" || e.key === "N") { e.preventDefault(); txForm(); }
+  else if (e.key === "/" && $("#fq")) { e.preventDefault(); $("#fq").focus(); }
+});
 
 /* ------------------------------------------------------------------ alertas */
 $("#alertsBtn").onclick = async () => {
@@ -612,13 +651,27 @@ VIEWS.dashboard = async (v) => {
   state._lastAlertCount = d.unread_alerts;
   const bal = d.month.income - d.month.expense;
   const empty = !d.accounts.length;
+  // saudação + resumo de vencimentos (só no mês corrente: "hoje" não faz sentido olhando o passado)
+  const isToday = refDate() === today();
+  const dueToday = d.upcoming.filter((b) => b.days_left === 0), dueNext = d.upcoming.filter((b) => b.days_left > 0);
+  const sum = (xs) => xs.reduce((s, b) => s + b.amount, 0);
+  const firstName = esc((state.user?.name || "").trim().split(/\s+/)[0] || "");
+  const greeting = isToday ? `<div class="greet">
+    <div class="greet-txt"><strong>Olá${firstName ? `, ${firstName}` : ""}</strong>
+      <span>${dueToday.length ? `Você tem ${dueToday.length === 1 ? "1 conta" : `${dueToday.length} contas`} a pagar hoje no total de <b class="neg">${brl(sum(dueToday))}</b>.` : "Nenhuma conta vencendo hoje."}</span></div>
+    <div class="greet-due">
+      <div class="gd gd-today"><span>Vencendo hoje</span><b>${brl(sum(dueToday))}</b></div>
+      <div class="gd gd-next"><span>Próximos 10 dias</span><b>${brl(sum(dueNext))}</b></div>
+    </div>
+  </div>` : "";
   v.innerHTML = `
+  ${greeting}
   ${empty ? `<div class="card" style="margin-bottom:16px"><h2>Bem-vindo ao Finora</h2><p class="muted">Comece em 3 passos: <a href="#bank">conecte seus bancos</a> ou <a href="#accounts">cadastre contas e cartões</a>, informe sua <a href="#incomes">renda</a> e seus <a href="#contracts">contratos e contas fixas</a>.</p></div>` : ""}
   <div class="grid g4 keep2">
     <div class="card stat hero"><h3>Patrimônio líquido</h3><div class="value" data-count="${d.net_worth}">${brl(d.net_worth)}</div><div class="sub">Saldo ${brl(d.cash)} · Invest. ${brl(d.investments)}${d.assets_total ? ` · Bens ${brl(d.assets_total)}` : ""}</div></div>
-    <div class="card stat"><h3>Receitas do mês</h3><div class="value pos" data-count="${d.month.income}">${brl(d.month.income)}</div><div class="sub">Esperado ${brl(d.expected_income)}</div></div>
-    <div class="card stat"><h3>Despesas do mês</h3><div class="value neg" data-count="${d.month.expense}">${brl(d.month.expense)}</div><div class="sub">Projeção ${brl(d.projected_expense)}</div></div>
-    <div class="card stat"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
+    <div class="card stat tint-green"><h3>Receitas do mês</h3><div class="value pos" data-count="${d.month.income}">${brl(d.month.income)}</div><div class="sub">Esperado ${brl(d.expected_income)}</div></div>
+    <div class="card stat tint-red"><h3>Despesas do mês</h3><div class="value neg" data-count="${d.month.expense}">${brl(d.month.expense)}</div><div class="sub">Projeção ${brl(d.projected_expense)}</div></div>
+    <div class="card stat tint-violet"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
   </div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><div class="between"><h2 style="margin:0">Receitas x despesas</h2>
@@ -644,7 +697,7 @@ VIEWS.dashboard = async (v) => {
     </div></div>
   </div>
   ${d.receivables.count_pending ? `<div class="card" style="margin-top:16px"><div class="between"><h2>Contas a receber</h2><span class="small muted">${brl(d.receivables.total_pending)} pendente</span></div>
-    <div class="list">${d.receivables.upcoming.map((r) => `<div class="li"><div class="grow"><div class="title">${esc(r.client_name)}${r.description ? " · " + esc(r.description) : ""}${r.overdue ? ' <span class="chip" style="color:var(--red)">atrasado</span>' : ""}</div><div class="small muted">Vencia ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div><button class="btn small" data-recv="${r.id}" style="margin-left:8px">Marcar recebido</button></div>`).join("") || '<div class="empty">Nada por enquanto.</div>'}</div></div>` : ""}
+    <div class="list">${d.receivables.upcoming.map((r) => `<div class="li"><div class="grow"><div class="title">${esc(r.client_name)}${r.description ? " · " + esc(r.description) : ""}${r.overdue ? ' <span class="chip c-red">atrasado</span>' : ""}</div><div class="small muted">Vencia ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div><button class="btn small" data-recv="${r.id}" style="margin-left:8px">Marcar recebido</button></div>`).join("") || '<div class="empty">Nada por enquanto.</div>'}</div></div>` : ""}
   ${(() => {
     const essTotal = d.categories.filter((c) => c.essential).reduce((s, c) => s + c.total, 0);
     const nonEss = d.categories.filter((c) => !c.essential);
@@ -694,7 +747,7 @@ VIEWS.transactions = async (v) => {
   const [s, e] = monthRange();
   v.innerHTML = `<div class="card">
     <div class="toolbar">
-      <input id="fq" placeholder="Buscar descrição…" style="min-width:180px">
+      <input id="fq" placeholder="Buscar descrição…  ( / )" aria-keyshortcuts="/" style="min-width:200px">
       <select id="facc"><option value="">Todas as contas</option>${accOptions().map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select>
       <select id="fcat"><option value="">Todas as categorias</option>${state.cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
       <select id="ftype"><option value="">Todos os tipos</option><option value="expense">Despesas</option><option value="income">Receitas</option><option value="transfer">Transferências</option></select>
@@ -709,7 +762,14 @@ VIEWS.transactions = async (v) => {
       <button class="btn ghost small" id="fclear" type="button">Limpar período/valor</button>
     </div>
     <div id="sum" class="small muted" style="margin-bottom:8px"></div>
-    <div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th class="hide-sm">Categoria</th><th class="hide-sm">Conta</th><th class="num">Valor</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
+    <div id="bulkBar" class="bulk-bar hidden" role="region" aria-label="Ações em lote">
+      <strong id="bulkCount"></strong>
+      <select id="bulkCat" aria-label="Categoria para os selecionados"><option value="">Categorizar como…</option>${state.cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
+      <button class="btn small primary" id="bulkApply" type="button">${navIcon("tag")} Aplicar categoria</button>
+      <button class="btn small danger" id="bulkDel" type="button">${navIcon("trash")} Excluir</button>
+      <button class="btn small ghost" id="bulkClear" type="button">Limpar seleção</button>
+    </div>
+    <div class="table-wrap"><table><thead><tr>${canEdit() ? '<th class="sel"><input type="checkbox" id="selAll" aria-label="Selecionar todos"></th>' : ""}<th>Data</th><th>Descrição</th><th class="hide-sm">Categoria</th><th class="hide-sm">Conta</th><th class="num">Valor</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
   const load = async () => {
     const p = new URLSearchParams({ start: $("#fstart").value || s, end: $("#fend").value || e });
     if ($("#fq").value) p.set("q", $("#fq").value);
@@ -723,13 +783,59 @@ VIEWS.transactions = async (v) => {
     const inc = rows.filter((r) => r.type === "income").reduce((a, r) => a + r.amount, 0);
     const exp = rows.filter((r) => r.type === "expense").reduce((a, r) => a + r.amount, 0);
     $("#sum").innerHTML = `${rows.length} lançamento(s) · Receitas <b class="pos">${brl(inc)}</b> · Despesas <b class="neg">${brl(exp)}</b>`;
-    $("#tb").innerHTML = rows.map((t) => `<tr class="clickable" data-id="${t.id}"><td>${fdate(t.date)}</td>
-      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip">Open Finance</span>' : ""}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
+    sel.clear(); syncBulk();
+    $("#tb").innerHTML = rows.map((t) => `<tr class="clickable" data-id="${t.id}" tabindex="0" role="button">${canEdit() ? `<td class="sel"><input type="checkbox" data-sel="${t.id}" aria-label="Selecionar ${esc(t.description)}"></td>` : ""}<td>${fdate(t.date)}</td>
+      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip c-violet">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip c-cyan">Open Finance</span>' : ""}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
       <td class="hide-sm"><span class="dot" style="display:inline-block;background:${esc(t.category_color)}"></span> ${esc(t.category_name || "—")}</td>
       <td class="hide-sm">${esc(t.account_name)}</td>
       <td class="num ${t.type === "income" ? "pos" : t.type === "expense" ? "neg" : "muted"}">${t.type === "expense" ? "-" : ""}${brl(t.amount)}</td></tr>`).join("")
-      || `<tr><td colspan="5" class="empty">Nenhum lançamento neste período.</td></tr>`;
-    $("#tb").onclick = (ev) => { const tr = ev.target.closest("tr[data-id]"); if (tr) txForm(rows.find((r) => r.id == tr.dataset.id)); };
+      || `<tr><td colspan="6" class="empty">Nenhum lançamento neste período.</td></tr>`;
+    $("#tb").onclick = (ev) => {
+      if (ev.target.closest(".sel")) return;
+      const tr = ev.target.closest("tr[data-id]"); if (tr) txForm(rows.find((r) => r.id == tr.dataset.id));
+    };
+    $("#tb").onchange = (ev) => {
+      const cb = ev.target.closest("[data-sel]"); if (!cb) return;
+      cb.checked ? sel.add(+cb.dataset.sel) : sel.delete(+cb.dataset.sel);
+      cb.closest("tr").classList.toggle("selected", cb.checked); syncBulk(rows.length);
+    };
+    if ($("#selAll")) $("#selAll").onchange = (ev) => {
+      $("#tb").querySelectorAll("[data-sel]").forEach((cb) => {
+        cb.checked = ev.target.checked; cb.closest("tr").classList.toggle("selected", cb.checked);
+        cb.checked ? sel.add(+cb.dataset.sel) : sel.delete(+cb.dataset.sel);
+      });
+      syncBulk(rows.length);
+    };
+    $("#tb").onkeydown = (ev) => {
+      if (ev.key !== "Enter" && ev.key !== " ") return;
+      const tr = ev.target.closest("tr[data-id]"); if (!tr) return;
+      ev.preventDefault(); txForm(rows.find((r) => r.id == tr.dataset.id));
+    };
+  };
+  // seleção em lote: revisar o mês sem abrir lançamento por lançamento
+  const sel = new Set();
+  const nLanc = (n) => (n === 1 ? "1 lançamento" : `${n} lançamentos`);
+  function syncBulk(total = 0) {
+    $("#bulkBar").classList.toggle("hidden", !sel.size);
+    $("#bulkCount").textContent = sel.size === 1 ? "1 selecionado" : `${sel.size} selecionados`;
+    const all = $("#selAll"); if (all) { all.checked = !!total && sel.size === total; all.indeterminate = sel.size > 0 && sel.size < total; }
+  }
+  const bulk = async (body, btn) => {
+    btn.disabled = true; btn.classList.add("loading");
+    try { const r = await api("/transactions/bulk", { body: { ids: [...sel], ...body } }); return r.count; }
+    finally { btn.disabled = false; btn.classList.remove("loading"); }
+  };
+  $("#bulkClear").onclick = () => { $("#tb").querySelectorAll("[data-sel]:checked").forEach((cb) => { cb.checked = false; cb.closest("tr").classList.remove("selected"); }); sel.clear(); syncBulk(); };
+  $("#bulkApply").onclick = async () => {
+    const cat = +$("#bulkCat").value;
+    if (!cat) { toast("Escolha a categoria primeiro.", "error"); shakeEl("#bulkBar"); $("#bulkCat").focus(); return; }
+    const n = await bulk({ action: "categorize", category_id: cat }, $("#bulkApply"));
+    toast(`${nLanc(n)} em ${state.cats.find((c) => c.id === cat)?.name || "a categoria escolhida"}`, "success"); load();
+  };
+  $("#bulkDel").onclick = async () => {
+    if (!await askConfirm({ title: `Excluir ${nLanc(sel.size)}?`, message: "Os saldos das contas são recalculados. Essa ação não pode ser desfeita.", confirmLabel: "Excluir lançamentos", danger: true })) return;
+    const n = await bulk({ action: "delete" }, $("#bulkDel"));
+    toast(n === 1 ? "1 lançamento excluído" : `${n} lançamentos excluídos`, "success"); load();
   };
   let deb; $("#fq").oninput = () => { clearTimeout(deb); deb = setTimeout(load, 300); };
   let debAmt; ["#fmin", "#fmax"].forEach((s) => ($(s).oninput = () => { clearTimeout(debAmt); debAmt = setTimeout(load, 300); }));
@@ -803,7 +909,7 @@ function simpleList(v, { items, empty, render, onNew, newLabel, intro = "" }) {
   v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">${intro}</p>${canEdit() ? `<button class="btn" id="newItem">${newLabel}</button>` : ""}</div>
   <div class="card"><div class="list">${items.map((it, i) => `<div class="li clickable" data-i="${i}" style="cursor:pointer">${render(it)}</div>`).join("") || `<div class="empty">${empty}</div>`}</div></div>`;
   if (canEdit()) $("#newItem").onclick = () => onNew();
-  v.querySelectorAll("[data-i]").forEach((el) => (el.onclick = () => onNew(items[el.dataset.i])));
+  v.querySelectorAll("[data-i]").forEach((el) => clickable(el, () => onNew(items[el.dataset.i])));
 }
 
 VIEWS.accounts = async (v) => {
@@ -811,7 +917,7 @@ VIEWS.accounts = async (v) => {
   simpleList(v, {
     items: state.accounts, empty: "Nenhuma conta cadastrada.", newLabel: "+ Conta", onNew: accountForm,
     intro: "Contas correntes, poupanças, investimentos, dinheiro e cartões.",
-    render: (a) => `<span class="dot" style="background:${esc(a.color)}"></span><div class="grow"><div class="title">${esc(a.name)} ${a.archived ? '<span class="chip">arquivada</span>' : ""} ${a.pluggy_account_id ? '<span class="chip">Open Finance</span>' : a.import_reminder !== "none" ? `<span class="chip">lembrete ${esc({ daily: "diário", weekly: "semanal", monthly: "mensal" }[a.import_reminder] || a.import_reminder)}</span>` : ""}</div><div class="small muted">${esc(KINDS[a.kind])}${a.institution ? " · " + esc(a.institution) : ""}</div></div><div class="amount ${a.balance < 0 ? "neg" : ""}">${brl(a.balance)}</div>`,
+    render: (a) => `<span class="dot" style="background:${esc(a.color)}"></span><div class="grow"><div class="title">${esc(a.name)} ${a.archived ? '<span class="chip">arquivada</span>' : ""} ${a.pluggy_account_id ? '<span class="chip c-cyan">Open Finance</span>' : a.import_reminder !== "none" ? `<span class="chip c-amber">lembrete ${esc({ daily: "diário", weekly: "semanal", monthly: "mensal" }[a.import_reminder] || a.import_reminder)}</span>` : ""}</div><div class="small muted">${esc(KINDS[a.kind])}${a.institution ? " · " + esc(a.institution) : ""}</div></div><div class="amount ${a.balance < 0 ? "neg" : ""}">${brl(a.balance)}</div>`,
   });
 };
 
@@ -839,7 +945,7 @@ VIEWS.contracts = async (v) => {
   simpleList(v, {
     items, empty: "Cadastre aluguel, financiamentos, seguros, escola, assinaturas…", newLabel: "+ Contrato", onNew: contractForm,
     intro: `Custos fixos ativos: <b>${brl(total)}</b>/mês`,
-    render: (c) => `<div class="grow"><div class="title">${esc(c.name)} ${c.active ? "" : '<span class="chip">inativo</span>'} ${c.interest_rate_month > 2 ? '<span class="chip neg">juros altos</span>' : ""}</div><div class="small muted">Vence todo dia ${c.due_day}${c.provider ? " · " + esc(c.provider) : ""}${c.end_date ? " · até " + fdate(c.end_date) : ""}</div></div><div class="amount">${brl(c.amount)}</div>`,
+    render: (c) => `<div class="grow"><div class="title">${esc(c.name)} ${c.active ? "" : '<span class="chip">inativo</span>'} ${c.interest_rate_month > 2 ? '<span class="chip c-red">juros altos</span>' : ""}</div><div class="small muted">Vence todo dia ${c.due_day}${c.provider ? " · " + esc(c.provider) : ""}${c.end_date ? " · até " + fdate(c.end_date) : ""}</div></div><div class="amount">${brl(c.amount)}</div>`,
   });
 };
 
@@ -865,7 +971,7 @@ VIEWS.receivables = async (v) => {
   simpleList(v, {
     items, empty: "Cadastre valores que clientes ainda vão te pagar.", newLabel: "+ Conta a receber", onNew: receivableForm,
     intro: `Pendente de recebimento: <b>${brl(total)}</b>`,
-    render: (r) => `<div class="grow"><div class="title">${esc(r.client_name)} ${r.received_at ? '<span class="chip">recebido</span>' : ""}</div><div class="small muted">${esc(r.description || "")}${r.description ? " · " : ""}Vence ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div>`,
+    render: (r) => `<div class="grow"><div class="title">${esc(r.client_name)} ${r.received_at ? '<span class="chip c-green">recebido</span>' : ""}</div><div class="small muted">${esc(r.description || "")}${r.description ? " · " : ""}Vence ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div>`,
   });
 };
 
@@ -902,7 +1008,7 @@ VIEWS.categories = async (v) => {
   v.innerHTML = `<div class="grid g2">
     <div class="card"><div class="between"><h2>Categorias</h2><button class="btn small" id="newCat">+ Categoria</button></div>
       <p class="small muted">Defina orçamentos mensais para receber alertas ao atingir 80% e 100%.</p>
-      <div class="list">${state.cats.map((c) => `<div class="li" data-c="${c.id}" style="cursor:pointer"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="title">${esc(c.name)}</div><div class="small muted">${c.kind === "income" ? "Receita" : "Despesa"}${c.essential ? " · essencial" : ""}</div></div><div class="small">${c.monthly_budget ? brl(c.monthly_budget) : ""}</div></div>`).join("")}</div></div>
+      <div class="list">${state.cats.map((c) => `<div class="li clickable" data-c="${c.id}" style="cursor:pointer"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="title">${esc(c.name)}</div><div class="small muted">${c.kind === "income" ? "Receita" : "Despesa"}${c.essential ? " · essencial" : ""}</div></div><div class="small">${c.monthly_budget ? brl(c.monthly_budget) : ""}</div></div>`).join("")}</div></div>
     <div class="card"><div class="between"><h2>Regras automáticas</h2><button class="btn small" id="newRule">+ Regra</button></div>
       <p class="small muted">Se a descrição contém o texto, o lançamento vai para a categoria escolhida. As regras valem para a sincronização bancária e as importações.</p>
       <div class="list">${rules.map((r) => `<div class="li"><div class="grow"><div class="title">“${esc(r.pattern)}”</div><div class="small muted">→ ${esc(catName(r.category_id))}</div></div><button class="btn small danger" data-del="${r.id}">Remover</button></div>`).join("") || '<div class="empty">Nenhuma regra. Dica: ao editar um lançamento, marque “aplicar sempre”.</div>'}</div></div></div>`;
@@ -919,7 +1025,7 @@ VIEWS.categories = async (v) => {
     onDelete: c.id ? async () => { await api(`/categories/${c.id}`, { method: "DELETE" }); await refreshRefs(); } : null,
   });
   $("#newCat").onclick = () => catForm();
-  v.querySelectorAll("[data-c]").forEach((el) => (el.onclick = () => catForm(state.cats.find((c) => c.id == el.dataset.c))));
+  v.querySelectorAll("[data-c]").forEach((el) => clickable(el, () => catForm(state.cats.find((c) => c.id == el.dataset.c))));
   $("#newRule").onclick = () => openForm({
     title: "Nova regra", values: { priority: 0, apply_existing: true },
     fields: [
@@ -930,7 +1036,10 @@ VIEWS.categories = async (v) => {
     ],
     onSubmit: async (d) => { const r = await api("/rules", { body: d }); toast(`Regra criada · ${r.updated} lançamento(s) recategorizado(s)`, "success"); },
   });
-  v.querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => { await api(`/rules/${b.dataset.del}`, { method: "DELETE" }); route(); }));
+  v.querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => {
+    if (!await askConfirm({ title: "Remover esta regra?", message: "Os lançamentos já categorizados continuam como estão; só os novos deixam de seguir a regra.", confirmLabel: "Remover regra", danger: true })) return;
+    await api(`/rules/${b.dataset.del}`, { method: "DELETE" }); toast("Regra removida", "success"); route();
+  }));
 };
 
 function goalForm(g = {}) {
@@ -1201,7 +1310,7 @@ VIEWS.bank = async (v) => {
   });
   v.querySelectorAll("[data-upd]").forEach((b) => (b.onclick = () => openConnect(b.dataset.upd)));
   v.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = async () => {
-    if (!confirm("Remover a conexão? As contas ficam arquivadas e o histórico é mantido.")) return;
+    if (!await askConfirm({ title: "Remover esta conexão bancária?", message: "As contas ficam arquivadas e o histórico de lançamentos é mantido.", confirmLabel: "Remover conexão", danger: true })) return;
     await api(`/pluggy/items/${encodeURIComponent(b.dataset.rm)}`, { method: "DELETE" }); await refreshRefs(); route();
   }));
 };
@@ -1236,7 +1345,7 @@ async function renderSharedAccessCard() {
   if (isOwner) {
     html += `<p class="muted small">Convide alguém (sócio(a), cônjuge, contador) pra ver e editar os mesmos dados financeiros que você.</p>
       <div class="row"><input id="shEmail" type="email" placeholder="E-mail da pessoa"><select id="shRole"><option value="editor">Pode editar</option><option value="viewer">Só visualizar</option></select><button class="btn" id="shInvite">Convidar</button></div>
-      <div class="list" style="margin-top:12px">${members.map((m) => `<div class="li"><div class="grow"><div class="title">${esc(m.email)} ${m.accepted_at ? "" : '<span class="chip">convite pendente</span>'}</div><div class="small muted">${roleLabel[m.role]}</div></div><button class="btn small danger" data-revoke="${m.id}">Remover</button></div>`).join("") || '<div class="empty">Ninguém tem acesso à sua conta ainda.</div>'}</div>`;
+      <div class="list" style="margin-top:12px">${members.map((m) => `<div class="li"><div class="grow"><div class="title">${esc(m.email)} ${m.accepted_at ? "" : '<span class="chip c-amber">convite pendente</span>'}</div><div class="small muted">${roleLabel[m.role]}</div></div><button class="btn small danger" data-revoke="${m.id}">Remover</button></div>`).join("") || '<div class="empty">Ninguém tem acesso à sua conta ainda.</div>'}</div>`;
   } else if (!state.user.workspace_owner) {
     html += `<p class="muted small">Convide alguém pra ver e editar os mesmos dados financeiros que você — só é possível convidar enquanto você está vendo os seus próprios dados.</p>`;
   }
@@ -1251,7 +1360,7 @@ function wireSharedAccessCard(v) {
     await api(`/shared-access/${b.dataset.decline}/decline`, { method: "POST" }); toast("Convite recusado", "success"); route();
   }));
   v.querySelectorAll("[data-revoke]").forEach((b) => (b.onclick = async () => {
-    if (!confirm("Remover o acesso dessa pessoa?")) return;
+    if (!await askConfirm({ title: "Remover o acesso dessa pessoa?", message: "Ela deixa de ver e editar seus dados imediatamente.", confirmLabel: "Remover acesso", danger: true })) return;
     await api(`/shared-access/${b.dataset.revoke}`, { method: "DELETE" }); toast("Acesso removido", "success"); route();
   }));
   const inviteBtn = v.querySelector("#shInvite");
@@ -1284,7 +1393,7 @@ VIEWS.settings = async (v) => {
   }));
   $("#installBtn").onclick = () => window._installPrompt?.prompt();
   $("#delMe").onclick = async () => {
-    if (prompt('Digite EXCLUIR para confirmar a exclusão definitiva da conta') !== "EXCLUIR") return;
+    if (!await askConfirm({ title: "Excluir sua conta definitivamente?", message: "Todos os seus dados — contas, lançamentos, comprovantes e metas — serão apagados. Exporte antes se quiser guardar uma cópia.", confirmLabel: "Excluir minha conta", danger: true, requireText: "EXCLUIR" })) return;
     await api("/me", { method: "DELETE" }); logout();
   };
   wireSharedAccessCard(v);
@@ -1297,7 +1406,7 @@ VIEWS.admin = async (v) => {
       <div class="li" style="display:block">
         <div class="between">
           <div class="grow">
-            <div class="title">${esc(u.name)} ${u.is_admin ? '<span class="chip">admin</span>' : ""}${u.suspended_at ? '<span class="chip" style="color:var(--red)">suspenso</span>' : ""}</div>
+            <div class="title">${esc(u.name)} ${u.is_admin ? '<span class="chip c-violet">admin</span>' : ""}${u.suspended_at ? '<span class="chip c-red">suspenso</span>' : ""}</div>
             <div class="small muted">${esc(u.email)} · desde ${fdate(u.created_at?.slice(0, 10))} · ${u.linked ? "já entrou pelo Supabase" : "ainda não fez o primeiro login"} · ${u.accounts_count} contas · ${u.transactions_count} lançamentos</div>
           </div>
           <div class="row" style="flex:0 0 auto;gap:6px;width:auto">
@@ -1320,7 +1429,7 @@ VIEWS.admin = async (v) => {
       toast(action === "suspend" ? "Usuário suspenso" : "Usuário reativado", "success"); renderList($("#adminSearch").value);
     }));
     $("#adminUsers").querySelectorAll("[data-mfa]").forEach((b) => (b.onclick = async () => {
-      if (!confirm("Resetar o MFA desse usuário? Ele vai precisar configurar um novo autenticador no próximo login.")) return;
+      if (!await askConfirm({ title: "Resetar o MFA desse usuário?", message: "Ele vai precisar configurar um novo autenticador no próximo login.", confirmLabel: "Resetar MFA", danger: true })) return;
       await api(`/admin/users/${b.dataset.mfa}/reset-mfa`, { method: "POST" });
       toast("MFA resetado", "success"); renderList($("#adminSearch").value);
     }));
@@ -1483,7 +1592,7 @@ function initAssistant() {
     panel.classList.toggle("hidden");
     if (!panel.classList.contains("hidden")) {
       if (!$("#ap-msgs").children.length) {
-        apAddMsg("Oi! Sou o assistente do Finora. Posso lançar gastos, criar metas, te levar pra qualquer tela ou explicar como usar qualquer função — é só perguntar.", "bot");
+        apAddMsg("Oi! Eu sou a Nora, sua assistente no Finora. Posso lançar gastos, criar metas, te levar pra qualquer tela ou explicar como usar qualquer função — é só perguntar.", "bot");
       }
       if (apNudges?.length && !apNudgesShown) {
         apNudgesShown = true;
