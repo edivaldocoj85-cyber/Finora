@@ -481,6 +481,29 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
   @keyframes n-ergue{0%,62%,100%{transform:none}78%{transform:rotate(-16deg)}}
 }
 
+/* ---------- Nora guia: acompanha a rolagem ----------
+   Camadas: .guia (X, trocando de lado) › .guia-pulo (arco do salto + squash)
+   › .guia-mola (atraso de mola e inclinação pela velocidade) › .guia-vira (olha pro conteúdo).
+   Só existe com movimento liberado (html.js-anim). */
+.guia{display:none}
+.js-anim .guia{display:block;position:fixed;z-index:44;left:0;bottom:24px;width:84px;visibility:hidden;pointer-events:none}
+.js-anim .guia.on{visibility:visible}
+.guia-pulo{transform-origin:50% 100%}
+.guia-mola{pointer-events:auto;cursor:pointer;transform-origin:50% 100%;will-change:transform;filter:drop-shadow(0 8px 12px rgba(20,18,58,.22));-webkit-tap-highlight-color:transparent}
+.guia-vira{transition:transform .35s var(--m-ui)}
+.guia.lado-d .guia-vira{transform:scaleX(-1)}
+.guia-balao{position:absolute;bottom:100%;left:10px;margin-bottom:4px;width:max-content;max-width:220px;padding:9px 13px;border-radius:14px 14px 14px 4px;background:#fff;color:var(--tinta);font-size:13px;font-weight:600;line-height:1.35;box-shadow:var(--sombra-lg),0 0 0 1px rgba(20,18,58,.08);opacity:0;transform:translateY(8px) scale(.85);transform-origin:left bottom;transition:opacity .25s var(--m-ui),transform .4s var(--m-pula)}
+.guia.lado-d .guia-balao{left:auto;right:10px;border-radius:14px 14px 4px 14px;transform-origin:right bottom}
+.guia-balao.on{opacity:1;transform:none}
+/* passinhos enquanto a página rola */
+.guia.corre .nora .n-tudo{animation:n-corre .28s var(--m-suave) infinite alternate}
+@keyframes n-corre{from{transform:translateY(0) scale(1.03,.97)}to{transform:translateY(-6px) scale(.97,1.04)}}
+.guia.acena .n-braco-d{animation:n-acena 1.2s var(--m-suave)}
+@media (max-width:960px){
+  .js-anim .guia{width:60px;bottom:calc(84px + env(safe-area-inset-bottom))}
+  .guia-balao{font-size:12px;max-width:170px;padding:8px 11px}
+}
+
 /* ---------- hero: coreografia de entrada ---------- */
 .js-anim .hero h1,.js-anim .hero .lead,.js-anim .hero .hero-cta,.js-anim .hero .fluxo{opacity:0;transform:translateY(20px);transition:opacity .7s var(--m-ui),transform .7s var(--m-ui)}
 .js-anim .hero .lead{transition-delay:.1s}.js-anim .hero .hero-cta{transition-delay:.2s}.js-anim .hero .fluxo{transition-delay:.3s}

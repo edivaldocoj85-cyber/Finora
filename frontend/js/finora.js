@@ -188,6 +188,113 @@
   addEventListener("scroll", paralaxe, { passive: true });
   fino.addEventListener?.("change", paralaxe); paralaxe();
 
+  /* ------------------------------------------------------------------
+     NORA GUIA — desce a página junto com a pessoa. Cada seção com
+     data-guia é uma parada: ela salta em arco até o lado indicado
+     (data-lado), aterrissa com squash e comenta num balão. Enquanto a
+     página rola, dá passinhos, inclina na direção do movimento e
+     atrasa como uma mola. Sai de cena na chamada final (a Nora de lá
+     assume). No celular fica sempre no canto, só saltitando no lugar.
+     ------------------------------------------------------------------ */
+  const guia = $(".guia");
+  if (guia && temIO && "animate" in guia) {
+    const pulo = $(".guia-pulo", guia), mola = $(".guia-mola", guia), balao = $(".guia-balao", guia);
+    const largo = matchMedia("(min-width:961px)");
+    let lado = "d", xAtual = 0, parada = null, visivel = false, tBalao = 0;
+    const margem = () => (largo.matches ? 28 : 10);
+    const posX = (l) => (largo.matches && l === "e" ? margem() : document.documentElement.clientWidth - margem() - guia.offsetWidth);
+    const viraPara = (l) => guia.classList.toggle("lado-d", l === "d" || !largo.matches);
+    const fixaX = (x) => { xAtual = x; guia.style.transform = `translateX(${x}px)`; };
+    const fala = (txt, espera = 0) => {
+      clearTimeout(tBalao); balao.classList.remove("on");
+      tBalao = setTimeout(() => {
+        balao.textContent = txt; balao.classList.add("on");
+        tBalao = setTimeout(() => balao.classList.remove("on"), 3400);
+      }, espera);
+    };
+    const gesto = (g) => { if (g !== "acena") return; guia.classList.remove("acena"); void guia.offsetWidth; guia.classList.add("acena"); };
+
+    // salto em arco: X anda com ease-in-out, Y sobe desacelerando e desce acelerando
+    function salta(novoLado, depois) {
+      const x0 = xAtual, x1 = posX(novoLado), longe = Math.abs(x1 - x0) > 40;
+      const d = longe ? 950 : 520, alto = longe ? -130 : -34;
+      lado = novoLado; viraPara(lado);
+      if (longe) {
+        const a = guia.animate([{ transform: `translateX(${x0}px)` }, { transform: `translateX(${x1}px)` }],
+          { duration: d * .76, delay: d * .12, easing: "cubic-bezier(.45,0,.55,1)", fill: "both" });
+        a.onfinish = () => { fixaX(x1); a.cancel(); };
+      } else fixaX(x1);
+      pulo.animate([
+        { transform: "none", easing: "ease-out" },
+        { transform: "translateY(4px) scale(1.14,.84)", offset: .12, easing: "cubic-bezier(.2,.7,.4,1)" },
+        { transform: `translateY(${alto}px) scale(.93,1.08)`, offset: .5, easing: "cubic-bezier(.6,0,.8,.4)" },
+        { transform: "translateY(3px) scale(1.14,.85)", offset: .88, easing: "ease-out" },
+        { transform: "none" }
+      ], { duration: d });
+      if (depois) setTimeout(depois, d * .9);
+    }
+
+    function entra() {
+      if (visivel) return; visivel = true;
+      lado = largo.matches ? parada.dataset.lado || "d" : "d";
+      fixaX(posX(lado)); viraPara(lado);
+      guia.classList.add("on");
+      pulo.animate([
+        { transform: "translateY(-90px) scale(.9,1.08)", opacity: 0 },
+        { transform: "translateY(0) scale(1.14,.86)", opacity: 1, offset: .5 },
+        { transform: "translateY(-12px) scale(.97,1.04)", offset: .72 },
+        { transform: "none", opacity: 1 }
+      ], { duration: 850, easing: "cubic-bezier(.16,1,.3,1)" });
+      if (parada) fala(parada.dataset.guia, 700);
+    }
+    function sai() {
+      if (!visivel) return; visivel = false;
+      clearTimeout(tBalao); balao.classList.remove("on");
+      pulo.animate([{ transform: "none", opacity: 1 }, { transform: "translateY(-18px) scale(.95,1.05)", offset: .35 }, { transform: "translateY(60px) scale(.8)", opacity: 0 }],
+        { duration: 480, easing: "cubic-bezier(.5,0,.75,0)" }).onfinish = () => { if (!visivel) guia.classList.remove("on"); };
+    }
+
+    // paradas: a seção que está no meio da tela manda
+    const ioParada = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting || e.target === parada) return;
+      parada = e.target;
+      if (!visivel) return avalia();
+      const novo = largo.matches ? parada.dataset.lado || "d" : "d";
+      salta(novo, () => { fala(parada.dataset.guia); gesto(parada.dataset.gesto); });
+    }), { rootMargin: "-45% 0px -45% 0px" });
+    $$("[data-guia]").forEach((s) => ioParada.observe(s));
+
+    // aparece depois do topo (a Nora do hero sai de cena) e some na chamada final e no rodapé
+    const vis = new Map(), fimEl = $(".cta-final"), rodEl = root.querySelector(".rodape");
+    function avalia() { (!vis.get(heroEl) && !vis.get(fimEl) && !vis.get(rodEl) && parada) ? entra() : sai(); }
+    const ioVis = new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); avalia(); });
+    [fimEl, rodEl].forEach((el) => el && ioVis.observe(el));
+    // o topo só "segura" a guia enquanto ocupa a parte de baixo da tela (sobra de hero não conta)
+    if (heroEl) new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); avalia(); },
+      { rootMargin: "-40% 0px 0px 0px" }).observe(heroEl);
+
+    // mola: segue a velocidade da rolagem com atraso, inclina e olha pra onde a página vai
+    const pup = $(".n-pupilas", guia);
+    let yAnt = scrollY, v = 0, pos = 0, vel = 0, parado = 0;
+    (function laco() {
+      requestAnimationFrame(laco);
+      if (!visivel) { yAnt = scrollY; return; }
+      const dy = scrollY - yAnt; yAnt = scrollY;
+      v += (dy - v) * .25;
+      const alvo = Math.max(-22, Math.min(22, v * 1.4));
+      vel += (alvo - pos) * .12; vel *= .72; pos += vel;           // mola amortecida
+      const incl = Math.max(-11, Math.min(11, v * .7));
+      mola.style.transform = `translateY(${pos.toFixed(2)}px) rotate(${incl.toFixed(2)}deg)`;
+      if (pup) pup.style.transform = `translateY(${Math.max(-3, Math.min(3, v * .4)).toFixed(2)}px)`;
+      if (Math.abs(dy) > .5) { parado = 0; guia.classList.add("corre"); }
+      else if (++parado > 9) guia.classList.remove("corre");
+    })();
+
+    // clique: pulinho no lugar e repete o comentário
+    mola.addEventListener("click", () => { salta(lado); if (parada) fala(parada.dataset.guia, 420); gesto("acena"); });
+    addEventListener("resize", () => { if (!largo.matches) lado = "d"; fixaX(posX(lado)); viraPara(lado); }, { passive: true });
+  }
+
   /* os chips de alerta ganham um índice para a cascata */
   $$(".chips li").forEach((li, i) => li.style.setProperty("--n", i));
 

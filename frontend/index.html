@@ -115,7 +115,7 @@
 </section>
 
 <!-- ============ ISSO SOA FAMILIAR? + COMPARATIVO ============ -->
-<section class="sec escuro" id="pra-quem">
+<section class="sec escuro" id="pra-quem" data-guia="Planilha cansa. Eu lembro por você." data-lado="d">
   <div class="wrap comp">
     <div class="sec-cab centro" data-cena>
       <h2>Por que a planilha não durou.</h2>
@@ -132,7 +132,7 @@
 </section>
 
 <!-- ============ PARCELAS E FATURAS (o diferencial) ============ -->
-<section class="sec parcelas" id="parcelas">
+<section class="sec parcelas" id="parcelas" data-guia="Eu conto cada parcela até a última." data-lado="e">
   <div class="wrap parc-in">
     <div class="parc-txt" data-cena>
       <h2>Parcelas e faturas, <mark>do jeito que o Brasil compra.</mark></h2>
@@ -186,7 +186,7 @@
 </section>
 
 <!-- ============ NORA / AUTOMAÇÕES ============ -->
-<section class="sec escuro auto" id="nora">
+<section class="sec escuro auto" id="nora" data-guia="Essa aqui sou eu!" data-lado="d" data-gesto="acena">
   <div class="wrap">
     <div class="sec-cab centro" data-cena>
       <h2>A Nora cuida da rotina. <span class="real">Você só confirma.</span></h2>
@@ -235,7 +235,7 @@
 </section>
 
 <!-- ============ NEGÓCIO ============ -->
-<section class="sec tom-claro">
+<section class="sec tom-claro" data-guia="Casa de um lado, caixa do outro." data-lado="e">
   <div class="wrap">
     <div class="sec-cab centro" data-cena>
       <h2>Também para o seu negócio.</h2>
@@ -269,7 +269,7 @@
 </section>
 
 <!-- ============ SEGURANÇA ============ -->
-<section class="sec" id="seguranca">
+<section class="sec" id="seguranca" data-guia="Eu só leio. O dinheiro fica no banco." data-lado="d">
   <div class="wrap seg-in">
     <div class="sec-cab" data-cena>
       <h2>Seu dinheiro fica no banco. A Finora só lê.</h2>
@@ -287,7 +287,7 @@
 </section>
 
 <!-- ============ PLANOS ============ -->
-<section class="sec tom-claro" id="planos">
+<section class="sec tom-claro" id="planos" data-guia="10 dias grátis, sem cartão." data-lado="e" data-gesto="acena">
   <div class="wrap">
     <div class="sec-cab centro" data-cena>
       <h2>Um plano, <mark>dois jeitos de pagar.</mark></h2>
@@ -329,7 +329,7 @@
 </section>
 
 <!-- ============ DÚVIDAS ============ -->
-<section class="sec" id="duvidas">
+<section class="sec" id="duvidas" data-guia="Ficou dúvida? É só abrir." data-lado="d">
   <div class="wrap estreito">
     <div class="sec-cab centro" data-cena>
       <h2>Perguntas frequentes</h2>
@@ -383,6 +383,9 @@
     <a href="#topo">Voltar ao topo ↑</a>
   </div>
 </footer>
+
+<!-- Nora guia: acompanha a rolagem e comenta cada seção (decorativa; montada pelo JS) -->
+<div class="guia" aria-hidden="true"><span class="guia-balao"></span><div class="guia-pulo"><div class="guia-mola"><div class="guia-vira" data-nora="guia"></div></div></div></div>
 
 <!-- CTA fixo no celular: aparece depois do topo e some perto da chamada final -->
 <div class="cta-movel"><a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a></div>
