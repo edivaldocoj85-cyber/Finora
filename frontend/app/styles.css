@@ -1,10 +1,10 @@
 :root {
-  --bg: #f5f7fb; --surface: #ffffff; --panel: #fafbfd; --surface-2: #eef1f7; --border: #e2e7f0;
-  --text: #0f172a; --muted: #64748b; --primary: #4f46e5; --primary-2: #6366f1;
-  --green: #047857; --red: #be123c; --amber: #b45309; --violet: #6d28d9; --cyan: #0e7490; --radius: 14px;
+  --bg: #f3f5f8; --surface: #ffffff; --panel: #fafbfc; --surface-2: #edf0f4; --border: #e2e6ed;
+  --text: #0e1a33; --muted: #5a6780; --primary: #2340d8; --primary-2: #3653e6;
+  --green: #047857; --red: #be123c; --amber: #b45309; --violet: #6d28d9; --cyan: #0e7490; --radius: 10px;
   /* tintas de papel (mesmo significado da landing): verde = entrada, rosa = saída/perigo,
      âmbar = atenção/vencendo, violeta = análise, ciano = sincronização/info */
-  --green-bg: #e6f7ef; --red-bg: #ffe9ee; --amber-bg: #fff4de; --violet-bg: #f2ecff; --cyan-bg: #e2f6fa; --primary-bg: #eef0ff;
+  --green-bg: #e6f7ef; --red-bg: #ffe9ee; --amber-bg: #fff4de; --violet-bg: #f2ecff; --cyan-bg: #e2f6fa; --primary-bg: #edf1fd;
   --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
   --shadow: 0 1px 2px rgba(15,23,42,.04), 0 2px 8px rgba(15,23,42,.05);
   --shadow-lg: 0 4px 12px rgba(15,23,42,.08), 0 12px 28px rgba(15,23,42,.06);
@@ -14,17 +14,19 @@
   /* identidade de movimento — arquétipo Corporate (ver DESIGN.md > Motion) */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --dur-quick: .15s; --dur-standard: .28s; --dur-slow: .42s;
-  --font-display: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+  --font-display: "Schibsted Grotesk", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   color-scheme: light;
 }
 /* Escuro: automático (segue o sistema, quando o usuário não fixou um modo) ou fixado via
    data-theme="dark"/"light" em <html>, controlado pelo seletor de aparência no topbar. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0b1020; --surface: #121a2e; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
-    --text: #e6eaf5; --muted: #8b97b5; --primary: #818cf8; --primary-2: #6366f1;
+    --bg: #0a1328; --surface: #111d35; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
+    --text: #e6eaf5; --muted: #8b97b5; --primary: #7d93f2; --primary-2: #5a74ee;
     --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a78bfa; --cyan: #22d3ee;
-    --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #1c1f45;
+    --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #16244a;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.25);
     --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.22);
     --shadow-lg: 0 6px 16px rgba(0,0,0,.3), 0 16px 32px rgba(0,0,0,.24);
@@ -32,10 +34,10 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0b1020; --surface: #121a2e; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
-  --text: #e6eaf5; --muted: #8b97b5; --primary: #818cf8; --primary-2: #6366f1;
+  --bg: #0a1328; --surface: #111d35; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
+  --text: #e6eaf5; --muted: #8b97b5; --primary: #7d93f2; --primary-2: #5a74ee;
   --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a78bfa; --cyan: #22d3ee;
-  --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #1c1f45;
+  --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #16244a;
   --shadow-sm: 0 1px 2px rgba(0,0,0,.25);
   --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.22);
   --shadow-lg: 0 6px 16px rgba(0,0,0,.3), 0 16px 32px rgba(0,0,0,.24);
@@ -43,7 +45,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; }
 ::selection { background: color-mix(in srgb, var(--primary) 35%, transparent); color: var(--text); }
 input, textarea { caret-color: var(--primary); }
 * { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; scrollbar-width: thin; }
@@ -54,8 +56,9 @@ input, textarea { caret-color: var(--primary); }
 .hidden { display: none !important; }
 .muted { color: var(--muted); } .small { font-size: 13px; }
 .pos { color: var(--green); } .neg { color: var(--red); }
-/* títulos e números de destaque na mesma face display da landing (Plus Jakarta Sans) */
-h1, h2, .brand, .stat .value, .te-preco { font-family: var(--font-display); }
+/* mesma tipografia da landing: títulos em Schibsted Grotesk, valores em mono (cara de extrato) */
+h1, h2, .brand { font-family: var(--font-display); }
+.stat .value, .te-preco, .li .amount, td.num, .gd b { font-family: var(--font-num); letter-spacing: -.02em; }
 h1 { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -.02em; margin: 0; }
 h2 { font-size: var(--fs-md); font-weight: 700; letter-spacing: -.01em; margin: 0 0 12px; }
 h3 { font-size: var(--fs-xs); margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
@@ -64,7 +67,7 @@ h3 { font-size: var(--fs-xs); margin: 0 0 8px; color: var(--muted); font-weight:
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; letter-spacing: -.02em; }
 .brand.big { font-size: 26px; justify-content: center; }
 .brand-txt { display: grid; line-height: 1.05; }
-.brand-txt small { font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 3px; white-space: nowrap; }
+.brand-txt small { font-family: var(--font-body); font-weight: 500; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 3px; white-space: nowrap; }
 .logo { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #4f46e5, #0e7490); font-weight: 700; }
 
 /* fim do teste grátis */
@@ -123,7 +126,7 @@ main { min-width: 0; padding: 0 28px 40px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); min-width: 0; }
 .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .stat .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.hero { background: linear-gradient(135deg, #4f46e5, #0891b2); color: #fff; border: none; }
+.hero { background: #0e1a33; color: #fff; border: none; }
 .hero h3, .hero .sub { color: rgba(255,255,255,.8); }
 
 /* botões */
@@ -336,7 +339,7 @@ dialog form { padding: 22px; overflow: auto; max-height: 90vh; }
 .greet-due { display: flex; gap: 10px; }
 .gd { min-width: 150px; padding: 8px 14px; border-radius: 10px; background: var(--surface-2); border-top: 3px solid var(--c); }
 .gd span { display: block; font-size: var(--fs-xs); color: var(--muted); }
-.gd b { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--red); }
+.gd b { font-variant-numeric: tabular-nums; color: var(--red); }
 .gd-today { --c: var(--amber); } .gd-next { --c: #0891b2; }
 @media (max-width: 600px) { .greet-due { width: 100%; } .gd { flex: 1; min-width: 0; } }
 
@@ -393,4 +396,4 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .ap-nome { display: flex; align-items: center; gap: 10px; }
 .ap-nome .nora-ic { width: 30px; height: 32px; flex: none; }
 .ap-nome span { display: grid; line-height: 1.15; font-family: var(--font-display); }
-.ap-nome small { font-family: Inter, system-ui, sans-serif; font-weight: 500; font-size: 11px; color: rgba(255,255,255,.82); }
+.ap-nome small { font-family: var(--font-body); font-weight: 500; font-size: 11px; color: rgba(255,255,255,.82); }

@@ -314,7 +314,7 @@ function startAuthCanvas() {
       }
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = dark ? "rgba(129,140,248,.55)" : "rgba(79,70,229,.4)";
+    ctx.fillStyle = dark ? "rgba(125,147,242,.55)" : "rgba(35,64,216,.4)";
     for (const p of particles) { ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2); ctx.fill(); }
   };
   resize();
@@ -625,7 +625,7 @@ $("#alertsBtn").onclick = async () => {
 function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function chart(el, cfg) {
   Chart.defaults.color = cssVar("--muted"); Chart.defaults.borderColor = cssVar("--border");
-  Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+  Chart.defaults.font.family = "'Public Sans', system-ui, sans-serif";
   const c = new Chart(el, cfg); state.charts.push(c); return c;
 }
 const monthLabel = (m) => { const [y, mo] = m.split("-"); return new Date(y, mo - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""); };
@@ -1014,7 +1014,7 @@ VIEWS.categories = async (v) => {
       <div class="list">${rules.map((r) => `<div class="li"><div class="grow"><div class="title">“${esc(r.pattern)}”</div><div class="small muted">→ ${esc(catName(r.category_id))}</div></div><button class="btn small danger" data-del="${r.id}">Remover</button></div>`).join("") || '<div class="empty">Nenhuma regra. Dica: ao editar um lançamento, marque “aplicar sempre”.</div>'}</div></div></div>`;
   const catForm = (c = {}) => openForm({
     title: c.id ? "Editar categoria" : "Nova categoria",
-    values: { kind: "expense", color: "#6366f1", monthly_budget: 0, ...c },
+    values: { kind: "expense", color: "#3653e6", monthly_budget: 0, ...c },
     fields: [
       { name: "name", label: "Nome", required: true },
       { row: [{ name: "kind", label: "Tipo", type: "select", options: [["expense", "Despesa"], ["income", "Receita"]] }, { name: "color", label: "Cor", type: "color" }] },
