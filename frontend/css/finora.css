@@ -28,6 +28,8 @@
   --display:"Plus Jakarta Sans",Inter,system-ui,sans-serif;
   --corpo:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --m-ui:cubic-bezier(.16,1,.3,1);--m-pula:cubic-bezier(.34,1.56,.64,1);--m-suave:cubic-bezier(.45,0,.55,1);
+  /* movimento responsivo: distância, duração e stagger encolhem com a tela */
+  --dist:22px;--dur:.7s;--stg:70ms;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -189,13 +191,8 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 .ic svg{width:22px;height:22px}
 
 /* ============ ISSO SOA FAMILIAR + COMPARATIVO ============ */
-.comp{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}
-.comp-txt h2{font-size:clamp(1.85rem,3.3vw,2.6rem)}
-.dores{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:12px}
-.dores li{position:relative;padding-left:30px;color:#e3e4f7;font-size:1.02rem}
-.dores li::before{content:"";position:absolute;left:0;top:.42em;width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px #fda4af;background:radial-gradient(circle,#fda4af 0 3px,transparent 3.5px)}
-.comp-vira{margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,.12);font-size:1.02rem;color:#b8bbe2;max-width:46ch}
-.comp-tab{display:grid;gap:6px}
+.comp .sec-cab{margin-bottom:40px}
+.comp-tab{display:grid;gap:6px;max-width:860px;margin:0 auto}
 .ct-row{display:grid;grid-template-columns:1.5fr repeat(3,1fr);align-items:center;gap:6px}
 .ct-row>span{padding:14px 12px;border-radius:10px;font-size:14px}
 .ct-row>span:first-child{color:#e3e4f7;font-weight:500;padding-left:0}
@@ -246,7 +243,7 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 .cf-top{display:flex;gap:10px;align-items:center;padding:8px 10px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
 .cf-top b{display:block;color:#fff;font-size:14px}
 .cf-top span{font-size:12px;color:#b8bbe2}
-.chat{list-style:none;margin:0;padding:16px 6px 6px;display:flex;flex-direction:column;gap:10px;min-height:470px;font-size:14px;line-height:1.45}
+.chat{list-style:none;margin:0;padding:16px 6px 6px;display:flex;flex-direction:column;gap:10px;min-height:360px;font-size:14px;line-height:1.45}
 .msg{max-width:86%;padding:10px 14px;border-radius:16px;transition:opacity .45s var(--m-ui),transform .45s var(--m-ui),filter .45s var(--m-ui)}
 .msg.eu{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:4px}
 .msg.ela{align-self:flex-start;background:#1f1d4a;color:#dcdef7;border-bottom-left-radius:4px}
@@ -328,11 +325,7 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 .termos-planos b{color:var(--tinta)}
 
 /* ============ FAQ ============ */
-.abas{display:flex;justify-content:center;gap:6px;margin:-20px auto 32px;padding:5px;background:var(--gelo);border-radius:999px;width:max-content;max-width:100%}
-.abas button{font:inherit;font-family:var(--display);font-weight:700;font-size:15px;border:0;background:none;color:var(--suave);padding:10px 20px;min-height:44px;border-radius:999px;cursor:pointer;transition:background-color .2s,color .2s}
-.abas button[aria-selected="true"]{background:var(--indigo);color:#fff}
 .faq{display:grid;gap:12px}
-.faq[hidden]{display:none}
 .faq details{background:#fff;border:1px solid var(--linha);border-radius:14px;transition:border-color .2s,box-shadow .2s}
 .faq details[open]{border-color:#c7d2fe;box-shadow:var(--sombra)}
 .faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;min-height:44px;font-family:var(--display);font-weight:700;font-size:1.02rem;color:var(--tinta)}
@@ -387,7 +380,7 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
   .rd-marca{grid-column:1/-1}
 }
 @media (max-width:960px){
-  .menu{position:fixed;inset:72px 0 auto;flex-direction:column;gap:0;background:#fff;padding:8px 24px 20px;border-bottom:1px solid var(--linha);box-shadow:0 20px 30px -20px rgba(20,18,58,.25);transform:translateY(-8px);opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility .2s}
+  .menu{position:fixed;inset:var(--cab-h) 0 auto;flex-direction:column;gap:0;background:#fff;padding:8px 24px 20px;border-bottom:1px solid var(--linha);box-shadow:0 20px 30px -20px rgba(20,18,58,.25);transform:translateY(-8px);opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility .2s}
   .menu.aberto{opacity:1;transform:none;visibility:visible}
   .menu a{padding:14px 0;border-bottom:1px solid var(--linha);font-size:16px}
   .menu a::after{display:none}
@@ -396,9 +389,9 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
   .lnk-entrar{display:none}
   .menu-btn{display:flex}
   .hero{padding-top:40px}
-  .hero-in,.comp,.parc-in,.auto-grid,.seg-in{grid-template-columns:minmax(0,1fr)}
+  .hero-in,.parc-in,.auto-grid,.seg-in{grid-template-columns:minmax(0,1fr)}
   .hero-in{gap:20px}
-  .comp,.parc-in,.seg-in{gap:44px}
+  .parc-in,.seg-in{gap:44px}
   .chat-fone{position:relative;top:0;max-width:420px;width:100%;margin:0 auto}
   .auto-grupo ul{grid-template-columns:1fr 1fr}
   .cards3{grid-template-columns:minmax(0,1fr)}
@@ -429,8 +422,6 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
   .pc-lin{flex-wrap:wrap}
   .pc-lin em{margin-left:0;width:100%}
   .chat{min-height:0}
-  .abas{width:100%}
-  .abas button{flex:1;padding:10px 8px;font-size:14px}
   .faq summary{padding:16px 18px}
   .faq details p{padding:0 18px 18px}
   .rd-in{grid-template-columns:1fr 1fr}
@@ -521,16 +512,19 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 @keyframes n-festa{0%{transform:none}30%{transform:translateY(-16px) rotate(-5deg)}60%{transform:translateY(0) scale(1.06,.94)}100%{transform:none}}
 
 /* ---------- cenas por seção (entram ao rolar) ---------- */
-.js-anim [data-cena] [data-i],.js-anim .sec-cab[data-cena]{opacity:0;transform:translateY(22px);transition:opacity .7s var(--m-ui),transform .7s var(--m-ui);transition-delay:calc(var(--i,0)*70ms)}
+.js-anim [data-cena] [data-i],.js-anim .sec-cab[data-cena]{opacity:0;transform:translateY(var(--dist));transition:opacity var(--dur) var(--m-ui),transform var(--dur) var(--m-ui);transition-delay:calc(var(--i,0)*var(--stg))}
 .js-anim [data-cena].on [data-i],.js-anim .sec-cab[data-cena].on{opacity:1;transform:none}
 .js-anim [data-cena] mark{background-size:0 100%;background-repeat:no-repeat;transition:background-size .8s .35s var(--m-ui)}
 .js-anim [data-cena].on mark{background-size:100% 100%}
-.js-anim .comp-txt h2,.js-anim .comp-txt .comp-vira,.js-anim .parc-txt h2,.js-anim .parc-txt .parc-lead,.js-anim .parc-txt>.btn{opacity:0;transform:translateY(20px);transition:opacity .7s var(--m-ui),transform .7s var(--m-ui)}
-.js-anim .comp-txt .comp-vira{transition-delay:.45s}
+.js-anim .parc-txt h2,.js-anim .parc-txt .parc-lead,.js-anim .parc-txt>.btn{opacity:0;transform:translateY(var(--dist));transition:opacity .7s var(--m-ui),transform .7s var(--m-ui)}
 .js-anim .parc-txt .parc-lead{transition-delay:.1s}.js-anim .parc-txt>.btn{transition-delay:.4s}
-.js-anim .comp-txt.on h2,.js-anim .comp-txt.on .comp-vira,.js-anim .parc-txt.on h2,.js-anim .parc-txt.on .parc-lead,.js-anim .parc-txt.on>.btn{opacity:1;transform:none}
-.js-anim .dores [data-i]{transition-delay:calc(var(--i)*80ms + .15s)}
-.js-anim .comp-tab [data-i]{transform:translateX(22px)}
+.js-anim .parc-txt.on h2,.js-anim .parc-txt.on .parc-lead,.js-anim .parc-txt.on>.btn{opacity:1;transform:none}
+.js-anim .comp-tab [data-i]{transform:translateX(var(--dist))}
+/* a coluna Finora acende célula por célula, depois que a linha chegou */
+.js-anim .ct-row .ct.ct-fin{background:rgba(255,255,255,.05);transition:background-color .5s var(--m-ui);transition-delay:calc(var(--i,0)*var(--stg) + .45s)}
+.js-anim .comp-tab.on .ct-row .ct.ct-fin{background:#2b2873}
+.js-anim .ct-row .ct.s.ct-fin::before{transform:scale(0);transition:transform .45s var(--m-pula);transition-delay:calc(var(--i,0)*var(--stg) + .6s)}
+.js-anim .comp-tab.on .ct-row .ct.s.ct-fin::before{transform:none}
 .js-anim .fatura{opacity:0;transform:translateY(30px);transition:opacity .7s var(--m-ui),transform .8s var(--m-ui)}
 .js-anim .fatura.on{opacity:1;transform:none}
 .js-anim .fatura [data-i]{transition-delay:calc(var(--i)*90ms + .25s)}
@@ -543,17 +537,62 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 .js-anim .cards3.on .v-fluxo i{transform:none}
 .js-anim .cta-final .cf-nora-pula{opacity:0;transform:translateY(40px) scale(.8);transition:opacity .5s,transform .7s var(--m-pula)}
 .js-anim .cta-final.on .cf-nora-pula{opacity:1;transform:none}
+/* os 8 alertas acendem em cascata curta (40ms, total < 400ms) */
+.js-anim .chips li{opacity:0;transform:scale(.85);transition:opacity .4s var(--m-ui),transform .45s var(--m-pula);transition-delay:calc(var(--n,0)*40ms + .3s)}
+.js-anim .auto-cols.on .chips li{opacity:1;transform:none}
+/* ícones de segurança "travam" no lugar, como um cadeado fechando */
+.js-anim .seg .ic{transform:scale(.6) rotate(-14deg);transition:transform .5s var(--m-pula);transition-delay:calc(var(--i,0)*var(--stg) + .2s)}
+.js-anim .seg.on .ic{transform:none}
+
+/* ---------- movimento que responde ao usuário ---------- */
+/* progresso de leitura no pé do cabeçalho (scaleX, só GPU) */
+.progresso{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--grad);transform-origin:left;transform:scaleX(var(--lido,0));pointer-events:none}
+/* cabeçalho compacta ao rolar */
+.cab{--cab-h:72px}
+.cab.rolou{--cab-h:60px}
+.cab-in{height:var(--cab-h);transition:height .3s var(--m-ui)}
+/* resposta ao toque: tudo que é clicável afunda de leve (< 100ms) */
+.btn:active{transform:translateY(1px) scale(.98);transition-duration:.08s}
+.faq summary{transition:color .2s}
+.faq summary:active{color:var(--indigo)}
+@media (prefers-reduced-motion:no-preference){
+  .faq details[open] p{animation:faq-abre .35s var(--m-ui)}
+  @keyframes faq-abre{from{opacity:0;transform:translateY(-6px)}}
+}
+/* só com mouse de verdade e tela larga: inclinação, camadas, brilho e cartões que sobem */
+@media (hover:hover) and (pointer:fine) and (min-width:961px){
+  .js-anim .hero-vis{transform:perspective(1400px) rotateX(calc(var(--py,0)*-3deg)) rotateY(calc(var(--px,0)*4deg));transform-style:preserve-3d}
+  .js-anim .f-alerta{translate:calc(var(--px,0)*14px) calc(var(--py,0)*10px)}
+  .js-anim .nora-wrap{translate:calc(var(--px,0)*-9px) calc(var(--py,0)*-6px)}
+  .js-anim [data-cena] .rc2[data-i],.js-anim [data-cena] .plano[data-i]{transition-property:opacity,transform,translate,box-shadow;transition-duration:var(--dur),var(--dur),.35s,.35s;transition-timing-function:var(--m-ui);transition-delay:calc(var(--i,0)*var(--stg)),calc(var(--i,0)*var(--stg)),0s,0s}
+  .js-anim .rc2:hover,.js-anim .plano:hover{translate:0 -6px}
+  .js-anim .rc2:hover{box-shadow:var(--sombra-lg),0 0 0 1px rgba(20,18,58,.05)}
+  .js-anim .plano:not(.dest):hover{box-shadow:var(--sombra-lg),0 0 0 1px rgba(20,18,58,.05)}
+  .js-anim .rc2:hover .v-fluxo div{animation:fluxo-ola .6s var(--m-pula) both;animation-delay:calc(var(--k,0)*50ms)}
+  .js-anim .rc2 .v-fluxo div:nth-child(2){--k:1}.js-anim .rc2 .v-fluxo div:nth-child(3){--k:2}.js-anim .rc2 .v-fluxo div:nth-child(4){--k:3}
+  @keyframes fluxo-ola{40%{transform:scaleY(1.08)}}
+  .js-anim .v-fluxo div{transform-origin:bottom}
+  .js-anim .auto-grupo li .a-ic{transition:transform .3s var(--m-pula)}
+  .js-anim .auto-grupo li:hover .a-ic{transform:scale(1.1) rotate(-6deg)}
+  .js-anim .btn-pri,.js-anim .btn-branco{position:relative;overflow:hidden}
+  .js-anim .btn-pri::after,.js-anim .btn-branco::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.3) 50%,transparent 65%);transform:translateX(-120%);transition:transform .8s var(--m-ui)}
+  .js-anim .btn-branco::after{background:linear-gradient(105deg,transparent 35%,rgba(79,70,229,.14) 50%,transparent 65%)}
+  .js-anim .btn-pri:hover::after,.js-anim .btn-branco:hover::after{transform:translateX(120%)}
+}
 
 @media (max-width:960px){
+  :root{--dist:18px;--dur:.6s;--stg:60ms}
   .nora-wrap{left:2%;top:-34px;width:92px}
   .nora-balao{max-width:190px;font-size:12px}
   .cf-nora-pula{align-self:flex-start;margin:0 0 -6px;width:84px}
 }
 @media (max-width:600px){
+  /* celular: deslocamento menor, mais rápido, cascata mais curta (motion-design: 0.8x) */
+  :root{--dist:14px;--dur:.5s;--stg:45ms}
   .nora-wrap{width:80px;top:-26px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .digitando i{animation:none}
-  .btn,.btn span,.cta-movel{transition:none}
+  .btn,.btn span,.cta-movel,.cab-in{transition:none}
 }

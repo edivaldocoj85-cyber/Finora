@@ -21,10 +21,19 @@
   /* links de entrada */
   $$("[data-entrar]").forEach((a) => a.setAttribute("href", root.dataset.login || "/app/"));
 
-  /* cabeçalho: sombra ao rolar */
+  /* cabeçalho: compacta ao rolar e mostra o progresso de leitura */
   const cab = $(".cab");
-  const onScroll = () => cab.classList.toggle("rolou", scrollY > 8);
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  let rafCab = 0;
+  const onScroll = () => {
+    cancelAnimationFrame(rafCab);
+    rafCab = requestAnimationFrame(() => {
+      cab.classList.toggle("rolou", scrollY > 8);
+      const total = document.documentElement.scrollHeight - innerHeight;
+      cab.style.setProperty("--lido", total > 0 ? Math.min(1, scrollY / total).toFixed(4) : 0);
+    });
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll, { passive: true }); onScroll();
 
   /* menu mobile */
   const btn = $(".menu-btn"), menu = $("#menu");
@@ -36,24 +45,6 @@
   });
   $$("a", menu).forEach((a) => a.addEventListener("click", fecha));
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menu.classList.contains("aberto")) { fecha(); btn.focus(); } });
-
-  /* abas do FAQ (padrão WAI-ARIA tabs) */
-  const abas = $$('[role="tab"]');
-  const ativa = (t) => {
-    abas.forEach((x) => {
-      const on = x === t;
-      x.setAttribute("aria-selected", String(on)); x.tabIndex = on ? 0 : -1;
-      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
-    });
-  };
-  abas.forEach((t, i) => {
-    t.addEventListener("click", () => ativa(t));
-    t.addEventListener("keydown", (e) => {
-      const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-      if (!d) return;
-      const n = abas[(i + d + abas.length) % abas.length]; ativa(n); n.focus();
-    });
-  });
 
   /* menu marca a seção atual */
   const secoes = $$("a[href^='#']", menu).map((a) => [a, document.querySelector(a.getAttribute("href"))]).filter(([, s]) => s);
@@ -157,6 +148,48 @@
     setTimeout(() => noraBalao.classList.add("on"), 2300);
     setTimeout(() => noraBalao.classList.remove("on"), 7800);
   }
+
+  /* movimento que responde ao ponteiro e à rolagem — só com mouse e tela larga.
+     No celular não há paralaxe (motion-design: evitar em telas pequenas). */
+  const fino = matchMedia("(hover:hover) and (pointer:fine) and (min-width:961px)");
+  const vis = $("[data-tilt]");
+  if (vis) {
+    // o painel do hero inclina na direção do cursor; alerta e Nora andam em camadas opostas
+    let ax = 0, ay = 0, x = 0, y = 0, anda = false;
+    const passo = () => {
+      x += (ax - x) * .1; y += (ay - y) * .1;
+      vis.style.setProperty("--px", x.toFixed(3)); vis.style.setProperty("--py", y.toFixed(3));
+      if (Math.abs(ax - x) > .002 || Math.abs(ay - y) > .002) requestAnimationFrame(passo); else anda = false;
+    };
+    const vai = () => { if (!anda) { anda = true; requestAnimationFrame(passo); } };
+    addEventListener("pointermove", (e) => {
+      if (!fino.matches || e.pointerType !== "mouse") return;
+      const r = vis.getBoundingClientRect();
+      if (r.bottom < 0) return;
+      const lim = (v) => Math.max(-1, Math.min(1, v));
+      ax = lim((e.clientX - (r.left + r.width / 2)) / (r.width * .75));
+      ay = lim((e.clientY - (r.top + r.height / 2)) / (r.height * .75));
+      vai();
+    }, { passive: true });
+    document.documentElement.addEventListener("pointerleave", () => { ax = ay = 0; vai(); });
+  }
+  // paralaxe leve na rolagem (< 40px): a vitrine da fatura flutua um pouco mais devagar
+  const camadas = [[$(".fatura"), .07], [vis, .06]].filter(([el]) => el);
+  let rafPar = 0;
+  const paralaxe = () => {
+    cancelAnimationFrame(rafPar);
+    rafPar = requestAnimationFrame(() => camadas.forEach(([el, k]) => {
+      if (!fino.matches) { el.style.translate = ""; return; }
+      const r = el.parentElement.getBoundingClientRect();
+      const off = Math.max(-40, Math.min(40, (r.top + r.height / 2 - innerHeight / 2) * -k));
+      el.style.translate = `0 ${off.toFixed(1)}px`;
+    }));
+  };
+  addEventListener("scroll", paralaxe, { passive: true });
+  fino.addEventListener?.("change", paralaxe); paralaxe();
+
+  /* os chips de alerta ganham um índice para a cascata */
+  $$(".chips li").forEach((li, i) => li.style.setProperty("--n", i));
 
   if (!temIO) { $$("[data-cena]").forEach((c) => c.classList.add("on")); return; }
 

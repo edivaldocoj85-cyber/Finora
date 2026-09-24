@@ -34,6 +34,14 @@ Supersedes the section-level color and structure notes above where they conflict
 - **Nora is the assistant** everywhere: landing chat header, app floating button and panel header (`.nora-ic` inline SVG), greeting, and the backend system prompt.
 - **Motion:** in the hero only Nora moves continuously (orbit, bobbing cards and bell removed). New scenes: invoice rows, installment bars and committed-months bars; cash-flow mini bars in negócio.
 
+## Landing v4 — enxuta + movimento responsivo (2026-09-24)
+
+Owner asked for less text and "movimentos responsivos". Skill used: motion-design (Corporate personality for UI, Playful for Nora — unchanged).
+- **Copy cut ~40%:** pains list and its closing line removed (comparison now has a one-line intro, "Por que a planilha não durou."); every paragraph cut to one sentence; automations reduced to 4 items + the 8 alert chips; chat has 4 messages; FAQ is one list of 7 questions (tabs removed).
+- **Responsive motion tokens:** `--dist / --dur / --stg` = 22px/.7s/70ms desktop → 18px/.6s/60ms tablet → 14px/.5s/45ms phone (motion-design 0.8x mobile rule). All scroll reveals read them.
+- **Reacts to the user:** reading-progress hairline on the header (`--lido`, scaleX) and header compacts 72→60px on scroll (`--cab-h`, mobile menu follows); on fine pointer + ≥961px only — hero panel tilts toward the cursor (≤4°, lerped in rAF) with the alert card and Nora moving in opposite layers via the `translate` property, scroll parallax ≤40px on the invoice and hero, cards lift 6px on hover, CTA shine sweep, automation icons tilt. No parallax/tilt on touch. Touch feedback: buttons press to .98 in 80ms.
+- **New scenes:** Finora column in the comparison lights cell by cell with ✓ popping; the 8 alert chips cascade (40ms); security icons "lock" into place; FAQ answers slide in when opened.
+
 ## Landing motion identity and mascot (2026-09-23)
 
 Owner asked for landing animations "with their own identity", characters allowed, using contasonline.com.br/pessoal as the movement reference (floating cards, slowly rotating ring, scroll reveals, a mascot). Finora's version:
