@@ -66,7 +66,7 @@
   }
 
   /* compatibilidade com links antigos (#acesso, #consultor…) */
-  const antigos = { "#acesso": "#planos", "#consultor": "#nora", "#automacoes": "#nora", "#contas": "#parcelas", "#extrato": "#parcelas", "#recursos": "#parcelas", "#como-resolve": "#parcelas", "#como-funciona": "#topo" };
+  const antigos = { "#acesso": "#planos", "#consultor": "#nora", "#automacoes": "#nora", "#contas": "#parcelas", "#extrato": "#parcelas", "#como-resolve": "#parcelas", "#como-funciona": "#topo" };
   const novo = antigos[location.hash];
   if (novo) {
     history.replaceState(null, "", novo);
@@ -189,78 +189,79 @@
   fino.addEventListener?.("change", paralaxe); paralaxe();
 
   /* ------------------------------------------------------------------
-     NORA GUIA — desce a página junto com a pessoa. Cada seção com
-     data-guia é uma parada: ela salta em arco até o lado indicado
-     (data-lado), aterrissa com squash e comenta num balão. Enquanto a
-     página rola, dá passinhos, inclina na direção do movimento e
-     atrasa como uma mola. Sai de cena na chamada final (a Nora de lá
-     assume). No celular fica sempre no canto, só saltitando no lugar.
+     NORA GUIA — acompanha a leitura sem roubar a cena. Cada seção com
+     data-guia é uma parada: ela some de leve, SURGE discreta no lado
+     indicado (data-lado) e, já parada, ENCENA um gesto curto para chamar
+     atenção (data-gesto: espia · acena · sim) antes de comentar no balão.
+     Se a pessoa fica parada lendo, ela repete o gesto uma vez.
+     Sai de cena na chamada final (a Nora de lá assume).
+     No celular fica sempre no canto, só trocando o gesto e a fala.
      ------------------------------------------------------------------ */
   const guia = $(".guia");
   if (guia && temIO && "animate" in guia) {
-    const pulo = $(".guia-pulo", guia), mola = $(".guia-mola", guia), balao = $(".guia-balao", guia);
+    const surge = $(".guia-surge", guia), mola = $(".guia-mola", guia), balao = $(".guia-balao", guia);
     const largo = matchMedia("(min-width:961px)");
-    let lado = "d", xAtual = 0, parada = null, visivel = false, tBalao = 0;
+    let lado = "d", parada = null, visivel = false, tBalao = 0, tGesto = 0, tLembra = 0;
     const margem = () => (largo.matches ? 28 : 10);
     const posX = (l) => (largo.matches && l === "e" ? margem() : document.documentElement.clientWidth - margem() - guia.offsetWidth);
-    const viraPara = (l) => guia.classList.toggle("lado-d", l === "d" || !largo.matches);
-    const fixaX = (x) => { xAtual = x; guia.style.transform = `translateX(${x}px)`; };
+    const poe = (l) => { lado = l; guia.style.transform = `translateX(${posX(l)}px)`; guia.classList.toggle("lado-d", l === "d" || !largo.matches); };
+    const ladoDe = (s) => (largo.matches ? s.dataset.lado || "d" : "d");
     const fala = (txt, espera = 0) => {
       clearTimeout(tBalao); balao.classList.remove("on");
       tBalao = setTimeout(() => {
         balao.textContent = txt; balao.classList.add("on");
-        tBalao = setTimeout(() => balao.classList.remove("on"), 3400);
+        tBalao = setTimeout(() => balao.classList.remove("on"), 4200);
       }, espera);
     };
-    const gesto = (g) => { if (g !== "acena") return; guia.classList.remove("acena"); void guia.offsetWidth; guia.classList.add("acena"); };
+    // gesto = a "encenação": curto, feito já parada, depois que ela surgiu
+    const GESTOS = ["espia", "acena", "sim"];
+    const encena = (g = "espia") => {
+      GESTOS.forEach((x) => guia.classList.remove("g-" + x)); void guia.offsetWidth;
+      guia.classList.add("g-" + g);
+    };
+    // lembrete: se a pessoa ficou lendo a mesma seção, um gesto a mais (sem balão)
+    guia.addEventListener("animationend", (e) => {
+      if (["n-espia", "n-acena", "n-sim"].includes(e.animationName)) GESTOS.forEach((x) => guia.classList.remove("g-" + x));
+    });
+    const agendaLembrete = () => { clearTimeout(tLembra); tLembra = setTimeout(() => visivel && encena(parada?.dataset.gesto || "espia"), 9000); };
 
-    // salto em arco: X anda com ease-in-out, Y sobe desacelerando e desce acelerando
-    function salta(novoLado, depois) {
-      const x0 = xAtual, x1 = posX(novoLado), longe = Math.abs(x1 - x0) > 40;
-      const d = longe ? 950 : 520, alto = longe ? -130 : -34;
-      lado = novoLado; viraPara(lado);
-      if (longe) {
-        const a = guia.animate([{ transform: `translateX(${x0}px)` }, { transform: `translateX(${x1}px)` }],
-          { duration: d * .76, delay: d * .12, easing: "cubic-bezier(.45,0,.55,1)", fill: "both" });
-        a.onfinish = () => { fixaX(x1); a.cancel(); };
-      } else fixaX(x1);
-      pulo.animate([
-        { transform: "none", easing: "ease-out" },
-        { transform: "translateY(4px) scale(1.14,.84)", offset: .12, easing: "cubic-bezier(.2,.7,.4,1)" },
-        { transform: `translateY(${alto}px) scale(.93,1.08)`, offset: .5, easing: "cubic-bezier(.6,0,.8,.4)" },
-        { transform: "translateY(3px) scale(1.14,.85)", offset: .88, easing: "ease-out" },
-        { transform: "none" }
-      ], { duration: d });
-      if (depois) setTimeout(depois, d * .9);
+    // chegada discreta: sobe 14px e aparece, sem quique; o gesto vem depois
+    let cena = null;
+    const troca = (a) => { cena?.cancel(); return (cena = a); };
+    const aparece = (d = 520) => troca(surge.animate(
+      [{ opacity: 0, transform: "translateY(14px) scale(.94)" }, { opacity: 1, transform: "none" }],
+      { duration: d, easing: "cubic-bezier(.16,1,.3,1)", fill: "both" }));
+    const desaparece = (d = 220) => troca(surge.animate(
+      [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(8px) scale(.96)" }],
+      { duration: d, easing: "cubic-bezier(.4,0,1,1)", fill: "both" }));
+
+    function chega(s, primeira) {
+      clearTimeout(tGesto); balao.classList.remove("on");
+      const novo = ladoDe(s), trocaLado = novo !== lado || primeira;
+      const mostra = () => {
+        poe(novo);
+        if (trocaLado) aparece();
+        tGesto = setTimeout(() => { encena(s.dataset.gesto || "espia"); fala(s.dataset.guia, 350); agendaLembrete(); }, trocaLado ? 480 : 80);
+      };
+      if (trocaLado && !primeira) desaparece().onfinish = mostra; else mostra();
     }
 
     function entra() {
       if (visivel) return; visivel = true;
-      lado = largo.matches ? parada.dataset.lado || "d" : "d";
-      fixaX(posX(lado)); viraPara(lado);
       guia.classList.add("on");
-      pulo.animate([
-        { transform: "translateY(-90px) scale(.9,1.08)", opacity: 0 },
-        { transform: "translateY(0) scale(1.14,.86)", opacity: 1, offset: .5 },
-        { transform: "translateY(-12px) scale(.97,1.04)", offset: .72 },
-        { transform: "none", opacity: 1 }
-      ], { duration: 850, easing: "cubic-bezier(.16,1,.3,1)" });
-      if (parada) fala(parada.dataset.guia, 700);
+      chega(parada, true);
     }
     function sai() {
       if (!visivel) return; visivel = false;
-      clearTimeout(tBalao); balao.classList.remove("on");
-      pulo.animate([{ transform: "none", opacity: 1 }, { transform: "translateY(-18px) scale(.95,1.05)", offset: .35 }, { transform: "translateY(60px) scale(.8)", opacity: 0 }],
-        { duration: 480, easing: "cubic-bezier(.5,0,.75,0)" }).onfinish = () => { if (!visivel) guia.classList.remove("on"); };
+      clearTimeout(tBalao); clearTimeout(tGesto); clearTimeout(tLembra); balao.classList.remove("on");
+      desaparece(260).onfinish = () => { if (!visivel) guia.classList.remove("on"); };
     }
 
     // paradas: a seção que está no meio da tela manda
     const ioParada = new IntersectionObserver((es) => es.forEach((e) => {
       if (!e.isIntersecting || e.target === parada) return;
       parada = e.target;
-      if (!visivel) return avalia();
-      const novo = largo.matches ? parada.dataset.lado || "d" : "d";
-      salta(novo, () => { fala(parada.dataset.guia); gesto(parada.dataset.gesto); });
+      visivel ? chega(parada) : avalia();
     }), { rootMargin: "-45% 0px -45% 0px" });
     $$("[data-guia]").forEach((s) => ioParada.observe(s));
 
@@ -273,26 +274,93 @@
     if (heroEl) new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); avalia(); },
       { rootMargin: "-40% 0px 0px 0px" }).observe(heroEl);
 
-    // mola: segue a velocidade da rolagem com atraso, inclina e olha pra onde a página vai
+    // mola discreta: um leve atraso e inclinação na rolagem; os olhos acompanham a página
     const pup = $(".n-pupilas", guia);
-    let yAnt = scrollY, v = 0, pos = 0, vel = 0, parado = 0;
+    let yAnt = scrollY, v = 0, pos = 0, vel = 0;
     (function laco() {
       requestAnimationFrame(laco);
       if (!visivel) { yAnt = scrollY; return; }
       const dy = scrollY - yAnt; yAnt = scrollY;
-      v += (dy - v) * .25;
-      const alvo = Math.max(-22, Math.min(22, v * 1.4));
-      vel += (alvo - pos) * .12; vel *= .72; pos += vel;           // mola amortecida
-      const incl = Math.max(-11, Math.min(11, v * .7));
+      v += (dy - v) * .2;
+      const alvo = Math.max(-8, Math.min(8, v * .6));
+      vel += (alvo - pos) * .1; vel *= .7; pos += vel;
+      const incl = Math.max(-4, Math.min(4, v * .3));
       mola.style.transform = `translateY(${pos.toFixed(2)}px) rotate(${incl.toFixed(2)}deg)`;
       if (pup) pup.style.transform = `translateY(${Math.max(-3, Math.min(3, v * .4)).toFixed(2)}px)`;
-      if (Math.abs(dy) > .5) { parado = 0; guia.classList.add("corre"); }
-      else if (++parado > 9) guia.classList.remove("corre");
+      if (Math.abs(dy) > 2) agendaLembrete();
     })();
 
-    // clique: pulinho no lugar e repete o comentário
-    mola.addEventListener("click", () => { salta(lado); if (parada) fala(parada.dataset.guia, 420); gesto("acena"); });
-    addEventListener("resize", () => { if (!largo.matches) lado = "d"; fixaX(posX(lado)); viraPara(lado); }, { passive: true });
+    // clique: acena e repete o comentário
+    mola.addEventListener("click", () => { encena("acena"); if (parada) fala(parada.dataset.guia, 200); });
+    addEventListener("resize", () => poe(largo.matches ? lado : "d"), { passive: true });
+  }
+
+  /* ------------------------------------------------------------------
+     VITRINE — carrossel de banners. A barra de tempo da aba ativa é a
+     própria animação CSS; quando ela termina, passa para o próximo.
+     Pausa sozinho com o mouse em cima, com foco dentro, fora da tela ou
+     no botão de pausa. Setas, ←/→ nas abas e arrastar no celular.
+     Sem JS ou com movimento reduzido, os banners ficam empilhados.
+     ------------------------------------------------------------------ */
+  const bn = $("[data-bn]");
+  if (bn) {
+    const slides = $$(".bn-slide", bn), abas = $$(".bn-aba", bn);
+    let atual = -1;
+    bn.classList.add("js");
+    slides.forEach((s, i) => { s.id = "bn-s" + i; abas[i].id = "bn-a" + i; abas[i].setAttribute("aria-controls", s.id); s.setAttribute("role", "tabpanel"); s.setAttribute("aria-labelledby", abas[i].id); });
+    function mostra(n, dir = 1) {
+      n = (n + slides.length) % slides.length;
+      if (n === atual) return;
+      bn.style.setProperty("--dir", dir);
+      slides.forEach((s, i) => {
+        s.classList.toggle("sai", i === atual);
+        s.classList.toggle("ativo", i === n);
+        s.inert = i !== n;
+      });
+      abas.forEach((a, i) => { a.setAttribute("aria-selected", String(i === n)); a.tabIndex = i === n ? 0 : -1; a.classList.remove("corre"); });
+      void abas[n].offsetWidth; abas[n].classList.add("corre");   // reinicia a barra de tempo
+      atual = n;
+    }
+    abas.forEach((a, i) => {
+      a.addEventListener("click", () => mostra(i, i > atual ? 1 : -1));
+      a.addEventListener("keydown", (e) => {
+        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!d) return;
+        e.preventDefault(); mostra(atual + d, d); abas[atual].focus();
+      });
+      a.addEventListener("animationend", (e) => { if (e.animationName === "bn-tempo") mostra(atual + 1, 1); });
+    });
+    $("[data-bn-ant]", bn).addEventListener("click", () => mostra(atual - 1, -1));
+    $("[data-bn-prox]", bn).addEventListener("click", () => mostra(atual + 1, 1));
+    const pausa = $("[data-bn-pausa]", bn);
+    pausa.addEventListener("click", () => {
+      const p = bn.classList.toggle("pausa");
+      pausa.setAttribute("aria-pressed", String(p));
+      pausa.setAttribute("aria-label", p ? "Retomar a troca automática" : "Pausar a troca automática");
+    });
+    // arrastar para os lados (toque)
+    const palco = $(".bn-palco", bn); let x0 = null;
+    palco.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") x0 = e.clientX; });
+    palco.addEventListener("pointerup", (e) => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 45) mostra(atual + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    });
+    palco.addEventListener("pointercancel", () => (x0 = null));
+    // só corre o tempo quando a vitrine está na tela
+    // (e a primeira cena recomeça quando a pessoa chega, para não "acontecer" fora da tela)
+    let jaViu = false;
+    if (temIO) new IntersectionObserver((es) => es.forEach((e) => {
+      bn.classList.toggle("visivel", e.isIntersecting);
+      if (e.isIntersecting && !jaViu) {
+        jaViu = true;
+        const s = slides[atual], a = abas[atual];
+        s.classList.remove("ativo"); a.classList.remove("corre"); void s.offsetWidth;
+        s.classList.add("ativo"); a.classList.add("corre");
+      }
+    }), { threshold: .35 }).observe(bn);
+    else bn.classList.add("visivel");
+    mostra(0);
   }
 
   /* os chips de alerta ganham um índice para a cascata */
