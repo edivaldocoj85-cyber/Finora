@@ -246,30 +246,9 @@
     setTimeout(() => noraBalao.classList.remove("on"), 7800);
   }
 
-  /* movimento que responde ao ponteiro e à rolagem — só com mouse e tela larga.
-     No celular não há paralaxe (motion-design: evitar em telas pequenas). */
+  /* paralaxe leve na rolagem — só com mouse e tela larga (no celular, nenhuma). */
   const fino = matchMedia("(hover:hover) and (pointer:fine) and (min-width:961px)");
   const vis = $("[data-tilt]");
-  if (vis) {
-    // o painel do hero inclina na direção do cursor; alerta e Nora andam em camadas opostas
-    let ax = 0, ay = 0, x = 0, y = 0, anda = false;
-    const passo = () => {
-      x += (ax - x) * .1; y += (ay - y) * .1;
-      vis.style.setProperty("--px", x.toFixed(3)); vis.style.setProperty("--py", y.toFixed(3));
-      if (Math.abs(ax - x) > .002 || Math.abs(ay - y) > .002) requestAnimationFrame(passo); else anda = false;
-    };
-    const vai = () => { if (!anda) { anda = true; requestAnimationFrame(passo); } };
-    addEventListener("pointermove", (e) => {
-      if (!fino.matches || e.pointerType !== "mouse") return;
-      const r = vis.getBoundingClientRect();
-      if (r.bottom < 0) return;
-      const lim = (v) => Math.max(-1, Math.min(1, v));
-      ax = lim((e.clientX - (r.left + r.width / 2)) / (r.width * .75));
-      ay = lim((e.clientY - (r.top + r.height / 2)) / (r.height * .75));
-      vai();
-    }, { passive: true });
-    document.documentElement.addEventListener("pointerleave", () => { ax = ay = 0; vai(); });
-  }
   // paralaxe leve na rolagem (< 40px): a vitrine da fatura flutua um pouco mais devagar
   const camadas = [[$(".fatura"), .07], [vis, .06]].filter(([el]) => el);
   let rafPar = 0;

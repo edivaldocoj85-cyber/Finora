@@ -34,6 +34,14 @@ Supersedes the section-level color and structure notes above where they conflict
 - **Nora is the assistant** everywhere: landing chat header, app floating button and panel header (`.nora-ic` inline SVG), greeting, and the backend system prompt.
 - **Motion:** in the hero only Nora moves continuously (orbit, bobbing cards and bell removed). New scenes: invoice rows, installment bars and committed-months bars; cash-flow mini bars in negócio.
 
+## Landing v6 — "Extrato anotado" (2026-09-24, supersedes Editorial type/color above)
+
+Owner: "o frontend ainda está com cara de IA — fonte, cores, brilho, fundos, velocidades". Skill: frontend-design (+ motion-design for pacing). The page now reads like a well-set bank statement annotated by hand, grounded in Finora's world (extrato, fatura, carnê):
+- **Type:** Schibsted Grotesk 800/700 display (newspaper grotesk, tight -.03em) · Public Sans body (sober, institutional) · IBM Plex Mono 500/600 for money values in every product "print" (tabular, statement-like). Plus Jakarta Sans + Inter retired from the landing.
+- **Color:** paper `--gelo #f3f5f8` + white, navy ink `--tinta #0e1a33`, cool neutrals (no lavender grays), one action color **azul-caneta** `--indigo #2340d8` (was Tailwind `#4f46e5`), and the highlighter `mark` as the annotation — now a real highlighter shape (irregular SVG stroke, 58% height). Dark bands are flat navy. The brand gradient `--grad` (indigo→cyan) is kept **only** for the logo tile and Nora (brand commitment).
+- **Removed as AI tells:** rotating conic border, grid background, glass cards, button shine sweep, hero tilt/pointer layers, gradient CTA band, pill buttons (now 10px radius), long soft shadows (now short), colored icon tiles in Recursos/trust strip (now 1.75px line icons in pen blue on a hairline ledger list).
+- **Pacing:** reveals 14px/.55s (desktop) → 10px/.45s (phone); hover lift 2px; hero messages 7.5s, banners 8s, marquee 70s — slower rotation, room to read.
+
 ## Landing v4 — enxuta + movimento responsivo (2026-09-24)
 
 Owner asked for less text and "movimentos responsivos". Skill used: motion-design (Corporate personality for UI, Playful for Nora — unchanged).
