@@ -393,30 +393,34 @@
   }
 
   /* ------------------------------------------------------------------
-     VITRINE — carrossel de banners. A barra de tempo da aba ativa é a
-     própria animação CSS; quando ela termina, passa para o próximo.
-     Pausa sozinho com o mouse em cima, com foco dentro, fora da tela ou
-     no botão de pausa. Setas, ←/→ nas abas e arrastar no celular.
-     Sem JS ou com movimento reduzido, os banners ficam empilhados.
+     CARROSSEL — usado pelo topo (.hs) e pela vitrine (.bn). A barra de
+     tempo da aba ativa é a própria animação CSS (bn-tempo); quando ela
+     termina, passa para o próximo. Pausa sozinho com o mouse em cima,
+     com foco dentro, fora da tela ou no botão de pausa. Setas (se
+     houver), ←/→ nas abas e arrastar no celular. Sem JS ou com
+     movimento reduzido, cada um tem seu estado estático no CSS.
+     pre: prefixo das classes · aoMudar(n, slide) · espera: ms antes de
+     começar a contar · reinicia: refaz a 1ª cena quando entra na tela.
      ------------------------------------------------------------------ */
-  const bn = $("[data-bn]");
-  if (bn) {
-    const slides = $$(".bn-slide", bn), abas = $$(".bn-aba", bn);
+  function carrossel(el, { pre, aoMudar = () => {}, espera = 0, reinicia = true }) {
+    const slides = $$(`.${pre}-slide`, el), abas = $$(`.${pre}-aba`, el);
+    if (!slides.length || slides.length !== abas.length) return;
     let atual = -1;
-    bn.classList.add("js");
-    slides.forEach((s, i) => { s.id = "bn-s" + i; abas[i].id = "bn-a" + i; abas[i].setAttribute("aria-controls", s.id); s.setAttribute("role", "tabpanel"); s.setAttribute("aria-labelledby", abas[i].id); });
+    el.classList.add("js");
+    slides.forEach((s, i) => { s.id = `${pre}-s${i}`; abas[i].id = `${pre}-a${i}`; abas[i].setAttribute("aria-controls", s.id); s.setAttribute("role", "tabpanel"); s.setAttribute("aria-labelledby", abas[i].id); });
     function mostra(n, dir = 1) {
       n = (n + slides.length) % slides.length;
       if (n === atual) return;
-      bn.style.setProperty("--dir", dir);
+      el.style.setProperty("--dir", dir);
       slides.forEach((s, i) => {
         s.classList.toggle("sai", i === atual);
         s.classList.toggle("ativo", i === n);
         s.inert = i !== n;
       });
-      abas.forEach((a, i) => { a.setAttribute("aria-selected", String(i === n)); a.tabIndex = i === n ? 0 : -1; a.classList.remove("corre"); });
+      abas.forEach((a, i) => { a.setAttribute("aria-selected", String(i === n)); a.tabIndex = i === n ? 0 : -1; a.classList.remove("corre"); a.classList.toggle("feita", i < n); });
       void abas[n].offsetWidth; abas[n].classList.add("corre");   // reinicia a barra de tempo
       atual = n;
+      aoMudar(n, slides[n]);
     }
     abas.forEach((a, i) => {
       a.addEventListener("click", () => mostra(i, i > atual ? 1 : -1));
@@ -427,16 +431,16 @@
       });
       a.addEventListener("animationend", (e) => { if (e.animationName === "bn-tempo") mostra(atual + 1, 1); });
     });
-    $("[data-bn-ant]", bn).addEventListener("click", () => mostra(atual - 1, -1));
-    $("[data-bn-prox]", bn).addEventListener("click", () => mostra(atual + 1, 1));
-    const pausa = $("[data-bn-pausa]", bn);
-    pausa.addEventListener("click", () => {
-      const p = bn.classList.toggle("pausa");
+    $(`[data-${pre}-ant]`, el)?.addEventListener("click", () => mostra(atual - 1, -1));
+    $(`[data-${pre}-prox]`, el)?.addEventListener("click", () => mostra(atual + 1, 1));
+    const pausa = $(`[data-${pre}-pausa]`, el);
+    pausa?.addEventListener("click", () => {
+      const p = el.classList.toggle("pausa");
       pausa.setAttribute("aria-pressed", String(p));
       pausa.setAttribute("aria-label", p ? "Retomar a troca automática" : "Pausar a troca automática");
     });
     // arrastar para os lados (toque)
-    const palco = $(".bn-palco", bn); let x0 = null;
+    const palco = $(`.${pre}-palco`, el); let x0 = null;
     palco.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") x0 = e.clientX; });
     palco.addEventListener("pointerup", (e) => {
       if (x0 === null) return;
@@ -444,20 +448,33 @@
       if (Math.abs(dx) > 45) mostra(atual + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     });
     palco.addEventListener("pointercancel", () => (x0 = null));
-    // só corre o tempo quando a vitrine está na tela
-    // (e a primeira cena recomeça quando a pessoa chega, para não "acontecer" fora da tela)
-    let jaViu = false;
-    if (temIO) new IntersectionObserver((es) => es.forEach((e) => {
-      bn.classList.toggle("visivel", e.isIntersecting);
-      if (e.isIntersecting && !jaViu) {
+    // só corre o tempo quando está na tela (e, se pedido, a 1ª cena recomeça quando a pessoa chega)
+    let jaViu = !reinicia, pronto = espera === 0;
+    if (!pronto) setTimeout(() => { pronto = true; if (el.dataset.naTela) el.classList.add("visivel"); }, espera);
+    const naTela = (sim) => {
+      el.dataset.naTela = sim ? "1" : "";
+      el.classList.toggle("visivel", sim && pronto);
+      if (sim && !jaViu) {
         jaViu = true;
         const s = slides[atual], a = abas[atual];
         s.classList.remove("ativo"); a.classList.remove("corre"); void s.offsetWidth;
         s.classList.add("ativo"); a.classList.add("corre");
       }
-    }), { threshold: .35 }).observe(bn);
-    else bn.classList.add("visivel");
+    };
+    if (temIO) new IntersectionObserver((es) => es.forEach((e) => naTela(e.isIntersecting)), { threshold: .35 }).observe(el);
+    else naTela(true);
     mostra(0);
+  }
+
+  const bn = $("[data-bn]");
+  if (bn) carrossel(bn, { pre: "bn" });
+
+  // topo: as mensagens giram e o painel ao lado acompanha (destaca a parte do app e troca o cartão)
+  const hs = $("[data-hs]"), heroFoco = $(".hero");
+  if (hs) {
+    carrossel(hs, { pre: "hs", espera: 1800, reinicia: false, aoMudar: (n, s) => { heroFoco.dataset.foco = s.dataset.foco || ""; } });
+    // depois da coreografia de entrada, o painel passa a reagir às mensagens (sem os atrasos da entrada)
+    setTimeout(() => heroFoco.classList.add("hs-vivo"), 1800);
   }
 
   /* os chips de alerta ganham um índice para a cascata */

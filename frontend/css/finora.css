@@ -106,7 +106,8 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 /* ============ HERO ============ */
 .hero{position:relative;overflow:hidden;padding:64px 0 20px;background:linear-gradient(180deg,#f4f5ff 0%,#fff 70%)}
 .hero-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:56px;align-items:center}
-.hero h1{font-size:clamp(2.4rem,4.8vw,3.7rem)}
+.hero .hs-t{font-size:clamp(2.4rem,4.8vw,3.7rem)}
+.hs-tit{margin:0;font-family:var(--display);font-weight:800;letter-spacing:-.025em;line-height:1.08;color:var(--tinta);text-wrap:balance}
 .lead{margin-top:20px;font-size:clamp(1.05rem,1.35vw,1.18rem);color:var(--texto);max-width:34em}
 .hero-cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;margin-top:30px}
 .nota{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--suave)}
@@ -640,8 +641,8 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 }
 
 /* ---------- hero: coreografia de entrada ---------- */
-.js-anim .hero h1,.js-anim .hero .lead,.js-anim .hero .hero-cta,.js-anim .hero .fluxo{opacity:0;transform:translateY(20px);transition:opacity .7s var(--m-ui),transform .7s var(--m-ui)}
-.js-anim .hero .lead{transition-delay:.1s}.js-anim .hero .hero-cta{transition-delay:.2s}.js-anim .hero .fluxo{transition-delay:.3s}
+.js-anim .hero .hs,.js-anim .hero .hero-cta,.js-anim .hero .fluxo{opacity:0;transform:translateY(20px);transition:opacity .7s var(--m-ui),transform .7s var(--m-ui)}
+.js-anim .hero .hero-cta{transition-delay:.2s}.js-anim .hero .fluxo{transition-delay:.3s}
 .js-anim .hero mark{background-size:0 100%;background-repeat:no-repeat;transition:background-size .8s .7s var(--m-ui)}
 .js-anim .hero.entra mark{background-size:100% 100%}
 .js-anim .app-mock{opacity:0;transform:translateY(36px) scale(.975);transition:opacity .8s .2s var(--m-ui),transform .9s .2s var(--m-ui)}
@@ -652,7 +653,7 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 .js-anim .donut{--arco:0%;transition:--arco 1.3s 1s var(--m-ui)}
 .js-anim .f-alerta{opacity:0;transform:translateX(-26px);transition:opacity .5s 1.35s var(--m-ui),transform .7s 1.35s var(--m-pula)}
 .js-anim .nora-wrap{opacity:0;transform:translateY(-60px)}
-.js-anim .hero.entra h1,.js-anim .hero.entra .lead,.js-anim .hero.entra .hero-cta,.js-anim .hero.entra .fluxo,
+.js-anim .hero.entra .hs,.js-anim .hero.entra .hero-cta,.js-anim .hero.entra .fluxo,
 .js-anim .hero.entra .app-mock,.js-anim .hero.entra .am-ola,.js-anim .hero.entra .am-kpi,.js-anim .hero.entra .am-contas,.js-anim .hero.entra .am-cats,
 .js-anim .hero.entra .f-alerta{opacity:1;transform:none}
 .js-anim .hero.entra .donut{--arco:100%}
@@ -893,4 +894,69 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
 @media (prefers-reduced-motion:reduce){
   .atende{transition:none}
   .at-dig i{animation:none}
+}
+
+/* =====================================================================
+   TOPO — mensagens que giram (mesma automação da vitrine). Barras no
+   estilo "stories" marcam o tempo; o painel ao lado acompanha: destaca
+   a parte do app de que a mensagem fala e troca o cartão flutuante.
+   Sem JS ou com movimento reduzido: só a primeira mensagem, parada.
+   ===================================================================== */
+.hs-ctrl{display:none}
+.hs.js .hs-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.hs-abas{display:flex;gap:6px;flex:1;max-width:340px}
+.hs-aba{position:relative;flex:1;height:24px;padding:0;border:0;background:none;cursor:pointer}
+.hs-aba::before,.hs-aba::after{content:"";position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:4px}
+.hs-aba::before{background:#dfe2f1;transition:background-color .2s}
+.hs-aba:hover::before{background:#c7cbe6}
+.hs-aba::after{background:var(--grad);transform:scaleX(0);transform-origin:left}
+.hs-aba.feita::after{transform:none}
+.hs-aba.corre::after{animation:bn-tempo var(--hs-t,6s) linear forwards;animation-play-state:paused}
+.hs.visivel:not(.pausa):not(:hover):not(:focus-within) .hs-aba.corre::after{animation-play-state:running}
+.hs-pausa{width:32px;height:32px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:var(--indigo-cl);color:var(--indigo);cursor:pointer;transition:background-color .2s}
+.hs-pausa:hover{background:#e0e4ff}
+.hs-pausa svg{width:15px;height:15px}
+.hs-pausa .ic-play,.hs.pausa .hs-pausa .ic-pausa{display:none}
+.hs.pausa .hs-pausa .ic-play{display:block}
+.hs-palco{display:grid}
+.hs-slide{grid-area:1/1}
+.hs:not(.js) .hs-slide:not(:first-child){display:none}
+.hs.js .hs-slide{opacity:0;visibility:hidden;transition:opacity .4s var(--m-ui),visibility 0s .45s}
+.hs.js .hs-slide.ativo{opacity:1;visibility:visible;transition-delay:.12s,0s}
+.hs.js .hs-palco{touch-action:pan-y}
+
+/* painel acompanha a mensagem */
+/* só depois da entrada: aí as transições do painel viram as do destaque, sem os atrasos da cascata */
+.hero.hs-vivo .am-dim{transition:opacity .5s var(--m-ui),filter .5s var(--m-ui),box-shadow .5s var(--m-ui),scale .5s var(--m-ui),transform .5s var(--m-ui);transition-delay:0s}
+.hero[data-foco="venc"] .am-dim:not(.al-venc),.hero[data-foco="parc"] .am-dim,
+.hero[data-foco="contas"] .am-dim:not(.al-contas),.hero[data-foco="cats"] .am-dim:not(.al-cats){opacity:.35;filter:saturate(.35)}
+.hero[data-foco="venc"] .al-venc,.hero[data-foco="contas"] .al-contas,.hero[data-foco="cats"] .al-cats{scale:1.025;box-shadow:0 0 0 2px var(--indigo),0 14px 28px -14px rgba(79,70,229,.55)}
+/* cartões flutuantes: um por mensagem, no mesmo lugar */
+.f-var{left:-28px;bottom:4px;display:flex;gap:10px;align-items:center;visibility:hidden;opacity:0;transform:translateX(-18px) scale(.96)}
+.f-var b{display:block;color:var(--tinta);font-size:13px}
+.f-var span{color:var(--suave)}
+.hero.hs-vivo .f-alerta,.hero.hs-vivo .f-var{transition:opacity .4s var(--m-ui),transform .55s var(--m-pula),visibility 0s .5s;transition-delay:0s}
+.hero.hs-vivo[data-foco]:not([data-foco=""]) .f-alerta{visibility:hidden;opacity:0;transform:translateX(-18px) scale(.96)}
+.hero.hs-vivo[data-foco="venc"] .f-venc,.hero.hs-vivo[data-foco="parc"] .f-parc,
+.hero.hs-vivo[data-foco="contas"] .f-contas,.hero.hs-vivo[data-foco="cats"] .f-cats{visibility:visible;opacity:1;transform:none;transition-delay:.15s,.15s,0s}
+.fl-btn{margin-left:4px;padding:6px 10px;border-radius:999px;background:var(--indigo);color:#fff;font-style:normal;font-weight:700;font-size:11px;white-space:nowrap}
+.fl-ic.ic-violeta{background:var(--violeta-cl);color:var(--violeta)}
+.fl-ic.ic-indigo{background:var(--indigo-cl);color:var(--indigo)}
+.fl-ic.ic-rosa{background:var(--rosa-cl);color:var(--rosa)}
+.fl-parc{min-width:190px}
+.fl-parc i{display:block;height:6px;margin:6px 0 4px;border-radius:6px;background:var(--violeta-cl);overflow:hidden}
+.fl-parc i::after{content:"";display:block;height:100%;width:var(--p);border-radius:6px;background:linear-gradient(90deg,#8b5cf6,#6d28d9)}
+@media (prefers-reduced-motion:no-preference){
+  /* a mensagem nova sobe em duas batidas (título, texto) e o marca-texto passa de novo */
+  .js-anim .hero.hs-vivo .hs-slide.ativo .hs-t{animation:bn-sobe .55s .12s var(--m-ui) both}
+  .js-anim .hero.hs-vivo .hs-slide.ativo .lead{animation:bn-sobe .55s .24s var(--m-ui) both}
+  .js-anim .hero.hs-vivo .hs-slide.ativo mark{animation:hs-marca .8s .45s var(--m-ui) both}
+  @keyframes hs-marca{from{background-size:0 100%}}
+  .js-anim .hero.hs-vivo[data-foco="parc"] .fl-parc i::after{animation:hs-parc 1s .5s var(--m-ui) both}
+  @keyframes hs-parc{from{width:0}}
+}
+@media (max-width:600px){
+  .f-var{left:0;bottom:0}
+  .fl-btn{display:none}
+  .hs.js .hs-ctrl{margin-bottom:16px}
 }

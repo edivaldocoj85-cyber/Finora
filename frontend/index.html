@@ -46,8 +46,34 @@
 <section class="hero">
   <div class="wrap hero-in">
     <div class="hero-txt">
-      <h1>Finanças em ordem, <mark>sem planilha.</mark></h1>
-      <p class="lead">O controle financeiro completo para a sua casa e o seu negócio: contas, cartões, parcelas e vencimentos em um só painel. A Finora organiza tudo, avisa antes de vencer e mostra quanto da sua renda já está comprometido.</p>
+      <div class="hs" data-hs role="region" aria-roledescription="carrossel" aria-label="Destaques da Finora">
+        <div class="hs-ctrl">
+          <div class="hs-abas" role="tablist" aria-label="Escolha a mensagem"><button class="hs-aba" role="tab" type="button" aria-label="Finanças em ordem"></button><button class="hs-aba" role="tab" type="button" aria-label="Vencimentos"></button><button class="hs-aba" role="tab" type="button" aria-label="Parcelas"></button><button class="hs-aba" role="tab" type="button" aria-label="Contas"></button><button class="hs-aba" role="tab" type="button" aria-label="Categorias"></button></div>
+          <button class="hs-pausa" type="button" data-hs-pausa aria-pressed="false" aria-label="Pausar a troca automática"><svg class="ic-pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"/><path d="M15 5v14"/></svg><svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8z"/></svg></button>
+        </div>
+        <div class="hs-palco">
+        <div class="hs-slide" data-foco="">
+          <h1 class="hs-t">Finanças em ordem, <mark>sem planilha.</mark></h1>
+          <p class="lead">Controle financeiro completo para a casa e o negócio: contas, cartões, parcelas e vencimentos em um só painel. A Finora organiza tudo e avisa antes de vencer.</p>
+        </div>
+        <div class="hs-slide" data-foco="venc">
+          <p class="hs-t hs-tit">Saiba hoje <mark>o que vence amanhã.</mark></p>
+          <p class="lead">A Finora avisa antes de cada vencimento e você marca como pago em um clique. Chega de juros e multa por esquecimento.</p>
+        </div>
+        <div class="hs-slide" data-foco="parc">
+          <p class="hs-t hs-tit">Parcelas <mark>sob controle.</mark></p>
+          <p class="lead">Parcelou? A Finora mostra parcela X de N, quanto ainda falta e quanto dos próximos meses já está comprometido.</p>
+        </div>
+        <div class="hs-slide" data-foco="contas">
+          <p class="hs-t hs-tit">Todas as contas, <mark>um só saldo.</mark></p>
+          <p class="lead">Bancos, cartões e carteira no mesmo painel, com os lançamentos organizados e categorizados automaticamente.</p>
+        </div>
+        <div class="hs-slide" data-foco="cats">
+          <p class="hs-t hs-tit">Descubra para onde <mark>vai o seu dinheiro.</mark></p>
+          <p class="lead">Gastos por categoria, orçamento planejado × realizado e um alerta assim que ele começa a apertar.</p>
+        </div>
+        </div>
+      </div>
       <div class="hero-cta">
         <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
         <span class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão de crédito para testar</span>
@@ -69,7 +95,7 @@
           <span class="am-tabs"><b>Painel</b><span>Lançamentos</span><span>Cartões</span><span>Contas</span></span>
         </div>
         <div class="am-corpo">
-          <div class="am-ola">
+          <div class="am-ola am-dim al-venc">
             <div><strong>Olá, Ana</strong><p>Você tem 2 contas a pagar hoje no total de <b>R$&nbsp;198,90</b>.</p></div>
             <div class="am-venc">
               <div class="am-v v-hoje"><span>Vencendo hoje</span><b>R$&nbsp;198,90</b></div>
@@ -77,18 +103,18 @@
             </div>
           </div>
           <div class="am-kpis">
-            <div class="am-kpi k-saldo"><span>Saldo em contas</span><b data-conta="36218.95" data-dec="2" data-pre="R$ ">R$&nbsp;36.218,95</b></div>
-            <div class="am-kpi k-rec"><span>Receitas do mês</span><b data-conta="8546.10" data-dec="2" data-pre="R$ ">R$&nbsp;8.546,10</b></div>
-            <div class="am-kpi k-desp"><span>Despesas do mês</span><b data-conta="4898.09" data-dec="2" data-pre="R$ ">R$&nbsp;4.898,09</b></div>
+            <div class="am-kpi k-saldo am-dim al-contas"><span>Saldo em contas</span><b data-conta="36218.95" data-dec="2" data-pre="R$ ">R$&nbsp;36.218,95</b></div>
+            <div class="am-kpi k-rec am-dim"><span>Receitas do mês</span><b data-conta="8546.10" data-dec="2" data-pre="R$ ">R$&nbsp;8.546,10</b></div>
+            <div class="am-kpi k-desp am-dim al-cats"><span>Despesas do mês</span><b data-conta="4898.09" data-dec="2" data-pre="R$ ">R$&nbsp;4.898,09</b></div>
           </div>
           <div class="am-baixo">
-            <div class="am-contas">
+            <div class="am-contas am-dim al-contas">
               <span class="am-t">Contas</span>
               <div class="am-c"><i style="--c:#f97316"></i>Itaú · corrente<b>R$&nbsp;31.240,50</b></div>
               <div class="am-c"><i style="--c:#8b5cf6"></i>Nubank · conta<b>R$&nbsp;4.883,45</b></div>
               <div class="am-c"><i style="--c:#0891b2"></i>Carteira<b>R$&nbsp;95,00</b></div>
             </div>
-            <div class="am-cats">
+            <div class="am-cats am-dim al-cats">
               <span class="am-t">Gastos por categoria</span>
               <div class="donut"><span>R$&nbsp;4,9 mil</span></div>
               <ul><li><i style="--c:#4f46e5"></i>Moradia</li><li><i style="--c:#0891b2"></i>Alimentação</li><li><i style="--c:#f59e0b"></i>Transporte</li><li><i style="--c:#10b981"></i>Educação</li></ul>
@@ -99,6 +125,22 @@
       <div class="flutua f-alerta">
         <span class="fl-ic"><svg viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
         <div><b>Vence em 2 dias</b><span>Fatura Nubank · R$&nbsp;1.284,90</span></div>
+      </div>
+      <div class="flutua f-var f-venc">
+        <span class="fl-ic"><svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></span>
+        <div><b>Internet fibra vence hoje</b><span>R$&nbsp;119,90</span></div><em class="fl-btn">Marcar como pago</em>
+      </div>
+      <div class="flutua f-var f-parc">
+        <span class="fl-ic ic-violeta"><svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg></span>
+        <div class="fl-parc"><b>Notebook · parcela 4 de 10</b><i style="--p:40%"></i><span>faltam 6 · R$&nbsp;1.874,40</span></div>
+      </div>
+      <div class="flutua f-var f-contas">
+        <span class="fl-ic ic-indigo"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M3 10h18"/><path d="m5 6 7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/></svg></span>
+        <div><b>3 contas no painel</b><span>Saldo total R$&nbsp;36.218,95</span></div>
+      </div>
+      <div class="flutua f-var f-cats">
+        <span class="fl-ic ic-rosa"><svg viewBox="0 0 24 24"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg></span>
+        <div><b>80% do orçamento: Restaurantes</b><span>R$&nbsp;480,00 de R$&nbsp;600,00</span></div>
       </div>
     </div>
   </div>
