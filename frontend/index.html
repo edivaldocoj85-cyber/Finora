@@ -51,6 +51,7 @@
       <div class="hero-cta">
         <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
         <span class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão de crédito para testar</span>
+        <button class="lnk-nora" type="button" data-abre-chat><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Tirar dúvidas com a Nora</button>
       </div>
       <ol class="fluxo" aria-label="Como funciona">
         <li><b>1</b>Conecte o banco ou importe o extrato</li>
@@ -61,7 +62,7 @@
 
     <!-- reprodução do painel real (cenário ilustrativo da Ana; os números fecham entre si) -->
     <div class="hero-vis" aria-hidden="true" data-tilt>
-      <div class="nora-wrap" data-nora="hero" title="Oi! Eu sou a Nora."><span class="nora-balao">Oi! Eu sou a <b>Nora</b>, sua assistente. Eu lembro das suas contas.</span></div>
+      <div class="nora-wrap" data-nora="hero" title="Oi! Eu sou a Nora."><span class="nora-balao">Oi! Eu sou a <b>Nora</b>. Clique em mim para tirar suas dúvidas.</span></div>
       <div class="app-mock">
         <div class="am-top">
           <span class="am-marca"><span class="logo sm">F</span>Finora</span>
@@ -468,7 +469,7 @@
 </section>
 
 <!-- ============ DÚVIDAS ============ -->
-<section class="sec" id="duvidas" data-guia="Ficou alguma dúvida? Veja aqui." data-lado="d" data-gesto="espia">
+<section class="sec" id="duvidas" data-guia="Ficou com alguma dúvida? Clique em mim." data-lado="d" data-gesto="espia">
   <div class="wrap estreito">
     <div class="sec-cab centro" data-cena>
       <h2>Perguntas frequentes</h2>
@@ -491,6 +492,7 @@
       <details data-i="7"><summary>Posso cancelar quando quiser?</summary>
         <p>Pode, sem multa. O acesso segue até o fim do período pago. Veja os <a href="/termos.html">Termos de Uso</a>.</p></details>
     </div>
+    <p class="faq-mais">Não achou sua dúvida? <button class="lnk-nora" type="button" data-abre-chat>Pergunte à Nora</button> ou escreva para <a href="mailto:finora@gmail.com">finora@gmail.com</a>.</p>
   </div>
 </section>
 
@@ -527,6 +529,23 @@
 
 <!-- Nora guia: acompanha a rolagem e comenta cada seção (decorativa; montada pelo JS) -->
 <div class="guia" aria-hidden="true"><span class="guia-balao"></span><div class="guia-surge"><div class="guia-mola"><div class="guia-vira" data-nora="guia"></div></div></div></div>
+
+<!-- Chat de dúvidas com a Nora (pré-venda). Abre ao clicar em qualquer Nora ou nos botões "Tirar dúvidas". -->
+<section class="atende" id="atende" role="dialog" aria-modal="false" aria-labelledby="at-titulo" hidden>
+  <header class="at-cab">
+    <span class="at-av" data-nora="mini"></span>
+    <div><h2 id="at-titulo">Nora</h2><span class="at-status"><i></i>Assistente da Finora · responde na hora</span></div>
+    <button class="at-fecha" type="button" data-fecha-chat aria-label="Fechar o chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </header>
+  <ol class="at-msgs" aria-live="polite" aria-relevant="additions"></ol>
+  <div class="at-sug" aria-label="Sugestões de perguntas"></div>
+  <form class="at-form" autocomplete="off">
+    <label class="sr" for="at-in">Escreva sua pergunta</label>
+    <input id="at-in" name="q" maxlength="500" placeholder="Escreva sua dúvida…" required>
+    <button type="submit" aria-label="Enviar pergunta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 21.5 21 3 2.5 9.5l8 3.5z"/><path d="m10.5 13 4-4"/></svg></button>
+  </form>
+  <p class="at-rod">Prefere e-mail? <a href="mailto:finora@gmail.com">finora@gmail.com</a></p>
+</section>
 
 <!-- CTA fixo no celular: aparece depois do topo e some perto da chamada final -->
 <div class="cta-movel"><a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a></div>

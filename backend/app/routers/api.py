@@ -26,7 +26,7 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
                       Goal, Income, PluggyItem, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, market, pluggy, storage
+from ..services import advisor, analytics, assistant, market, pluggy, storage, vendas
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -71,6 +71,25 @@ def pedir_acesso(data: WaitlistIn, db: Session = Depends(get_db)):
     db.add(WaitlistSignup(email=email))
     db.commit()
     return {"ok": True}
+
+
+# Chat de pré-venda da landing (sem login). Não grava nada; o limite por IP protege o custo
+# da camada de IA e o tamanho da conversa é cortado aqui, antes de qualquer processamento.
+class VendasMsg(BaseModel):
+    papel: str = Field(pattern="^(eu|nora)$")
+    texto: str = Field(min_length=1, max_length=2000)
+
+
+class VendasIn(BaseModel):
+    mensagens: list[VendasMsg] = Field(min_length=1, max_length=40)
+
+
+@router.post("/vendas/chat", dependencies=[Depends(rate_limit("vendas", 30, 600))])
+def chat_vendas(data: VendasIn):
+    historico = [{"papel": m.papel, "texto": m.texto.strip()[:600]} for m in data.mensagens[-12:]]
+    if historico[-1]["papel"] != "eu" or not historico[-1]["texto"]:
+        raise HTTPException(400, "A última mensagem precisa ser a pergunta do visitante.")
+    return vendas.responder(historico)
 
 
 # ---------------------------------------------------------------- admin (backoffice da plataforma)

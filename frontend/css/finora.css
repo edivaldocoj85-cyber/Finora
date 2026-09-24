@@ -835,3 +835,62 @@ mark{background:linear-gradient(transparent 60%,var(--marca-texto) 60%,var(--mar
   .v-reserva{flex-direction:column;align-items:flex-start}
   .vr-anel{width:128px;height:128px}
 }
+
+/* =====================================================================
+   CHAT COM A NORA (pré-venda) — painel no canto no computador, folha de
+   baixo no celular. Mesma linguagem do chat ilustrativo da seção Nora,
+   mas em superfície clara para leitura longa.
+   ===================================================================== */
+.lnk-nora{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;font-size:14px;color:var(--indigo);cursor:pointer;text-decoration:underline;text-decoration-color:#c7d2fe;text-underline-offset:4px}
+.lnk-nora:hover{color:var(--indigo-esc);text-decoration-color:currentColor}
+.lnk-nora svg{width:17px;height:17px}
+.faq-mais{margin-top:22px;text-align:center;color:var(--suave)}
+.faq-mais .lnk-nora{min-height:0;font-size:inherit}
+
+.atende{position:fixed;z-index:60;right:24px;bottom:24px;width:min(400px,calc(100vw - 32px));height:min(600px,calc(100dvh - 120px));display:flex;flex-direction:column;background:#fff;border-radius:22px;box-shadow:0 30px 70px -20px rgba(20,18,58,.45),0 0 0 1px rgba(20,18,58,.08);overflow:hidden;opacity:0;transform:translateY(16px) scale(.96);transform-origin:right bottom;transition:opacity .2s var(--m-ui),transform .32s var(--m-ui)}
+.atende[hidden]{display:none}
+.atende.on{opacity:1;transform:none}
+.at-cab{display:flex;align-items:center;gap:12px;padding:14px 12px 14px 16px;background:var(--tinta);color:#fff}
+.at-av{width:40px;flex:none;margin-top:-4px}
+.at-cab h2{font-size:16px;color:#fff}
+.at-status{display:flex;align-items:center;gap:6px;font-size:12px;color:#b8bbe2}
+.at-status i{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.2)}
+.at-fecha{margin-left:auto;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
+.at-fecha:hover{background:rgba(255,255,255,.16)}
+.at-fecha svg{width:20px;height:20px}
+.at-msgs{flex:1;list-style:none;margin:0;padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain;background:var(--gelo);font-size:14.5px;line-height:1.5}
+.at-m{max-width:88%;padding:10px 14px;border-radius:16px;overflow-wrap:anywhere}
+.at-m.eu{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:4px}
+.at-m.ela{align-self:flex-start;background:#fff;color:var(--texto);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(20,18,58,.08)}
+.at-m.ela b{color:var(--tinta)}
+.at-m.ela a{color:var(--indigo);font-weight:600}
+.at-email{display:flex!important;align-items:center;justify-content:center;gap:8px;margin-top:10px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--indigo-cl);color:var(--indigo-esc)!important;text-decoration:none;font-size:13.5px}
+.at-email:hover{background:#e0e4ff}
+.at-email svg{width:16px;height:16px}
+.at-dig{display:flex;gap:4px;padding:14px}
+.at-dig i{width:7px;height:7px;border-radius:50%;background:#a5a9d4;animation:pula 1s infinite}
+.at-dig i:nth-child(2){animation-delay:.15s}.at-dig i:nth-child(3){animation-delay:.3s}
+.at-sug{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;background:var(--gelo)}
+.at-sug:not(:empty){padding-bottom:12px}
+.at-sug button{font:inherit;font-size:13px;font-weight:600;color:var(--indigo);background:#fff;border:1px solid #c7d2fe;border-radius:999px;padding:0 12px;min-height:36px;cursor:pointer;transition:background-color .15s,border-color .15s}
+.at-sug button:hover{background:var(--indigo-cl);border-color:var(--indigo)}
+.at-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--linha);background:#fff}
+.at-form input{flex:1;min-width:0;min-height:46px;padding:0 16px;border:1px solid var(--linha);border-radius:999px;font:inherit;font-size:15px;color:var(--tinta);background:var(--gelo)}
+.at-form input:focus{outline:2px solid var(--indigo);outline-offset:1px;background:#fff}
+.at-form button{width:46px;height:46px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:var(--indigo);color:#fff;cursor:pointer;transition:background-color .15s,transform .12s}
+.at-form button:hover{background:var(--indigo-esc)}
+.at-form button:active{transform:scale(.94)}
+.at-form button svg{width:20px;height:20px}
+.at-rod{padding:0 16px 12px;font-size:12px;color:var(--suave);background:#fff}
+.at-rod a{color:var(--indigo);font-weight:600}
+/* com o chat aberto, a guia e o CTA fixo saem da frente */
+.chat-aberto .guia,.chat-aberto .cta-movel{opacity:0!important;pointer-events:none!important}
+[data-nora="hero"],[data-nora="pula"]{cursor:pointer}
+@media (max-width:600px){
+  .atende{right:0;left:0;bottom:0;width:auto;height:min(88dvh,640px);border-radius:22px 22px 0 0;transform:translateY(40px)}
+  .at-form{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+}
+@media (prefers-reduced-motion:reduce){
+  .atende{transition:none}
+  .at-dig i{animation:none}
+}

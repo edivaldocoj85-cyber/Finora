@@ -104,6 +104,103 @@
   }
   $$("[data-nora]").forEach((el) => el.insertAdjacentHTML("afterbegin", nora(el.dataset.nora)));
 
+  /* ------------------------------------------------------------------
+     CHAT COM A NORA (pré-venda). Abre ao clicar em qualquer Nora da
+     página ou nos botões [data-abre-chat]. Pergunta vai para
+     /api/vendas/chat; quando a Nora não sabe, oferece mandar a dúvida
+     por e-mail já escrita. Fica fora do bloco de movimento: funciona
+     também com movimento reduzido.
+     ------------------------------------------------------------------ */
+  const EMAIL = "finora@gmail.com";
+  const at = document.getElementById("atende");
+  let abreChat = () => {};
+  if (at) {
+    const lista = $(".at-msgs", at), sug = $(".at-sug", at), form = $(".at-form", at), campo = $("#at-in", at);
+    const conversa = [];   // [{papel: "eu"|"nora", texto}]
+    let ocupado = false, voltaFoco = null;
+    const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    // texto da Nora: escapa tudo e só então aplica **negrito**, quebras e e-mails como link
+    const formata = (t) => esc(t)
+      .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+      .replace(/([\w.+-]+@[\w-]+\.[\w.]+)/g, '<a href="mailto:$1">$1</a>')
+      .replace(/\n/g, "<br>");
+    const rola = () => { lista.scrollTop = lista.scrollHeight; };
+    const mailto = () => {
+      const perguntas = conversa.filter((m) => m.papel === "eu").map((m) => "• " + m.texto).join("\n");
+      return `mailto:${EMAIL}?subject=${encodeURIComponent("Dúvida sobre a Finora")}&body=${encodeURIComponent("Olá, equipe Finora!\n\nMinha dúvida:\n" + perguntas + "\n\n")}`;
+    };
+    function balao(papel, texto, email) {
+      const li = document.createElement("li");
+      li.className = "at-m " + (papel === "eu" ? "eu" : "ela");
+      li.innerHTML = papel === "eu" ? esc(texto) : formata(texto);
+      if (email) {
+        const a = document.createElement("a");
+        a.className = "at-email"; a.href = mailto();
+        a.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Enviar minha dúvida por e-mail';
+        li.appendChild(a);
+      }
+      lista.appendChild(li); rola();
+    }
+    function sugere(itens) {
+      sug.innerHTML = "";
+      (itens || []).slice(0, 3).forEach((t) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = t;
+        b.addEventListener("click", () => pergunta(t));
+        sug.appendChild(b);
+      });
+      rola();   // as sugestões mudam a altura da lista: rola de novo pra última mensagem ficar inteira
+    }
+    async function pergunta(texto) {
+      texto = (texto || "").trim().slice(0, 500);
+      if (!texto || ocupado) return;
+      ocupado = true; sugere([]);
+      conversa.push({ papel: "eu", texto }); balao("eu", texto);
+      const dig = document.createElement("li");
+      dig.className = "at-m ela at-dig"; dig.setAttribute("aria-label", "A Nora está escrevendo");
+      dig.innerHTML = "<i></i><i></i><i></i>";
+      lista.appendChild(dig); rola();
+      let r;
+      try {
+        const resp = await fetch("/api/vendas/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensagens: conversa.slice(-12) }) });
+        if (resp.status === 429) r = { resposta: `Recebi muitas mensagens seguidas. Espere alguns minutos ou escreva para **${EMAIL}**.`, email: true };
+        else if (!resp.ok) throw new Error(resp.status);
+        else r = await resp.json();
+      } catch {
+        r = { resposta: `Não consegui responder agora. Tente de novo em instantes ou escreva para **${EMAIL}**.`, email: true };
+      }
+      dig.remove();
+      conversa.push({ papel: "nora", texto: r.resposta });
+      balao("nora", r.resposta, r.email);
+      sugere(r.sugestoes);
+      ocupado = false; campo.focus();
+    }
+    form.addEventListener("submit", (e) => { e.preventDefault(); const t = campo.value; campo.value = ""; pergunta(t); });
+
+    abreChat = () => {
+      if (!at.hidden) { campo.focus(); return; }
+      voltaFoco = document.activeElement;
+      at.hidden = false; root.classList.add("chat-aberto");
+      requestAnimationFrame(() => at.classList.add("on"));
+      if (!conversa.length) {
+        const oi = "Oi! Eu sou a **Nora**, assistente da Finora. Posso explicar como o app funciona, preços, teste grátis, segurança e o que mais você quiser saber. Qual é a sua dúvida?";
+        conversa.push({ papel: "nora", texto: oi }); balao("nora", oi);
+        sugere(["O que a Finora faz?", "Quanto custa?", "É seguro?"]);
+      }
+      setTimeout(() => campo.focus(), 60);
+    };
+    const fechaChat = () => {
+      at.classList.remove("on"); root.classList.remove("chat-aberto");
+      setTimeout(() => { if (!at.classList.contains("on")) at.hidden = true; }, 220);
+      if (voltaFoco && voltaFoco.focus) voltaFoco.focus();
+    };
+    $("[data-fecha-chat]", at).addEventListener("click", fechaChat);
+    at.addEventListener("keydown", (e) => { if (e.key === "Escape") fechaChat(); });
+    $$("[data-abre-chat]").forEach((b) => b.addEventListener("click", abreChat));
+    // qualquer Nora da página abre o chat (a do hero, a da chamada final e a guia)
+    $$('[data-nora="hero"], [data-nora="pula"], .guia-mola').forEach((n) => n.addEventListener("click", abreChat));
+  }
+
   if (reduz) return; // daqui pra baixo é só movimento
   document.documentElement.classList.add("js-anim");
 
@@ -290,8 +387,8 @@
       if (Math.abs(dy) > 2) agendaLembrete();
     })();
 
-    // clique: acena e repete o comentário
-    mola.addEventListener("click", () => { encena("acena"); if (parada) fala(parada.dataset.guia, 200); });
+    // clique: ela acena enquanto o chat abre (o chat é ligado no bloco do chat, acima)
+    mola.addEventListener("click", () => { clearTimeout(tBalao); balao.classList.remove("on"); encena("acena"); });
     addEventListener("resize", () => poe(largo.matches ? lado : "d"), { passive: true });
   }
 

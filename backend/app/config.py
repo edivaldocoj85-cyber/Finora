@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     # IA (Anthropic)
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-5"
+    # chat de pré-venda da landing (público): modelo próprio, independente do consultor
+    vendas_model: str = "claude-opus-5"
 
     # Login com Google (Google Cloud Console -> OAuth Client ID, tipo "Web application")
     google_client_id: str = ""
