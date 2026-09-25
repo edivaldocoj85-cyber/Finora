@@ -29,6 +29,7 @@
       <a href="#planos">Planos</a>
       <a href="#duvidas">Dúvidas</a>
       <a class="menu-entrar" href="/app/" data-entrar>Acessar conta</a>
+      <a class="menu-testar btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias</a>
     </nav>
     <div class="cab-acoes">
       <a class="lnk-entrar" href="/app/" data-entrar>
@@ -46,37 +47,13 @@
 <section class="hero">
   <div class="wrap hero-in">
     <div class="hero-txt">
-      <div class="hs" data-hs role="region" aria-roledescription="carrossel" aria-label="Destaques da Finora">
-        <div class="hs-ctrl">
-          <div class="hs-abas" role="tablist" aria-label="Escolha a mensagem"><button class="hs-aba" role="tab" type="button" aria-label="Finanças em ordem"></button><button class="hs-aba" role="tab" type="button" aria-label="Vencimentos"></button><button class="hs-aba" role="tab" type="button" aria-label="Parcelas"></button><button class="hs-aba" role="tab" type="button" aria-label="Contas"></button><button class="hs-aba" role="tab" type="button" aria-label="Categorias"></button></div>
-          <button class="hs-pausa" type="button" data-hs-pausa aria-pressed="false" aria-label="Pausar a troca automática"><svg class="ic-pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"/><path d="M15 5v14"/></svg><svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8z"/></svg></button>
-        </div>
-        <div class="hs-palco">
-        <div class="hs-slide" data-foco="">
-          <h1 class="hs-t">Finanças em ordem, <mark>sem planilha.</mark></h1>
-          <p class="lead">Controle financeiro completo para a casa e o negócio: contas, cartões, parcelas e vencimentos em um só painel. A Finora organiza tudo e avisa antes de vencer.</p>
-        </div>
-        <div class="hs-slide" data-foco="venc">
-          <p class="hs-t hs-tit">Saiba hoje <mark>o que vence amanhã.</mark></p>
-          <p class="lead">A Finora avisa antes de cada vencimento e você marca como pago em um clique. Chega de juros e multa por esquecimento.</p>
-        </div>
-        <div class="hs-slide" data-foco="parc">
-          <p class="hs-t hs-tit">Parcelas <mark>sob controle.</mark></p>
-          <p class="lead">Parcelou? A Finora mostra parcela X de N, quanto ainda falta e quanto dos próximos meses já está comprometido.</p>
-        </div>
-        <div class="hs-slide" data-foco="contas">
-          <p class="hs-t hs-tit">Todas as contas, <mark>um só saldo.</mark></p>
-          <p class="lead">Bancos, cartões e carteira no mesmo painel, com os lançamentos organizados e categorizados automaticamente.</p>
-        </div>
-        <div class="hs-slide" data-foco="cats">
-          <p class="hs-t hs-tit">Descubra para onde <mark>vai o seu dinheiro.</mark></p>
-          <p class="lead">Gastos por categoria, orçamento planejado × realizado e um alerta assim que ele começa a apertar.</p>
-        </div>
-        </div>
+      <div class="hs">
+        <h1 class="hs-t">Finanças em ordem, <mark>sem planilha.</mark></h1>
+        <p class="lead">Controle financeiro completo para a casa e o negócio: contas, cartões, parcelas e vencimentos em um só painel. A Finora organiza tudo e avisa antes de vencer.</p>
       </div>
       <div class="hero-cta">
         <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias <span aria-hidden="true">→</span></a>
-        <span class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão de crédito para testar</span>
+        <span class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão de crédito · você entra com a sua conta Google</span>
         <button class="lnk-nora" type="button" data-abre-chat><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Tirar dúvidas com a Nora</button>
       </div>
       <ol class="fluxo" aria-label="Como funciona">
@@ -194,7 +171,6 @@
 
 <!-- ============ VITRINE: banners animados (o que muda na vida da pessoa) ============ -->
 <section class="sec escuro vitrine" id="vitrine" data-guia="Olha o que muda na sua rotina." data-lado="d" data-gesto="acena">
-  <div class="faixa-frases" aria-hidden="true"><ul class="ff-trilho"><li>Fim das surpresas no saldo</li><li>Reserva para os imprevistos</li><li>Dicas para aplicar o seu dinheiro</li><li>Metas que saem do papel</li><li>Parcelas sob controle</li><li>Menos supérfluo, mais futuro</li><li>Fim das surpresas no saldo</li><li>Reserva para os imprevistos</li><li>Dicas para aplicar o seu dinheiro</li><li>Metas que saem do papel</li><li>Parcelas sob controle</li><li>Menos supérfluo, mais futuro</li></ul></div>
   <div class="wrap">
     <div class="sec-cab centro" data-cena>
       <h2>Dinheiro com direção <span class="real">muda a sua rotina.</span></h2>
@@ -479,14 +455,14 @@
         <h3>Mensal</h3>
         <p class="preco"><small>R$</small>14<small>,90</small><span>/mês</span></p>
         <p class="p-desc">Sem fidelidade. Cancele quando quiser.</p>
-        <a class="btn btn-sec" href="/app/" data-entrar>Testar grátis por 10 dias</a>
+        <a class="btn btn-sec btn-plano" href="/app/?plano=mensal" data-entrar data-plano="mensal">Testar grátis<small>depois R$&nbsp;14,90/mês</small></a>
       </article>
       <article class="plano dest" data-i="1">
         <span class="p-tag">Economize R$&nbsp;28,90</span>
         <h3>Anual</h3>
         <p class="preco"><small>R$</small>12<small>,49</small><span>/mês</span></p>
         <p class="p-desc">R$&nbsp;149,90 por ano, em vez de R$&nbsp;178,80.</p>
-        <a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias</a>
+        <a class="btn btn-pri btn-plano" href="/app/?plano=anual" data-entrar data-plano="anual">Testar grátis<small>depois R$&nbsp;149,90/ano</small></a>
       </article>
       <div class="p-inclui" data-i="2">
         <h3>Incluído nos dois</h3>
@@ -503,7 +479,7 @@
       </div>
     </div>
     <ul class="termos-planos">
-      <li><b>Teste:</b> 10 dias, sem cartão.</li>
+      <li><b>Teste:</b> 10 dias, sem cartão, entrando com a sua conta Google.</li>
       <li><b>Depois:</b> acesso pausado até assinar, dados guardados.</li>
       <li><b>Cancelamento:</b> sem multa. Veja os <a href="/termos.html">Termos de Uso</a>.</li>
     </ul>
@@ -530,7 +506,8 @@
       <details data-i="5"><summary>Tem aplicativo para celular?</summary>
         <p>Funciona no navegador e pode ser instalada na tela inicial, sem loja.</p></details>
       <details data-i="6"><summary>Como é feito o pagamento?</summary>
-        <p><span class="preencher">[PREENCHER: formas de pagamento aceitas — ex.: Pix e cartão de crédito]</span></p></details>
+        <p>As formas de pagamento aparecem na hora de assinar, depois do teste. Quer saber antes? Escreva para <a href="mailto:finora@gmail.com">finora@gmail.com</a>.</p></details>
+      <!-- PREENCHER antes do lançamento: formas de pagamento aceitas (ex.: Pix e cartão de crédito) -->
       <details data-i="7"><summary>Posso cancelar quando quiser?</summary>
         <p>Pode, sem multa. O acesso segue até o fim do período pago. Veja os <a href="/termos.html">Termos de Uso</a>.</p></details>
     </div>
@@ -564,19 +541,19 @@
     <nav class="rd-col" aria-label="Legal e contato"><h3>Legal e contato</h3><a href="/privacidade.html">Política de Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="mailto:finora@gmail.com">finora@gmail.com</a></nav>
   </div>
   <div class="wrap rd-base">
-    <span>© 2026 Finora · <span class="preencher">[PREENCHER: razão social]</span> · CNPJ <span class="preencher">[PREENCHER]</span> · Brasília, DF</span>
+    <span>© 2026 Finora · Brasília, DF<!-- PREENCHER antes do lançamento: razão social e CNPJ --></span>
     <a href="#topo">Voltar ao topo ↑</a>
   </div>
 </footer>
 
 <!-- Nora guia: acompanha a rolagem e comenta cada seção (decorativa; montada pelo JS) -->
-<div class="guia" aria-hidden="true"><span class="guia-balao"></span><div class="guia-surge"><div class="guia-mola"><div class="guia-vira" data-nora="guia"></div></div></div></div>
+<div class="guia" aria-hidden="true"><span class="guia-balao"></span><button class="guia-fecha" type="button" tabindex="-1" title="Esconder a Nora"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button><div class="guia-surge"><div class="guia-mola"><div class="guia-vira" data-nora="guia"></div></div></div></div>
 
 <!-- Chat de dúvidas com a Nora (pré-venda). Abre ao clicar em qualquer Nora ou nos botões "Tirar dúvidas". -->
 <section class="atende" id="atende" role="dialog" aria-modal="false" aria-labelledby="at-titulo" hidden>
   <header class="at-cab">
     <span class="at-av" data-nora="mini"></span>
-    <div><h2 id="at-titulo">Nora</h2><span class="at-status"><i></i>Assistente da Finora · responde na hora</span></div>
+    <div><h2 id="at-titulo">Nora</h2><span class="at-status" aria-live="polite">Assistente da Finora</span></div>
     <button class="at-fecha" type="button" data-fecha-chat aria-label="Fechar o chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </header>
   <ol class="at-msgs" aria-live="polite" aria-relevant="additions"></ol>

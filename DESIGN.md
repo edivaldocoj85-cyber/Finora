@@ -43,6 +43,15 @@ Owner: "o frontend ainda está com cara de IA — fonte, cores, brilho, fundos, 
 - **Pacing:** reveals 14px/.55s (desktop) → 10px/.45s (phone); hover lift 2px; hero messages 7.5s, banners 8s, marquee 70s — slower rotation, room to read.
 - **Panel and login follow (same day):** `styles.css` tokens — `--primary #2340d8` (dark `#7d93f2`), `--primary-bg`, cool `--bg/--border/--text/--muted`, `--radius 10px`; `--font-display` Schibsted Grotesk, `--font-body` Public Sans, `--font-num` IBM Plex Mono on `.stat .value`, `.li .amount`, `td.num`, `.gd b`, `.te-preco`; dashboard `.hero` card flat navy (was indigo→cyan gradient); Chart.js font and bar fill updated. Login (`auth-finora.css`): brand side flat navy (radial glow + ring removed), headline "Bem-vindo **de volta.**" with the same highlighter, 10px buttons, shorter shadows. Logo tile and Nora keep the brand gradient.
 
+## Landing v6.1 — critique P1 fixes (2026-09-25, after critique 23/36)
+
+Owner chose "confiança na decisão" first, "só limpar" (no redesign), scope = the 3 P1s.
+- **Trust at the decision point:** hero note and plan terms say "você entra com a sua conta Google"; plan buttons are two-line and distinct ("Testar grátis / depois R$ 14,90/mês" · "… R$ 149,90/ano") and carry `?plano=mensal|anual` (kept by the `[data-entrar]` href rewrite, for the future checkout); no `[PREENCHER]` visible on the landing anymore — payment FAQ answers honestly ("aparecem na hora de assinar… finora@gmail.com"), footer shows "© 2026 Finora · Brasília, DF", and the pending facts live as `<!-- PREENCHER … -->` comments (legal pages still show theirs); chat status is neutral "Assistente da Finora" and switches to "Sem conexão agora · respondemos por e-mail" on failure; send button disabled while answering; mobile menu gained the trial CTA.
+- **Nora guia out of the way:** rendered only ≥1440px (gutter), never on phones/laptops; before showing a bubble she checks `elementsFromPoint` and skips it over links, buttons, tables, prices, the invoice, the app mock or the FAQ (gesture only); mouse-only close button (session-scoped, the guide stays `aria-hidden`).
+- **Hero and motion distilled:** static h1 + lead (the message carousel is gone); after the entrance the app mock does ONE tour of its spotlights (vencimentos → parcelas → contas → categorias → geral, 3.2s each) and stops; the marquee was removed (HTML and CSS); floating cards and the banner alert no longer bounce and sit below the mock (they covered the "Carteira" row).
+- **Polish:** active-nav marker observes every section (nothing lit on the hero/vitrine/negócio); light focus ring (`#9db0ff`) on navy bands; struck-through prices `#6b7688` (was 2.6:1).
+- Detector 25 → 20; the rest is out of scope (vitrine side stripe, nested cards inside product prints, typing dots, header height transition).
+
 ## Landing v4 — enxuta + movimento responsivo (2026-09-24)
 
 Owner asked for less text and "movimentos responsivos". Skill used: motion-design (Corporate personality for UI, Playful for Nora — unchanged).

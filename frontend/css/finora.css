@@ -119,7 +119,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .ilustra{margin-top:14px;text-align:right;font-size:12px;color:var(--suave)}
 
 /* reprodução do painel */
-.hero-vis{position:relative;padding:64px 0 34px}
+.hero-vis{position:relative;padding:64px 0 60px}
 .app-mock{position:relative;z-index:1;background:#fff;border-radius:var(--raio-lg);box-shadow:var(--sombra-lg),0 0 0 1px rgba(14,26,51,.06);overflow:hidden;font-size:12px;color:var(--texto)}
 .am-top{display:flex;align-items:center;gap:18px;padding:12px 16px;background:var(--tinta);color:#c3cad6}
 .am-marca{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;color:#fff;font-size:13px}
@@ -158,7 +158,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .am-cats ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:11px}
 .am-cats li{display:flex;align-items:center;gap:6px}
 .flutua{position:absolute;z-index:2;background:#fff;border-radius:14px;box-shadow:var(--sombra-lg),0 0 0 1px rgba(14,26,51,.06);padding:12px 14px;font-size:12px}
-.f-alerta{left:-28px;bottom:4px;display:flex;gap:10px;align-items:center}
+.f-alerta{left:-28px;bottom:-26px;display:flex;gap:10px;align-items:center}
 .f-alerta b{display:block;color:var(--tinta);font-size:13px}
 .f-alerta span{color:var(--suave)}
 .fl-ic{width:34px;height:34px;border-radius:10px;background:var(--ambar-cl);color:var(--ambar);display:grid;place-items:center;flex:none}
@@ -221,11 +221,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
    Faixa escura com grade fina (cara de painel/instrumento), frases correndo
    no topo e um carrossel de cenas do produto. O banner ativo ganha uma borda
    de luz que gira (única luz "futurista" da página — pedido do dono). */
-.vitrine{position:relative;isolation:isolate;padding-top:0}
-.faixa-frases{overflow:hidden;padding:18px 0;margin-bottom:72px;border-bottom:1px solid rgba(255,255,255,.08);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-.ff-trilho{list-style:none;margin:0;padding:0;display:flex;width:max-content}
-.ff-trilho li{display:flex;align-items:center;white-space:nowrap;font-family:var(--display);font-weight:700;font-size:clamp(1rem,1.6vw,1.25rem);color:#dfe5ee;letter-spacing:-.01em}
-.ff-trilho li::after{content:"/";margin:0 26px;color:#5d6d88;font-weight:400}
+.vitrine{position:relative;isolation:isolate}
 
 .bn{max-width:1100px;margin:0 auto}
 .bn-palco{display:grid;gap:20px}
@@ -286,7 +282,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .vc-lin{display:grid;grid-template-columns:128px 1fr 48px 52px;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #edf0f4;font-size:13px}
 .vc-bar{height:10px;border-radius:10px;background:var(--gelo);overflow:hidden}
 .vc-bar i{display:block;height:100%;width:var(--para);border-radius:10px;background:linear-gradient(90deg,#f59e0b,#d97706)}
-.vc-lin s{color:#97a0b0;text-align:right}
+.vc-lin s{color:#6b7688;text-align:right}
 .vc-lin b{text-align:right}
 .vc-lin b{color:var(--tinta);font-variant-numeric:tabular-nums}
 .vc-total{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;margin-top:12px;padding:14px;border-radius:14px;background:var(--verde-cl)}
@@ -538,13 +534,13 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   .rec{padding:20px 0 24px}
   .confia-in{gap:14px}
   .fluxo{flex-direction:column;gap:8px}
-  .hero-vis{padding:56px 0 52px}
+  .hero-vis{padding:56px 0 72px}
   .am-tabs span{display:none}
   .am-kpis{grid-template-columns:1fr 1fr}
   .k-saldo{grid-column:1/-1}
   .am-kpi b{font-size:15px}
   .am-baixo{grid-template-columns:minmax(0,1fr)}
-  .f-alerta{left:0;bottom:0}
+  .f-alerta{left:0;bottom:-20px}
   .ct-row{grid-template-columns:1.2fr repeat(3,minmax(0,1fr));gap:4px}
   .ct-row>span{padding:10px 4px;font-size:12px}
   .ct::before{display:block;margin:0 0 2px}
@@ -617,13 +613,13 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
    Chegada discreta, depois uma "encenação" curta: .g-espia · .g-acena · .g-sim.
    Só existe com movimento liberado (html.js-anim). */
 .guia{display:none}
-.js-anim .guia{display:block;position:fixed;z-index:44;left:0;bottom:24px;width:84px;visibility:hidden;pointer-events:none}
+.js-anim .guia{display:none;position:fixed;z-index:44;left:0;bottom:24px;width:84px;visibility:hidden;pointer-events:none}
 .js-anim .guia.on{visibility:visible}
 .guia-surge{transform-origin:50% 100%;opacity:0}
 .guia-mola{pointer-events:auto;cursor:pointer;transform-origin:50% 100%;will-change:transform;filter:drop-shadow(0 8px 12px rgba(14,26,51,.22));-webkit-tap-highlight-color:transparent}
 .guia-vira{transition:transform .35s var(--m-ui)}
 .guia.lado-d .guia-vira{transform:scaleX(-1)}
-.guia-balao{position:absolute;bottom:100%;left:10px;margin-bottom:4px;width:max-content;max-width:220px;padding:9px 13px;border-radius:14px 14px 14px 4px;background:#fff;color:var(--tinta);font-size:13px;font-weight:600;line-height:1.35;box-shadow:var(--sombra-lg),0 0 0 1px rgba(14,26,51,.08);opacity:0;transform:translateY(8px) scale(.85);transform-origin:left bottom;transition:opacity .25s var(--m-ui),transform .4s var(--m-pula)}
+.guia-balao{position:absolute;bottom:100%;left:10px;margin-bottom:4px;width:max-content;max-width:190px;padding:9px 13px;border-radius:14px 14px 14px 4px;background:#fff;color:var(--tinta);font-size:13px;font-weight:600;line-height:1.35;box-shadow:var(--sombra-lg),0 0 0 1px rgba(14,26,51,.08);opacity:0;transform:translateY(8px) scale(.85);transform-origin:left bottom;transition:opacity .25s var(--m-ui),transform .4s var(--m-pula)}
 .guia.lado-d .guia-balao{left:auto;right:10px;border-radius:14px 14px 4px 14px;transform-origin:right bottom}
 .guia-balao.on{opacity:1;transform:none}
 /* encenações (curtas, feitas já parada; a antena "dá sinal" em todas) */
@@ -652,7 +648,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .js-anim .am-kpi:nth-child(1){transition-delay:.6s}.js-anim .am-kpi:nth-child(2){transition-delay:.67s}.js-anim .am-kpi:nth-child(3){transition-delay:.74s}
 .js-anim .am-contas{transition-delay:.84s}.js-anim .am-cats{transition-delay:.9s}
 .js-anim .donut{--arco:0%;transition:--arco 1.3s 1s var(--m-ui)}
-.js-anim .f-alerta{opacity:0;transform:translateX(-26px);transition:opacity .5s 1.35s var(--m-ui),transform .7s 1.35s var(--m-pula)}
+.js-anim .f-alerta{opacity:0;transform:translateX(-16px);transition:opacity .5s 1.35s var(--m-ui),transform .6s 1.35s var(--m-ui)}
 .js-anim .nora-wrap{opacity:0;transform:translateY(-60px)}
 .js-anim .hero.entra .hs,.js-anim .hero.entra .hero-cta,.js-anim .hero.entra .fluxo,
 .js-anim .hero.entra .app-mock,.js-anim .hero.entra .am-ola,.js-anim .hero.entra .am-kpi,.js-anim .hero.entra .am-contas,.js-anim .hero.entra .am-cats,
@@ -758,9 +754,6 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
    correm devagar. Sem movimento liberado, tudo aparece no estado final.
    ===================================================================== */
 @media (prefers-reduced-motion:no-preference){
-  .js-anim .ff-trilho{animation:ff-corre 70s linear infinite}
-  .js-anim .faixa-frases:hover .ff-trilho{animation-play-state:paused}
-  @keyframes ff-corre{to{transform:translateX(-50%)}}
   @keyframes bn-desenha{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
   @keyframes bn-sobe{from{opacity:0;transform:translateY(12px)}}
   @keyframes bn-entra{from{opacity:0;transform:translateX(26px) scale(.96)}}
@@ -773,7 +766,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   /* 1. o saldo mergulha, o alerta chega, o ajuste corrige a rota */
   .js-anim .bn-slide.ativo .vs-risco{opacity:1;animation:bn-desenha 1.2s .5s var(--m-suave) both,vs-apaga .6s 3s forwards}
   @keyframes vs-apaga{to{opacity:.35}}
-  .js-anim .bn-slide.ativo .vs-alerta{animation:bn-entra .6s 1.5s var(--m-pula) both}
+  .js-anim .bn-slide.ativo .vs-alerta{animation:bn-entra .6s 1.5s var(--m-ui) both}
   .js-anim .bn-slide.ativo .vs-ajuste{animation:bn-desenha 1.1s 2.3s var(--m-ui) both}
   .js-anim .bn-slide.ativo .vs-hoje{animation:vs-pulsa 1.6s 2.2s var(--m-suave) 2}
   @keyframes vs-pulsa{50%{r:8}}
@@ -815,8 +808,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 }
 @media (max-width:960px){
   .bn-slide{grid-template-columns:minmax(0,1fr);gap:26px;padding:28px 22px}
-  .faixa-frases{margin-bottom:52px}
-  .bn.js .bn-ctrl{flex-wrap:wrap}
+    .bn.js .bn-ctrl{flex-wrap:wrap}
   .bn-abas{order:-1;width:100%;overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
   .bn-abas::-webkit-scrollbar{display:none}
 }
@@ -924,10 +916,10 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .hero[data-foco="contas"] .am-dim:not(.al-contas),.hero[data-foco="cats"] .am-dim:not(.al-cats){opacity:.35;filter:saturate(.35)}
 .hero[data-foco="venc"] .al-venc,.hero[data-foco="contas"] .al-contas,.hero[data-foco="cats"] .al-cats{scale:1.025;box-shadow:0 0 0 2px var(--indigo),0 14px 28px -14px rgba(35,64,216,.55)}
 /* cartões flutuantes: um por mensagem, no mesmo lugar */
-.f-var{left:-28px;bottom:4px;display:flex;gap:10px;align-items:center;visibility:hidden;opacity:0;transform:translateX(-18px) scale(.96)}
+.f-var{left:-28px;bottom:-26px;display:flex;gap:10px;align-items:center;visibility:hidden;opacity:0;transform:translateX(-18px) scale(.96)}
 .f-var b{display:block;color:var(--tinta);font-size:13px}
 .f-var span{color:var(--suave)}
-.hero.hs-vivo .f-alerta,.hero.hs-vivo .f-var{transition:opacity .4s var(--m-ui),transform .55s var(--m-pula),visibility 0s .5s;transition-delay:0s}
+.hero.hs-vivo .f-alerta,.hero.hs-vivo .f-var{transition:opacity .4s var(--m-ui),transform .5s var(--m-ui),visibility 0s .5s;transition-delay:0s}
 .hero.hs-vivo[data-foco]:not([data-foco=""]) .f-alerta{visibility:hidden;opacity:0;transform:translateX(-18px) scale(.96)}
 .hero.hs-vivo[data-foco="venc"] .f-venc,.hero.hs-vivo[data-foco="parc"] .f-parc,
 .hero.hs-vivo[data-foco="contas"] .f-contas,.hero.hs-vivo[data-foco="cats"] .f-cats{visibility:visible;opacity:1;transform:none;transition-delay:.15s,.15s,0s}
@@ -948,7 +940,7 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   @keyframes hs-parc{from{width:0}}
 }
 @media (max-width:600px){
-  .f-var{left:0;bottom:0}
+  .f-var{left:0;bottom:-20px}
   .fl-btn{display:none}
   .hs.js .hs-ctrl{margin-bottom:16px}
 }
@@ -959,3 +951,23 @@ mark{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 .vs-alerta span,.ct-row .ct{font-family:var(--num);font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .am-kpi b,.ft-total,.vc-total b,.vr-info>b{font-weight:600}
 .bn.js .bn-slide.ativo{box-shadow:inset 0 3px 0 var(--c),inset 0 0 0 1px rgba(255,255,255,.08)}
+
+/* ---------- clarify / harden / polish (critique 2026-09-24) ---------- */
+/* guia só na margem de telas largas, onde não cobre o conteúdo */
+@media (min-width:1440px){ .js-anim .guia{display:block} }
+.guia-fecha{position:absolute;z-index:2;top:-4px;right:-6px;width:24px;height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:#fff;color:var(--tinta);box-shadow:0 1px 3px rgba(14,26,51,.25);cursor:pointer;pointer-events:auto;opacity:0;transition:opacity .15s}
+.guia-fecha svg{width:13px;height:13px;stroke-width:2.5}
+.guia:hover .guia-fecha{opacity:1}
+/* botão de plano: ação + o que acontece depois do teste */
+.btn-plano{flex-direction:column;gap:0;min-height:56px;line-height:1.2;padding-top:8px;padding-bottom:8px}
+.btn-plano small{font-family:var(--corpo);font-weight:500;font-size:12.5px;opacity:.85}
+/* menu do celular também leva ao teste */
+.menu .menu-testar{display:none}
+/* chat: status honesto e envio travado enquanto a Nora responde */
+.at-status.off{color:#fcd34d}
+.at-form button:disabled{opacity:.5;cursor:default}
+/* foco visível nas faixas escuras (o azul-caneta some sobre o marinho) */
+.escuro :focus-visible,.rodape :focus-visible,.at-cab :focus-visible{outline-color:#9db0ff}
+@media (max-width:960px){
+  .menu .menu-testar,.menu .menu-testar:hover{display:flex;margin-top:14px;border-bottom:0;color:#fff;padding:0 22px}
+}

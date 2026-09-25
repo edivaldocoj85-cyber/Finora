@@ -19,7 +19,8 @@
   const temIO = "IntersectionObserver" in window;
 
   /* links de entrada */
-  $$("[data-entrar]").forEach((a) => a.setAttribute("href", root.dataset.login || "/app/"));
+  // o botão de cada plano leva a escolha junto (?plano=mensal|anual), para o app retomar na hora de assinar
+  $$("[data-entrar]").forEach((a) => a.setAttribute("href", (root.dataset.login || "/app/") + (a.dataset.plano ? "?plano=" + a.dataset.plano : "")));
 
   /* cabeçalho: compacta ao rolar e mostra o progresso de leitura */
   const cab = $(".cab");
@@ -49,11 +50,12 @@
   /* menu marca a seção atual */
   const secoes = $$("a[href^='#']", menu).map((a) => [a, document.querySelector(a.getAttribute("href"))]).filter(([, s]) => s);
   if ("IntersectionObserver" in window) {
+    // observa TODAS as seções: numa que não está no menu (topo, vitrine, negócio…), nenhum item fica aceso
     const ioNav = new IntersectionObserver((es) => es.forEach((e) => {
       if (!e.isIntersecting) return;
       secoes.forEach(([a, s]) => a.setAttribute("aria-current", String(s === e.target)));
     }), { rootMargin: "-45% 0px -50% 0px" });
-    secoes.forEach(([, s]) => ioNav.observe(s));
+    $$("#conteudo > section").forEach((s) => ioNav.observe(s));
   }
 
   /* CTA fixo no celular: aparece depois do topo, some na chamada final e no rodapé */
@@ -116,6 +118,9 @@
   let abreChat = () => {};
   if (at) {
     const lista = $(".at-msgs", at), sug = $(".at-sug", at), form = $(".at-form", at), campo = $("#at-in", at);
+    const status = $(".at-status", at), enviar = $("button[type=submit]", form);
+    // o status diz a verdade: sem conexão, avisa e aponta o e-mail
+    const estado = (ok) => { status.textContent = ok ? "Assistente da Finora" : "Sem conexão agora · respondemos por e-mail"; status.classList.toggle("off", !ok); };
     const conversa = [];   // [{papel: "eu"|"nora", texto}]
     let ocupado = false, voltaFoco = null;
     const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -154,7 +159,7 @@
     async function pergunta(texto) {
       texto = (texto || "").trim().slice(0, 500);
       if (!texto || ocupado) return;
-      ocupado = true; sugere([]);
+      ocupado = true; sugere([]); enviar.disabled = true;
       conversa.push({ papel: "eu", texto }); balao("eu", texto);
       const dig = document.createElement("li");
       dig.className = "at-m ela at-dig"; dig.setAttribute("aria-label", "A Nora está escrevendo");
@@ -165,15 +170,16 @@
         const resp = await fetch("/api/vendas/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensagens: conversa.slice(-12) }) });
         if (resp.status === 429) r = { resposta: `Recebi muitas mensagens seguidas. Espere alguns minutos ou escreva para **${EMAIL}**.`, email: true };
         else if (!resp.ok) throw new Error(resp.status);
-        else r = await resp.json();
+        else { r = await resp.json(); estado(true); }
       } catch {
+        estado(false);
         r = { resposta: `Não consegui responder agora. Tente de novo em instantes ou escreva para **${EMAIL}**.`, email: true };
       }
       dig.remove();
       conversa.push({ papel: "nora", texto: r.resposta });
       balao("nora", r.resposta, r.email);
       sugere(r.sugestoes);
-      ocupado = false; campo.focus();
+      ocupado = false; enviar.disabled = false; campo.focus();
     }
     form.addEventListener("submit", (e) => { e.preventDefault(); const t = campo.value; campo.value = ""; pergunta(t); });
 
@@ -276,7 +282,17 @@
   const guia = $(".guia");
   if (guia && temIO && "animate" in guia) {
     const surge = $(".guia-surge", guia), mola = $(".guia-mola", guia), balao = $(".guia-balao", guia);
-    const largo = matchMedia("(min-width:961px)");
+    // só na margem de telas largas (≥1440px, onde sobra espaço fora do conteúdo); no celular e no notebook ela não aparece
+    const largo = matchMedia("(min-width:1440px)");
+    let dispensada = false;
+    try { dispensada = sessionStorage.getItem("finora-guia") === "fora"; } catch {}
+    // o balão nunca abre em cima de algo que a pessoa precisa ler ou clicar
+    const ALVO = "a, button, input, table, [role=table], [role=row], .btn, .plano, .preco, .fatura, .termos-planos, .flutua, .ct-row, .app-mock, .faq";
+    const cobreAlgo = () => {
+      const r = balao.getBoundingClientRect();
+      const pts = [[r.left + 4, r.top + 4], [r.right - 4, r.top + 4], [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4], [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
+      return pts.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => !guia.contains(el) && el.closest(ALVO)));
+    };
     let lado = "d", parada = null, visivel = false, tBalao = 0, tGesto = 0, tLembra = 0;
     const margem = () => (largo.matches ? 28 : 10);
     const posX = (l) => (largo.matches && l === "e" ? margem() : document.documentElement.clientWidth - margem() - guia.offsetWidth);
@@ -285,7 +301,9 @@
     const fala = (txt, espera = 0) => {
       clearTimeout(tBalao); balao.classList.remove("on");
       tBalao = setTimeout(() => {
-        balao.textContent = txt; balao.classList.add("on");
+        balao.textContent = txt;
+        if (cobreAlgo()) return;             // sem espaço livre: fica só o gesto, sem balão
+        balao.classList.add("on");
         tBalao = setTimeout(() => balao.classList.remove("on"), 4200);
       }, espera);
     };
@@ -323,7 +341,7 @@
     }
 
     function entra() {
-      if (visivel) return; visivel = true;
+      if (visivel || dispensada || !largo.matches) return; visivel = true;
       guia.classList.add("on");
       chega(parada, true);
     }
@@ -351,6 +369,11 @@
       { rootMargin: "-40% 0px 0px 0px" }).observe(heroEl);
 
     // mola discreta: um leve atraso e inclinação na rolagem; os olhos acompanham a página
+    $(".guia-fecha", guia)?.addEventListener("click", (e) => {
+      e.stopPropagation(); dispensada = true; sai();
+      try { sessionStorage.setItem("finora-guia", "fora"); } catch {}
+    });
+    largo.addEventListener?.("change", () => (largo.matches ? avalia() : sai()));
     const pup = $(".n-pupilas", guia);
     let yAnt = scrollY, v = 0, pos = 0, vel = 0;
     (function laco() {
@@ -448,12 +471,15 @@
   const bn = $("[data-bn]");
   if (bn) carrossel(bn, { pre: "bn" });
 
-  // topo: as mensagens giram e o painel ao lado acompanha (destaca a parte do app e troca o cartão)
-  const hs = $("[data-hs]"), heroFoco = $(".hero");
-  if (hs) {
-    carrossel(hs, { pre: "hs", espera: 1800, reinicia: false, aoMudar: (n, s) => { heroFoco.dataset.foco = s.dataset.foco || ""; } });
-    // depois da coreografia de entrada, o painel passa a reagir às mensagens (sem os atrasos da entrada)
-    setTimeout(() => heroFoco.classList.add("hs-vivo"), 1800);
+  // topo: o título fica parado. Depois da entrada, o painel faz UM passeio pelos destaques
+  // (vencimentos → parcelas → contas → categorias), cada um com seu cartão, e volta ao geral.
+  const heroFoco = $(".hero");
+  if (heroFoco && $(".hero-vis")) {
+    const FOCOS = ["venc", "parc", "contas", "cats", ""];
+    setTimeout(() => {
+      heroFoco.classList.add("hs-vivo");
+      FOCOS.forEach((f, i) => setTimeout(() => { heroFoco.dataset.foco = f; }, 1600 + i * 3200));
+    }, 1800);
   }
 
   /* os chips de alerta ganham um índice para a cascata */
