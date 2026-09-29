@@ -40,125 +40,227 @@
 <main id="conteudo">
 
 <!-- ============ ABERTURA: a folhinha do mês ============ -->
-<section class="abre">
+<section class="abre" data-luz>
+  <div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
   <div class="wrap abre-in">
     <div class="abre-txt">
+      <p class="selo-topo"><span class="pulso" aria-hidden="true"></span>10 dias grátis, sem cartão de crédito</p>
       <h1>Dinheiro dá menos medo quando você sabe <mark>o que vem pela frente.</mark></h1>
       <p class="lead">A Finora junta suas contas, cartões e parcelas num lugar só e avisa antes de cada vencimento. Sem planilha e sem sermão.</p>
       <div class="abre-cta">
         <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
-        <p class="nota">Sem cartão de crédito. Você entra com a sua conta Google.</p>
+        <p class="nota">Você entra com a sua conta Google.</p>
       </div>
+      <ul class="abre-selos" aria-label="Destaques">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Open Finance só de leitura</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Aviso antes de vencer</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Parcelas mês a mês</li>
+      </ul>
     </div>
 
-    <figure class="folhinha" aria-labelledby="fl-leg">
-      <figcaption class="fl-cab"><span id="fl-leg">Outubro</span><small>um mês como qualquer outro</small></figcaption>
-      <div class="fl-sem" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
-      <div class="fl-dias">
-        <span class="vazio"></span><span class="vazio"></span><span class="vazio"></span><span class="vazio"></span>
-        <span>1</span><span>2</span><span>3</span><span>4</span>
-        <a class="marcado" href="#dia-5" style="--o:0"><b>5</b><em>salário</em><span class="sr">: o salário caiu</span></a>
-        <span>6</span><span>7</span><span>8</span><span>9</span>
-        <a class="marcado" href="#dia-10" style="--o:1"><b>10</b><em>luz!</em><span class="sr">: a conta de luz</span></a>
-        <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
-        <a class="marcado" href="#dia-18" style="--o:2"><b>18</b><em>cartão fecha</em><span class="sr">: o cartão fecha</span></a>
-        <span>19</span><span>20</span><span>21</span>
-        <a class="marcado" href="#dia-22" style="--o:3"><b>22</b><em>salão</em><span class="sr">: as contas do salão</span></a>
-        <span>23</span><span>24</span>
-        <a class="marcado" href="#dia-25" style="--o:4"><b>25</b><em>fatura</em><span class="sr">: a fatura chega</span></a>
-        <span>26</span><span>27</span><span>28</span><span>29</span>
-        <a class="marcado" href="#dia-30" style="--o:5"><b>30</b><em>sobrou?</em><span class="sr">: o fim do mês</span></a>
-        <span>31</span>
+    <div class="fl-palco">
+      <figure class="folhinha" aria-labelledby="fl-leg">
+        <span class="fl-reflexo" aria-hidden="true"></span>
+        <figcaption class="fl-cab"><span id="fl-leg">Outubro</span><small>um mês como qualquer outro</small></figcaption>
+        <div class="fl-sem" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+        <div class="fl-dias">
+          <span class="vazio"></span><span class="vazio"></span><span class="vazio"></span><span class="vazio"></span>
+          <span>1</span><span>2</span><span>3</span><span>4</span>
+          <a class="marcado" href="#dia-5" style="--o:0" data-dia="5"><b>5</b><em>salário</em><span class="sr">: o salário caiu</span></a>
+          <span>6</span><span>7</span><span>8</span><span>9</span>
+          <a class="marcado" href="#dia-10" style="--o:1" data-dia="10"><b>10</b><em>luz!</em><span class="sr">: a conta de luz</span></a>
+          <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
+          <a class="marcado" href="#dia-18" style="--o:2" data-dia="18"><b>18</b><em>cartão fecha</em><span class="sr">: o cartão fecha</span></a>
+          <span>19</span><span>20</span><span>21</span>
+          <a class="marcado" href="#dia-22" style="--o:3" data-dia="22"><b>22</b><em>salão</em><span class="sr">: as contas do salão</span></a>
+          <span>23</span><span>24</span>
+          <a class="marcado" href="#dia-25" style="--o:4" data-dia="25"><b>25</b><em>fatura</em><span class="sr">: a fatura chega</span></a>
+          <span>26</span><span>27</span><span>28</span><span>29</span>
+          <a class="marcado" href="#dia-30" style="--o:5" data-dia="30"><b>30</b><em>sobrou?</em><span class="sr">: o fim do mês</span></a>
+          <span>31</span>
+        </div>
+        <button class="fl-nora" type="button" data-abre-chat aria-label="Tirar dúvidas com a Nora"><span data-nora="mini"></span></button>
+      </figure>
+      <!-- aviso que gira junto com os dias circulados (decorativo: o mesmo conteúdo está nas histórias) -->
+      <div class="aviso" aria-hidden="true">
+        <span class="av-ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+        <span class="av-corpo"><small>Aviso da Finora · dia <b class="av-dia">10</b></small><span class="av-txt">A conta de luz vence em 3 dias.</span></span>
       </div>
-      <button class="fl-nora" type="button" data-abre-chat aria-label="Tirar dúvidas com a Nora"><span data-nora="mini"></span></button>
-    </figure>
+    </div>
   </div>
+  <a class="rolar" href="#historias" aria-label="Ver as histórias do mês"><span></span></a>
 </section>
 
 <!-- ============ HISTÓRIAS: seis dias do mês ============ -->
 <section class="sec" id="historias">
   <div class="wrap">
-    <header class="sec-cab">
+    <header class="sec-cab" data-rev>
       <h2>Um mês como qualquer outro</h2>
-      <p>Seis dias que quase todo mundo conhece. As pessoas são inventadas; as situações, nem tanto.</p>
+      <p>Seis dias que quase todo mundo conhece. As pessoas são inventadas; as situações, nem tanto. Ao lado de cada uma, um pedacinho da Finora para você mexer. Os valores são ilustrativos.</p>
     </header>
 
     <ol class="dias">
-      <li class="dia" id="dia-5">
+      <li class="dia" id="dia-5" data-rev>
         <p class="dia-n" aria-hidden="true">5</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 5</p>
           <h3>O salário caiu. Três dias depois, parecia que não.</h3>
           <p>Aluguel, mercado do mês, a mensalidade da escola do Theo. O Rafael olha o saldo e não consegue lembrar metade do que saiu.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>Os lançamentos chegam do banco, ou do extrato que você importa, e já vêm separados por categoria. Você vê para onde foi cada real sem anotar nada.</p>
+          <div class="demo demo-extrato" data-demo="extrato">
+            <ul class="dx-lista">
+              <li data-cat="moradia" style="--i:0"><span class="dx-nome">Aluguel</span><span class="tag c-moradia">Moradia</span><b>R$&nbsp;1.450,00</b></li>
+              <li data-cat="educacao" style="--i:1"><span class="dx-nome">Escola Pequeno Mundo</span><span class="tag c-educacao">Educação</span><b>R$&nbsp;780,00</b></li>
+              <li data-cat="mercado" style="--i:2"><span class="dx-nome">Mercado Bom Preço</span><span class="tag c-mercado">Mercado</span><b>R$&nbsp;612,35</b></li>
+              <li data-cat="saude" style="--i:3"><span class="dx-nome">Farmácia</span><span class="tag c-saude">Saúde</span><b>R$&nbsp;86,90</b></li>
+            </ul>
+            <div class="dx-barra" aria-hidden="true"><i class="c-moradia" style="--w:49.5%"></i><i class="c-educacao" style="--w:26.6%"></i><i class="c-mercado" style="--w:20.9%"></i><i class="c-saude" style="--w:3%"></i></div>
+            <div class="dx-leg" role="group" aria-label="Destacar uma categoria">
+              <button type="button" data-cat="moradia" aria-pressed="false"><i class="c-moradia"></i>Moradia 49%</button>
+              <button type="button" data-cat="educacao" aria-pressed="false"><i class="c-educacao"></i>Educação 27%</button>
+              <button type="button" data-cat="mercado" aria-pressed="false"><i class="c-mercado"></i>Mercado 21%</button>
+              <button type="button" data-cat="saude" aria-pressed="false"><i class="c-saude"></i>Saúde 3%</button>
+            </div>
+            <button class="demo-btn" type="button" data-replay><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Importar de novo</button>
+          </div>
         </div>
       </li>
 
-      <li class="dia" id="dia-10">
+      <li class="dia" id="dia-10" data-rev>
         <p class="dia-n" aria-hidden="true">10</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 10</p>
           <h3>A conta de luz venceu ontem.</h3>
           <p>Não faltou dinheiro, faltou lembrar. A Júlia pagou com juros e multa, pela segunda vez no ano.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>As contas fixas ficam num calendário, e você recebe um aviso três dias antes de cada vencimento. Pagou? Marque como paga com um toque.</p>
+          <div class="demo demo-conta" data-demo="conta">
+            <ol class="dc-semana" aria-hidden="true">
+              <li class="av">7<small>aviso</small></li><li>8</li><li>9</li><li class="vc">10<small>vence</small></li>
+            </ol>
+            <div class="dc-aviso">
+              <span class="dc-sino"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+              <span><b>Conta de luz vence em 3 dias</b><small>Dia 10 · R$&nbsp;187,40</small></span>
+            </div>
+            <button class="dc-pagar" type="button" aria-pressed="false"><span class="dc-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="dc-txt">Marcar como paga</span></button>
+            <p class="dc-ok" aria-live="polite"></p>
+          </div>
         </div>
       </li>
 
-      <li class="dia" id="dia-18">
+      <li class="dia" id="dia-18" data-rev>
         <p class="dia-n" aria-hidden="true">18</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 18</p>
           <h3>O cartão fechou. Parcela 4 de 10 do notebook.</h3>
           <p>Tem também a geladeira e a passagem de dezembro. O Diego sabe que está tudo parcelado. Só não sabe quanto do ano que vem já é da fatura.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>Cada compra parcelada aparece com a parcela da vez e quanto ainda falta. Antes de parcelar mais uma, você vê quanto dos próximos meses já está comprometido.</p>
+          <div class="demo demo-parc" data-demo="parc">
+            <div class="dp-item">
+              <div class="dp-top"><span>Notebook</span><span>parcela 4 de 10</span></div>
+              <div class="dp-trilho"><i style="--p:.4"></i></div>
+              <small>Faltam 6 × R$&nbsp;420,00 = R$&nbsp;2.520,00</small>
+            </div>
+            <p class="dp-leg">Já comprometido no cartão, por mês</p>
+            <div class="dp-barras" aria-hidden="true">
+              <div class="dp-col" data-v="680"><b>680</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>nov</small></div>
+              <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>dez</small></div>
+              <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>jan</small></div>
+              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>fev</small></div>
+              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>mar</small></div>
+              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>abr</small></div>
+            </div>
+            <button class="demo-btn dp-sim" type="button" aria-pressed="false">E se parcelar um celular de R$&nbsp;1.800 em 6×?</button>
+            <p class="dp-diz" aria-live="polite">Notebook, geladeira e passagem já ocupam de R$&nbsp;680 a R$&nbsp;990 por mês até abril.</p>
+          </div>
         </div>
       </li>
 
-      <li class="dia" id="dia-22">
+      <li class="dia" id="dia-22" data-rev>
         <p class="dia-n" aria-hidden="true">22</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 22</p>
           <h3>Dinheiro do salão, dinheiro de casa. Tudo na mesma conta.</h3>
           <p>A Carla é manicure e atende em casa. Uma cliente pagou no Pix, outra ficou de pagar semana que vem, e o esmalte acabou.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>Você separa a casa do negócio, anota quem ainda te deve e vê o caixa do mês. Nota fiscal e boleto a Finora não emite.</p>
+          <div class="demo demo-caixa" data-demo="caixa">
+            <div class="dk-abas" role="group" aria-label="Ver o dinheiro de">
+              <button type="button" data-lado="salao" aria-pressed="true">Salão</button>
+              <button type="button" data-lado="casa" aria-pressed="false">Casa</button>
+              <span class="dk-cursor" aria-hidden="true"></span>
+            </div>
+            <div class="dk-painel" data-painel="salao">
+              <p class="dk-total"><small>Caixa do salão em outubro</small><b data-caixa>R$&nbsp;1.165,10</b></p>
+              <ul class="dk-lista">
+                <li><span>Pix · Lúcia</span><b class="pos">+ R$&nbsp;45,00</b></li>
+                <li><span>Esmaltes e algodão</span><b class="neg">− R$&nbsp;38,90</b></li>
+              </ul>
+              <div class="dk-deve">
+                <span><b>Marina te deve</b><small>R$&nbsp;60,00 · combinou semana que vem</small></span>
+                <button type="button" class="dk-recebi" aria-pressed="false">Recebi</button>
+              </div>
+            </div>
+            <div class="dk-painel" data-painel="casa" hidden>
+              <p class="dk-total"><small>Gastos da casa em outubro</small><b>R$&nbsp;2.184,65</b></p>
+              <ul class="dk-lista">
+                <li><span>Mercado do mês</span><b class="neg">− R$&nbsp;612,35</b></li>
+                <li><span>Conta de luz</span><b class="neg">− R$&nbsp;187,40</b></li>
+              </ul>
+              <p class="dk-sep">Nada do salão aparece aqui.</p>
+            </div>
+          </div>
         </div>
       </li>
 
-      <li class="dia" id="dia-25">
+      <li class="dia" id="dia-25" data-rev>
         <p class="dia-n" aria-hidden="true">25</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 25</p>
           <h3>A fatura chegou. Desta vez, do tamanho que ela esperava.</h3>
           <p>No meio do mês, a Bia recebeu um aviso: já tinha usado 80% do que separou para restaurantes. Segurou o delivery por duas semanas.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>Você decide quanto quer gastar em cada categoria. A Finora avisa quando chega em 80%, quando passa do limite e quando o cartão está perto do limite dele.</p>
+          <div class="demo demo-orc" data-demo="orc">
+            <div class="do-top"><span>Restaurantes</span><span>separou <b>R$&nbsp;400</b></span></div>
+            <div class="do-medidor"><i class="do-cheio"></i><span class="do-80" aria-hidden="true">80%</span></div>
+            <label class="do-lab" for="do-gasto">Arraste: quanto a Bia já gastou <output id="do-out" for="do-gasto">R$&nbsp;320</output></label>
+            <input class="do-range" id="do-gasto" type="range" min="0" max="520" step="10" value="320">
+            <p class="do-msg" aria-live="polite"><span class="do-ic" aria-hidden="true"></span><span class="do-txt">Aviso: você já usou 80% do que separou para Restaurantes.</span></p>
+          </div>
         </div>
       </li>
 
-      <li class="dia" id="dia-30">
+      <li class="dia" id="dia-30" data-rev>
         <p class="dia-n" aria-hidden="true">30</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 30</p>
           <h3>Sobraram R$&nbsp;300. E agora?</h3>
           <p>O Paulo nunca tinha chegado ao fim do mês com sobra. Não sabe se guarda, se investe, nem onde.</p>
         </div>
-        <div class="dia-ajuda">
+        <div class="dia-ajuda" data-spot>
           <p class="ajuda-t">Com a Finora</p>
           <p>Você cria uma meta, como uma reserva para imprevistos, e acompanha quanto falta. O consultor explica as opções tendo Selic, CDI e IPCA como referência. É conteúdo educativo, não recomendação de investimento.</p>
+          <div class="demo demo-meta" data-demo="meta">
+            <div class="dm-top"><span>Reserva para imprevistos</span><span>meta <b>R$&nbsp;3.000</b></span></div>
+            <div class="dm-meses" aria-hidden="true"></div>
+            <label class="do-lab" for="dm-mes">Arraste: guardar por mês <output id="dm-out" for="dm-mes">R$&nbsp;300</output></label>
+            <input class="do-range" id="dm-mes" type="range" min="100" max="1000" step="50" value="300">
+            <p class="dm-msg" aria-live="polite">Em <b>10 meses</b> a reserva está pronta: <b>agosto de 2027</b>.</p>
+            <p class="dm-obs">Conta simples, sem rendimento.</p>
+          </div>
         </div>
       </li>
     </ol>
@@ -166,19 +268,26 @@
 </section>
 
 <!-- ============ NORA ============ -->
-<section class="sec sec-nora" id="nora">
+<section class="sec sec-nora" id="nora" data-luz>
+  <div class="aurora aurora-nora" aria-hidden="true"><i class="a1"></i><i class="a2"></i></div>
   <div class="wrap nora-in">
-    <div class="nora-fig" aria-hidden="true"><span data-nora="hero"></span></div>
-    <div class="nora-txt">
+    <div class="nora-fig" aria-hidden="true"><span class="nora-halo"></span><span data-nora="hero"></span></div>
+    <div class="nora-txt" data-rev>
       <h2>Quando der preguiça de abrir o app, escreva para a Nora.</h2>
       <p>Ela é a assistente da Finora. Você escreve do jeito que falaria com alguém, ela prepara o lançamento e espera você confirmar. Nada entra sem o seu ok.</p>
-      <dl class="conversa">
+      <div class="cv-abas" role="group" aria-label="Exemplos de conversa">
+        <button type="button" data-ex="0" aria-pressed="true">Anotar um gasto</button>
+        <button type="button" data-ex="1" aria-pressed="false">Ver o saldo</button>
+        <button type="button" data-ex="2" aria-pressed="false">Gastos do mês</button>
+        <button type="button" data-ex="3" aria-pressed="false">Contas do dia</button>
+      </div>
+      <dl class="conversa" aria-live="polite">
         <div class="cv eu"><dt>Você</dt><dd>gastei 80 na farmácia</dd></div>
         <div class="cv ela"><dt>Nora</dt><dd>Anoto R$&nbsp;80,00 em Saúde, na sua conta corrente. Posso lançar?</dd></div>
         <div class="cv eu"><dt>Você</dt><dd>pode</dd></div>
       </dl>
-      <p class="nota">Exemplo de conversa. A Nora também responde saldo, gastos por categoria e lembra das contas do dia.</p>
-      <button class="lnk-nora" type="button" data-abre-chat>Tem alguma dúvida sobre a Finora? Pergunte para a Nora</button>
+      <p class="nota">Exemplos de conversa, com valores ilustrativos.</p>
+      <button class="btn btn-luz" type="button" data-abre-chat><span data-nora="mini" class="btn-nora"></span>Tem alguma dúvida? Pergunte para a Nora</button>
     </div>
   </div>
 </section>
@@ -186,20 +295,23 @@
 <!-- ============ CONFIANÇA ============ -->
 <section class="sec" id="seguranca">
   <div class="wrap">
-    <header class="sec-cab">
+    <header class="sec-cab" data-rev>
       <h2>Seu dinheiro continua no banco.</h2>
       <p>É natural desconfiar de quem pede acesso às suas contas. Então, sem rodeio:</p>
     </header>
     <div class="confia">
-      <div>
+      <div data-rev data-spot>
+        <span class="cf-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
         <h3>A Finora só lê.</h3>
         <p>A conexão com o banco é feita pelo Open Finance, através da Pluggy, e você autoriza no app do próprio banco. A Finora não movimenta dinheiro e nunca vê a sua senha.</p>
       </div>
-      <div>
+      <div data-rev data-spot>
+        <span class="cf-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg></span>
         <h3>Não quer conectar o banco? Tudo bem.</h3>
         <p>Dá para lançar à mão, pedir para a Nora anotar ou importar o extrato em CSV. Funciona do mesmo jeito.</p>
       </div>
-      <div>
+      <div data-rev data-spot>
+        <span class="cf-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
         <h3>Os dados são seus.</h3>
         <p>Todo acesso tem verificação em duas etapas. Você exporta ou apaga tudo quando quiser, como manda a LGPD. Veja a <a href="/privacidade.html">Política de Privacidade</a>.</p>
       </div>
@@ -210,25 +322,26 @@
 <!-- ============ PREÇO ============ -->
 <section class="sec sec-preco" id="planos">
   <div class="wrap">
-    <header class="sec-cab">
+    <header class="sec-cab" data-rev>
       <h2>Quanto custa</h2>
       <p>Dez dias para testar tudo, sem cartão de crédito. Depois, se fizer sentido para você:</p>
     </header>
     <div class="planos">
-      <article class="plano">
+      <article class="plano" data-rev data-spot>
         <h3>Por mês</h3>
-        <p class="preco">R$&nbsp;14,90</p>
+        <p class="preco">R$&nbsp;<span data-conta="14.90">14,90</span></p>
         <p class="p-desc">Sem fidelidade.</p>
         <a class="btn btn-sec" href="/app/?plano=mensal" data-entrar data-plano="mensal">Testar grátis e ficar no mensal</a>
       </article>
-      <article class="plano">
+      <article class="plano plano-anual" data-rev data-spot>
+        <p class="p-selo">Sai mais em conta</p>
         <h3>Por ano</h3>
-        <p class="preco">R$&nbsp;149,90</p>
+        <p class="preco">R$&nbsp;<span data-conta="149.90">149,90</span></p>
         <p class="p-desc">Sai por R$&nbsp;12,49 ao mês, R$&nbsp;28,90 a menos no ano.</p>
         <a class="btn btn-pri" href="/app/?plano=anual" data-entrar data-plano="anual">Testar grátis e ficar no anual</a>
       </article>
     </div>
-    <p class="inclui">Os dois planos têm tudo: Open Finance e importação de extrato, cartões e parcelas, contas fixas, a pagar e a receber, a Nora, os alertas, orçamentos, metas, o consultor e acesso compartilhado com quem você convidar.</p>
+    <p class="inclui" data-rev>Os dois planos têm tudo: Open Finance e importação de extrato, cartões e parcelas, contas fixas, a pagar e a receber, a Nora, os alertas, orçamentos, metas, o consultor e acesso compartilhado com quem você convidar.</p>
     <p class="termos-planos">Quando o teste acaba, o acesso fica pausado até você escolher um plano, e nada é apagado. Cancelar não tem multa. Veja os <a href="/termos.html">Termos de Uso</a>.</p>
   </div>
 </section>
@@ -239,7 +352,7 @@
     <header class="sec-cab">
       <h2>Dúvidas frequentes</h2>
     </header>
-    <div class="faq">
+    <div class="faq" data-rev>
       <details><summary>Preciso de cartão de crédito para testar?</summary>
         <p>Não. Você entra com a sua conta Google e usa tudo por 10 dias.</p></details>
       <details><summary>Meus dados estão seguros?</summary>
@@ -263,9 +376,10 @@
 </section>
 
 <!-- ============ FECHO ============ -->
-<section class="fecho">
-  <div class="wrap fecho-in">
-    <h2>O seu próximo dia 25 pode ser mais tranquilo.</h2>
+<section class="fecho" data-luz>
+  <div class="aurora aurora-fecho" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+  <div class="wrap fecho-in" data-rev>
+    <h2>O seu próximo dia 25 pode ser <span class="brilha">mais tranquilo.</span></h2>
     <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
     <p class="nota">Sem cartão de crédito. Cancelar não tem multa.</p>
   </div>
