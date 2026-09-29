@@ -23,6 +23,17 @@ Three modes: **Claro** (light), **Escuro** (dark), **Automático** (follows OS `
 
 CSS pattern (standard token-override idiom): light values live directly on `:root`; dark values are defined twice with identical tokens — once under `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }` for the automatic case, and once under `:root[data-theme="dark"]` for the explicit override. No component ever branches on theme itself; everything reads the same custom properties.
 
+## Landing v7 — "Um mês como qualquer outro" (2026-09-29, supersedes every earlier Landing section below)
+
+Owner: "tirar toda a landing de app e criar algo mais humanizado". What bothered them: too many app screens, salesman tone, too many effects. Chosen direction: real-life stories. The v3–v6.1 notes below remain as history only; where they conflict, this section wins.
+- **Thesis / signature:** a wall calendar ("folhinha") for October, pinned with a brand-gradient tack, with six days circled by pen and annotated in handwriting (salário, luz!, cartão fecha, salão, fatura, sobrou?). Each circled day links to its story. Handwriting (Kalam) appears **only** here and in the "Com a Finora" note labels.
+- **Structure:** abertura (h1 "Dinheiro dá menos medo quando você sabe o que vem pela frente." + folhinha) · "Um mês como qualquer outro" (6 days, each: big pen-blue day number · 2–3 sentence story about a fictional person · "Com a Finora" note stating the real feature in plain words) · Nora (static mascot + a 3-line example exchange, no phone frame) · "Seu dinheiro continua no banco." (3 plain paragraphs) · "Quanto custa" (two simple options, `?plano=` kept) · Dúvidas · fecho "O seu próximo dia 25 pode ser mais tranquilo." · footer.
+- **Removed:** app mock, floating cards, trust strip, comparison table, feature cards, banner carousel, invoice mock, automation chips, business mini-mocks, Nora guia, sticky mobile CTA, reading-progress bar, parallax/tilt, counters, scroll reveals.
+- **Honesty:** characters are declared invented in the section intro ("As pessoas são inventadas; as situações, nem tanto."). Only real features are described; "não emite nota fiscal nem boleto" and "conteúdo educativo, não recomendação de investimento" stay.
+- **Type:** Bricolage Grotesque 800/700 (display) + Public Sans (body) + Kalam (handwriting, sparingly). **Color:** white and `--papel #f5f7fb` alternating, ink `#14213d`, one action color `--caneta #2340d8`, highlighter `#ffe27a` for `mark` and hover annotation. Brand gradient only on the logo, the calendar tack and Nora.
+- **Motion:** one moment — on load the pen circles the six days in sequence (stroke draw, 0.22s apart) and the handwritten notes fade in. Nothing else moves except hover states and the chat panel. Reduced motion or no JS: circles render finished (CSS fallback ring without JS).
+- **Kept:** Nora pre-sales chat (`#atende`, `/api/vendas/chat`), `[data-entrar]` href rewrite, old-hash redirects (now to `#historias`/`#dia-*`), legal pages (`.doc`) on the same stylesheet.
+
 ## Landing v3 — critique fixes (2026-09-23, after critique 23/36)
 
 Supersedes the section-level color and structure notes above where they conflict.

@@ -32,7 +32,7 @@ Constraint: single-process container, no CDN/edge; keep payload and dependencies
 Name "Finora" and the indigo→cyan gradient mark stay (user confirmed: keep name and palette, elevate finish rather than reinvent identity). Portuguese (pt-BR) is the product's only language.
 
 ## Evidence on Hand
-No real customers yet, so no testimonials, user counts or ratings — the landing must not imply any. Demo figures on the landing are one consistent illustrative scenario ("Ana") labelled as such. Only real features may be claimed (no WhatsApp, audio, receipt OCR or push notifications until built).
+No real customers yet, so no testimonials, user counts or ratings — the landing must not imply any. The landing tells short everyday stories about fictional people (Rafael, Júlia, Diego, Carla, Bia, Paulo), declared as invented on the page; they are situations, never testimonials. Only real features may be claimed (no WhatsApp, audio, receipt OCR or push notifications until built).
 
 ## Product Principles
 - Installments and invoices are first-class, not an afterthought bolted onto a generic transaction list.
