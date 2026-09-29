@@ -1014,7 +1014,7 @@ VIEWS.categories = async (v) => {
       <div class="list">${rules.map((r) => `<div class="li"><div class="grow"><div class="title">“${esc(r.pattern)}”</div><div class="small muted">→ ${esc(catName(r.category_id))}</div></div><button class="btn small danger" data-del="${r.id}">Remover</button></div>`).join("") || '<div class="empty">Nenhuma regra. Dica: ao editar um lançamento, marque “aplicar sempre”.</div>'}</div></div></div>`;
   const catForm = (c = {}) => openForm({
     title: c.id ? "Editar categoria" : "Nova categoria",
-    values: { kind: "expense", color: "#3653e6", monthly_budget: 0, ...c },
+    values: { kind: "expense", color: "#7b3fa8", monthly_budget: 0, ...c },
     fields: [
       { name: "name", label: "Nome", required: true },
       { row: [{ name: "kind", label: "Tipo", type: "select", options: [["expense", "Despesa"], ["income", "Receita"]] }, { name: "color", label: "Cor", type: "color" }] },

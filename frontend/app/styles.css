@@ -1,13 +1,19 @@
 :root {
-  --bg: #f3f5f8; --surface: #ffffff; --panel: #fafbfc; --surface-2: #edf0f4; --border: #e2e6ed;
-  --text: #0e1a33; --muted: #5a6780; --primary: #2340d8; --primary-2: #3653e6;
-  --green: #047857; --red: #be123c; --amber: #b45309; --violet: #6d28d9; --cyan: #0e7490; --radius: 10px;
-  /* tintas de papel (mesmo significado da landing): verde = entrada, rosa = saída/perigo,
-     âmbar = atenção/vencendo, violeta = análise, ciano = sincronização/info */
-  --green-bg: #e6f7ef; --red-bg: #ffe9ee; --amber-bg: #fff4de; --violet-bg: #f2ecff; --cyan-bg: #e2f6fa; --primary-bg: #edf1fd;
-  --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
-  --shadow: 0 1px 2px rgba(15,23,42,.04), 0 2px 8px rgba(15,23,42,.05);
-  --shadow-lg: 0 4px 12px rgba(15,23,42,.08), 0 12px 28px rgba(15,23,42,.06);
+  /* paleta ameixa + coral (2026-09-29): neutros levemente quentes, ação em roxo-ameixa,
+     coral como acento da marca (logo, Nora). Ver DESIGN.md. */
+  --bg: #f8f5f6; --surface: #ffffff; --panel: #fcfafb; --surface-2: #f1eaf2; --border: #e9e1ec;
+  --text: #2a1633; --muted: #6e6078; --primary: #5b2a86; --primary-2: #7b3fa8;
+  --coral: #ff7a59; --coral-esc: #c4432a; --ink: #2a1633;
+  /* fundo dos botões cheios (texto branco sempre ≥ 4.5:1) */
+  --btn-1: #5b2a86; --btn-2: #7b3fa8;
+  --green: #047857; --red: #be123c; --amber: #b45309; --violet: #4338ca; --cyan: #0e7490; --radius: 10px;
+  /* tintas com significado: verde = entrada, rosa = saída/perigo, âmbar = atenção/vencendo,
+     "violet" = parcelas/análise (agora anil, para não se confundir com o roxo-ameixa da ação),
+     ciano = sincronização/info */
+  --green-bg: #e6f7ef; --red-bg: #ffe9ee; --amber-bg: #fff4de; --violet-bg: #eef0ff; --cyan-bg: #e2f6fa; --primary-bg: #f1e9f7;
+  --shadow-sm: 0 1px 2px rgba(42,22,51,.05);
+  --shadow: 0 1px 2px rgba(42,22,51,.05), 0 2px 8px rgba(42,22,51,.06);
+  --shadow-lg: 0 4px 12px rgba(42,22,51,.09), 0 12px 28px rgba(42,22,51,.07);
   /* escala tipográfica: razão ~1.18, base 15px */
   --fs-xs: .8125rem; --fs-sm: .875rem; --fs-base: .9375rem; --fs-md: 1.0625rem;
   --fs-lg: 1.25rem; --fs-xl: 1.5rem; --fs-2xl: 1.75rem;
@@ -23,10 +29,12 @@
    data-theme="dark"/"light" em <html>, controlado pelo seletor de aparência no topbar. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0a1328; --surface: #111d35; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
-    --text: #e6eaf5; --muted: #8b97b5; --primary: #7d93f2; --primary-2: #5a74ee;
-    --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a78bfa; --cyan: #22d3ee;
-    --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #16244a;
+    --bg: #150c1b; --surface: #1f1427; --panel: #1a1021; --surface-2: #2a1d33; --border: #3a2a45;
+    --text: #f3eaf5; --muted: #a897b0; --primary: #c9a6f0; --primary-2: #9f6fd6;
+    --coral: #ff8f73; --coral-esc: #ff9a7e; --ink: #0f0813;
+    --btn-1: #7a45b3; --btn-2: #8a55c4;
+    --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a5b4fc; --cyan: #22d3ee;
+    --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #1e1f45; --cyan-bg: #0d2630; --primary-bg: #2c1b3d;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.25);
     --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.22);
     --shadow-lg: 0 6px 16px rgba(0,0,0,.3), 0 16px 32px rgba(0,0,0,.24);
@@ -34,10 +42,12 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0a1328; --surface: #111d35; --panel: #0e1526; --surface-2: #1a2440; --border: #243152;
-  --text: #e6eaf5; --muted: #8b97b5; --primary: #7d93f2; --primary-2: #5a74ee;
-  --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a78bfa; --cyan: #22d3ee;
-  --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #211a3d; --cyan-bg: #0d2630; --primary-bg: #16244a;
+  --bg: #150c1b; --surface: #1f1427; --panel: #1a1021; --surface-2: #2a1d33; --border: #3a2a45;
+  --text: #f3eaf5; --muted: #a897b0; --primary: #c9a6f0; --primary-2: #9f6fd6;
+  --coral: #ff8f73; --coral-esc: #ff9a7e; --ink: #0f0813;
+  --btn-1: #7a45b3; --btn-2: #8a55c4;
+  --green: #4ade80; --red: #fb7185; --amber: #fbbf24; --violet: #a5b4fc; --cyan: #22d3ee;
+  --green-bg: #0f2a22; --red-bg: #2e1420; --amber-bg: #2b2210; --violet-bg: #1e1f45; --cyan-bg: #0d2630; --primary-bg: #2c1b3d;
   --shadow-sm: 0 1px 2px rgba(0,0,0,.25);
   --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.22);
   --shadow-lg: 0 6px 16px rgba(0,0,0,.3), 0 16px 32px rgba(0,0,0,.24);
@@ -68,7 +78,7 @@ h3 { font-size: var(--fs-xs); margin: 0 0 8px; color: var(--muted); font-weight:
 .brand.big { font-size: 26px; justify-content: center; }
 .brand-txt { display: grid; line-height: 1.05; }
 .brand-txt small { font-family: var(--font-body); font-weight: 500; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 3px; white-space: nowrap; }
-.logo { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #4f46e5, #0e7490); font-weight: 700; }
+.logo { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #5b2a86 0%, #a8488f 55%, #ff7a59 100%); font-weight: 700; }
 
 /* fim do teste grátis */
 #trialExpired { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 16px; background: var(--bg); }
@@ -126,7 +136,7 @@ main { min-width: 0; padding: 0 28px 40px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); min-width: 0; }
 .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .stat .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.hero { background: #0e1a33; color: #fff; border: none; }
+.hero { background: var(--ink); color: #fff; border: none; }
 .hero h3, .hero .sub { color: rgba(255,255,255,.8); }
 
 /* botões */
@@ -140,7 +150,7 @@ main { min-width: 0; padding: 0 28px 40px; }
 .btn:hover { background: var(--surface-2); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
 .btn:active { transform: translateY(1px) scale(.98); }
 .btn.primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  background: linear-gradient(135deg, var(--btn-1), var(--btn-2));
   border-color: transparent; color: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.12);
 }
@@ -230,8 +240,8 @@ tr.clickable { cursor: pointer; } tr.clickable:hover td { background: var(--surf
   30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); }
 }
 .shake { animation: shake .4s var(--ease); }
-.toast.success { background: color-mix(in srgb, var(--green) 30%, #111827); }
-.toast.error { background: color-mix(in srgb, var(--red) 32%, #111827); }
+.toast.success { background: color-mix(in srgb, var(--green) 30%, #24142c); }
+.toast.error { background: color-mix(in srgb, var(--red) 32%, #24142c); }
 
 /* modal e toast */
 dialog { border: none; border-radius: 18px; padding: 0; background: var(--surface); color: var(--text); width: min(520px, calc(100vw - 32px)); max-height: 90vh; box-shadow: var(--shadow-lg); }
@@ -240,7 +250,7 @@ dialog::backdrop { background: rgba(8,12,24,.55); backdrop-filter: blur(2px); an
 dialog form { padding: 22px; overflow: auto; max-height: 90vh; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .toast {
-  position: fixed; bottom: 24px; left: 50%; background: #111827; color: #fff; padding: 10px 16px;
+  position: fixed; bottom: 24px; left: 50%; background: #24142c; color: #fff; padding: 10px 16px;
   border-radius: 10px; z-index: 50; box-shadow: var(--shadow-lg); max-width: calc(100vw - 32px);
   transform: translateX(-50%) translateY(0); opacity: 1;
   transition: opacity var(--dur-standard) var(--ease), transform var(--dur-standard) var(--ease);
@@ -256,7 +266,7 @@ dialog form { padding: 22px; overflow: auto; max-height: 90vh; }
 /* assistente de uso (robô) */
 #assistantBtn {
   position: fixed; right: 20px; bottom: 24px; z-index: 25; width: 56px; height: 56px;
-  border-radius: 50%; border: none; background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  border-radius: 50%; border: none; background: linear-gradient(135deg, var(--btn-1), var(--btn-2));
   color: #fff; font-size: 26px; cursor: pointer; box-shadow: var(--shadow-lg); display: grid; place-items: center;
   transition: transform var(--dur-quick) var(--ease), box-shadow var(--dur-quick) var(--ease);
 }
@@ -301,7 +311,7 @@ dialog form { padding: 22px; overflow: auto; max-height: 90vh; }
 .ob-steps i { width: 22px; height: 4px; border-radius: 99px; background: var(--surface-2); display: block; }
 .ob-steps i.done { background: var(--primary-2); }
 .ob-steps i.active { background: var(--primary); }
-.ob-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; margin: 0 auto 14px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; }
+.ob-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; margin: 0 auto 14px; background: linear-gradient(135deg, var(--btn-1), var(--btn-2)); color: #fff; }
 .ob-icon .nav-icon { width: 24px; height: 24px; }
 .ob-card h2 { text-align: center; font-size: var(--fs-lg); }
 .ob-card p.muted { text-align: center; margin-top: -6px; }

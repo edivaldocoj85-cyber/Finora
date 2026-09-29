@@ -1,6 +1,6 @@
 /* =====================================================================
    FINORA — tela de entrada (Google + MFA), continuação visual da landing:
-   painel de marca à esquerda (azul-marinho liso), cartão de acesso à direita.
+   painel de marca à esquerda (ameixa liso), cartão de acesso à direita.
    Escopado em #auth.fn-auth; o lado direito usa os tokens do app
    (--surface, --text, --muted…), então acompanha claro/escuro.
    ===================================================================== */
@@ -17,18 +17,18 @@
 
 /* lado da marca */
 #auth.fn-auth .fa-lado{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:40px;padding:32px clamp(24px,5vw,72px) 40px;min-height:100vh;overflow:hidden;isolation:isolate;
-  background:#0e1a33;color:#c5cedd}
+  background:#2a1633;color:#d9cce0}
 #auth.fn-auth .fa-marca{display:inline-flex;align-items:center;gap:10px;font-family:var(--fa-display);font-weight:800;font-size:21px;color:#fff;text-decoration:none;letter-spacing:-.02em}
 #auth.fn-auth .fa-marca .marca-txt{display:grid;line-height:1.05}
-#auth.fn-auth .fa-marca .marca-txt small{font-family:"Public Sans",system-ui,sans-serif;font-weight:500;font-size:12px;color:#9aa7bd;margin-top:3px}
+#auth.fn-auth .fa-marca .marca-txt small{font-family:"Public Sans",system-ui,sans-serif;font-weight:500;font-size:12px;color:#b3a3bd;margin-top:3px}
 #auth.fn-auth .fa-saud{font-family:var(--fa-display);font-weight:800;font-size:clamp(2.2rem,4vw,3.25rem);line-height:1.06;letter-spacing:-.035em;color:#fff;margin:0}
 #auth.fn-auth .fa-sub{margin:16px 0 0;font-size:1.1rem;max-width:30ch}
 #auth.fn-auth .fa-check{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:12px}
 #auth.fn-auth .fa-check li{position:relative;padding-left:32px}
 #auth.fn-auth .fa-check li::before{content:"";position:absolute;left:0;top:2px;width:20px;height:20px;border-radius:50%;background:#059669 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/12px no-repeat}
-#auth.fn-auth .fa-mini{display:flex;gap:12px;align-items:center;max-width:380px;background:rgba(255,255,255,.96);color:#33415c;border-radius:10px;padding:14px 16px;box-shadow:0 10px 24px -14px rgba(0,0,0,.5);font-size:13px}
-#auth.fn-auth .fa-mini b{display:block;color:#0e1a33;font-size:14px;font-weight:600;transition:opacity .4s}
-#auth.fn-auth .fa-mini span:not(.logo){font-size:12px;color:#5a6780}
+#auth.fn-auth .fa-mini{display:flex;gap:12px;align-items:center;max-width:380px;background:rgba(255,255,255,.96);color:#4a3a55;border-radius:10px;padding:14px 16px;box-shadow:0 10px 24px -14px rgba(0,0,0,.5);font-size:13px}
+#auth.fn-auth .fa-mini b{display:block;color:#2a1633;font-size:14px;font-weight:600;transition:opacity .4s}
+#auth.fn-auth .fa-mini span:not(.logo){font-size:12px;color:#6e6078}
 
 /* painel do formulário */
 #auth.fn-auth .fa-painel{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px clamp(20px,5vw,72px)}
@@ -76,5 +76,5 @@
   #auth.fn-auth .fa-r{opacity:1;transform:none;transition:none}
 }
 
-/* marca-texto (mesmo traço da landing): texto em tinta sobre o amarelo */
-#auth.fn-auth .fa-saud mark{color:#0e1a33;padding:0 .08em;margin:0 -.04em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cpath d='M3 6 C40 3 90 5 140 4 S190 3 197 6 L196 35 C150 38 100 34 60 37 S12 36 4 33 Z' fill='%23ffd84d'/%3E%3C/svg%3E") center/100% 92% no-repeat;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+/* marca-texto (mesmo traço da landing): texto em tinta sobre o coral claro */
+#auth.fn-auth .fa-saud mark{color:#2a1633;padding:0 .08em;margin:0 -.04em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cpath d='M3 6 C40 3 90 5 140 4 S190 3 197 6 L196 35 C150 38 100 34 60 37 S12 36 4 33 Z' fill='%23ffc9b8'/%3E%3C/svg%3E") center/100% 92% no-repeat;-webkit-box-decoration-break:clone;box-decoration-break:clone}

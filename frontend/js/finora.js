@@ -49,21 +49,21 @@
   function nora(pose) {
     const id = "noraG" + (++noraN);
     return `<svg class="nora nora-${pose}" viewBox="0 0 160 170" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#4f46e5"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
-      <ellipse class="n-sombra" cx="80" cy="160" rx="36" ry="6" fill="#15133a" opacity=".16"/>
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b3fa8"/><stop offset=".5" stop-color="#5b2a86"/><stop offset="1" stop-color="#ff7a59"/></linearGradient></defs>
+      <ellipse class="n-sombra" cx="80" cy="160" rx="36" ry="6" fill="#2a1633" opacity=".16"/>
       <g class="n-tudo">
-        <g class="n-antena"><path d="M80 36 Q83 22 93 15" fill="none" stroke="#312e81" stroke-width="4.5" stroke-linecap="round"/><circle cx="94" cy="14" r="8" fill="#67e8f9"/><circle cx="91.5" cy="11.5" r="2.4" fill="#fff" opacity=".8"/></g>
-        <path class="n-braco-e" d="M34 100 q-16 6 -18 22" fill="none" stroke="#4338ca" stroke-width="10" stroke-linecap="round"/>
-        <g class="n-braco-d"><path d="M126 96 q18 -6 22 -26" fill="none" stroke="#0e7490" stroke-width="10" stroke-linecap="round"/></g>
-        <ellipse cx="60" cy="143" rx="13" ry="7" fill="#312e81"/><ellipse cx="100" cy="143" rx="13" ry="7" fill="#312e81"/>
+        <g class="n-antena"><path d="M80 36 Q83 22 93 15" fill="none" stroke="#3a1d4f" stroke-width="4.5" stroke-linecap="round"/><circle cx="94" cy="14" r="8" fill="#ff9a7e"/><circle cx="91.5" cy="11.5" r="2.4" fill="#fff" opacity=".8"/></g>
+        <path class="n-braco-e" d="M34 100 q-16 6 -18 22" fill="none" stroke="#5b2a86" stroke-width="10" stroke-linecap="round"/>
+        <g class="n-braco-d"><path d="M126 96 q18 -6 22 -26" fill="none" stroke="#e0613f" stroke-width="10" stroke-linecap="round"/></g>
+        <ellipse cx="60" cy="143" rx="13" ry="7" fill="#3a1d4f"/><ellipse cx="100" cy="143" rx="13" ry="7" fill="#3a1d4f"/>
         <rect x="30" y="36" width="100" height="104" rx="32" fill="url(#${id})"/>
         <path d="M44 52 q10 -9 26 -9" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="5" stroke-linecap="round"/>
         <g class="n-olhos">
           <ellipse cx="62" cy="80" rx="12" ry="14" fill="#fff"/><ellipse cx="98" cy="80" rx="12" ry="14" fill="#fff"/>
-          <g class="n-pupilas"><circle cx="64" cy="82" r="6.5" fill="#15133a"/><circle cx="100" cy="82" r="6.5" fill="#15133a"/><circle cx="66.5" cy="79" r="2.2" fill="#fff"/><circle cx="102.5" cy="79" r="2.2" fill="#fff"/></g>
+          <g class="n-pupilas"><circle cx="64" cy="82" r="6.5" fill="#2a1633"/><circle cx="100" cy="82" r="6.5" fill="#2a1633"/><circle cx="66.5" cy="79" r="2.2" fill="#fff"/><circle cx="102.5" cy="79" r="2.2" fill="#fff"/></g>
         </g>
-        <ellipse cx="48" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/><ellipse cx="112" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/>
-        <path class="n-boca" d="M70 102 q10 11 20 0" fill="none" stroke="#15133a" stroke-width="4.5" stroke-linecap="round"/>
+        <ellipse cx="48" cy="101" rx="7.5" ry="4.5" fill="#ffb3a1" opacity=".75"/><ellipse cx="112" cy="101" rx="7.5" ry="4.5" fill="#ffb3a1" opacity=".75"/>
+        <path class="n-boca" d="M70 102 q10 11 20 0" fill="none" stroke="#2a1633" stroke-width="4.5" stroke-linecap="round"/>
       </g>
     </svg>`;
   }

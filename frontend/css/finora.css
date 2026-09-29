@@ -1,21 +1,26 @@
 /* =====================================================================
    FINORA — landing pública (v7, "um mês como qualquer outro")
    Humanizada: histórias do dia a dia em vez de telas do app.
-   Papel claro, tinta azul-marinho, uma cor de ação (azul-caneta) e o
-   marca-texto amarelo como anotação. A letra de mão (Kalam) aparece só
-   na folhinha, onde alguém escreveu à mão. Degradê da marca só no logo
-   e na Nora. Tipos: Bricolage Grotesque (títulos) + Public Sans (texto).
+   Paleta ameixa + coral (2026-09-29): branco quente, seções em lilás
+   claríssimo, tinta ameixa, uma cor de ação (roxo-ameixa) e o coral como
+   a caneta de quem anota — marca-texto, círculos e letra de mão. Coral
+   puro (#ff7a59) só em preenchimento; em texto e traço, o coral escuro
+   (--coral-esc, 5:1 no branco). A letra de mão (Kalam) aparece só na
+   folhinha e nas notas "Com a Finora". Degradê da marca (ameixa → coral)
+   no logo, no percevejo da folhinha e na Nora.
+   Tipos: Bricolage Grotesque (títulos) + Public Sans (texto).
    Também serve às páginas legais (.doc). Ver DESIGN.md.
    ===================================================================== */
 :root{
-  --tinta:#14213d;  --texto:#3a4660;  --suave:#5d6882;  --linha:#dde3ee;
-  --fundo:#ffffff;  --papel:#f5f7fb;
-  --caneta:#2340d8; --caneta-esc:#1a2fa3; --caneta-cl:#edf1fd;
-  --marca-texto:#ffe27a;
+  --tinta:#2a1633;  --texto:#4a3a55;  --suave:#6e6078;  --linha:#e9e1ec;
+  --fundo:#fbf8f6;  --papel:#f3ecf5;  --cartao:#ffffff;
+  --caneta:#5b2a86; --caneta-esc:#47206a; --caneta-cl:#f1e9f7;
+  --coral:#ff7a59;  --coral-esc:#c4432a;
+  --marca-texto:#ffc9b8;
   --ambar-cl:#fff4de;
-  --grad:linear-gradient(135deg,#4f46e5 0%,#3f5fd6 45%,#0e7490 100%); /* só logo e Nora — compromisso de marca */
+  --grad:linear-gradient(135deg,#5b2a86 0%,#a8488f 55%,#ff7a59 100%); /* logo, percevejo e Nora */
   --raio:12px;
-  --sombra:0 1px 2px rgba(20,33,61,.06),0 12px 28px -16px rgba(20,33,61,.22);
+  --sombra:0 1px 2px rgba(42,22,51,.06),0 12px 28px -16px rgba(42,22,51,.24);
   --display:"Bricolage Grotesque",system-ui,sans-serif;
   --corpo:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mao:"Kalam","Comic Neue",cursive;
@@ -46,7 +51,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .preencher{background:#fff3c4;color:#7c2d12;border:1px dashed #d97706;border-radius:4px;padding:0 4px;font-weight:600}
 .rodape .preencher{background:#3b2f0b;color:#fde68a;border-color:#b45309}
 
-/* marca-texto: um traço de caneta amarela atrás da parte que importa */
+/* marca-texto: um traço de caneta coral clara atrás da parte que importa */
 mark{background:linear-gradient(transparent 58%,var(--marca-texto) 58%, var(--marca-texto) 92%,transparent 92%);color:inherit;padding:0 .08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 
 /* ============ MARCA E BOTÕES ============ */
@@ -55,22 +60,22 @@ mark{background:linear-gradient(transparent 58%,var(--marca-texto) 58%, var(--ma
 .marca-txt{display:grid;line-height:1.05}
 .marca-txt b{font-weight:800}
 .marca-txt small{font-family:var(--corpo);font-weight:500;font-size:12px;letter-spacing:0;color:var(--suave);margin-top:2px;white-space:nowrap}
-.rodape .marca-txt small{color:#9aa7bd}
+.rodape .marca-txt small{color:#b3a3bd}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 22px;border-radius:10px;font-family:var(--corpo);font-weight:700;font-size:15.5px;text-decoration:none;border:0;cursor:pointer;text-align:center;transition:background-color .2s,box-shadow .2s}
 .btn:active{transform:translateY(1px)}
 .btn-lg{min-height:54px;padding:0 28px;font-size:17px}
 .btn-pri{background:var(--caneta);color:#fff}
 .btn-pri:hover{background:var(--caneta-esc)}
-.btn-sec{background:#fff;color:var(--caneta);box-shadow:inset 0 0 0 2px #c6d0f5}
+.btn-sec{background:#fff;color:var(--caneta);box-shadow:inset 0 0 0 2px #d9c6e8}
 .btn-sec:hover{box-shadow:inset 0 0 0 2px var(--caneta)}
 .nota{font-size:14.5px;color:var(--suave)}
 
-.lnk-nora{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:var(--caneta);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:#c6d0f5;text-underline-offset:4px}
+.lnk-nora{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:var(--caneta);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:#d9c6e8;text-underline-offset:4px}
 .lnk-nora:hover{color:var(--caneta-esc);text-decoration-color:currentColor}
 
 /* ============ CABEÇALHO ============ */
-.cab{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);border-bottom:1px solid transparent;transition:border-color .2s}
+.cab{position:sticky;top:0;z-index:40;background:rgba(251,248,246,.96);border-bottom:1px solid transparent;transition:border-color .2s}
 .cab.rolou{border-bottom-color:var(--linha)}
 .cab-in{max-width:1160px;margin:0 auto;padding:0 24px;height:var(--cab-h);display:flex;align-items:center;gap:36px}
 .menu{display:flex;gap:28px;margin-right:auto}
@@ -94,23 +99,23 @@ mark{background:linear-gradient(transparent 58%,var(--marca-texto) 58%, var(--ma
 .abre-cta{margin-top:36px;display:grid;justify-items:start;gap:12px}
 
 /* a folhinha: um calendário de parede com alguns dias circulados à mão */
-.folhinha{position:relative;margin:0;background:#fff;border:1px solid var(--linha);border-radius:var(--raio);padding:22px 22px 26px;box-shadow:var(--sombra);transform:rotate(1.2deg)}
-.folhinha::before{content:"";position:absolute;top:-9px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--grad);box-shadow:0 2px 3px rgba(20,33,61,.25)}
+.folhinha{position:relative;margin:0;background:var(--cartao);border:1px solid var(--linha);border-radius:var(--raio);padding:22px 22px 26px;box-shadow:var(--sombra);transform:rotate(1.2deg)}
+.folhinha::before{content:"";position:absolute;top:-9px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--grad);box-shadow:0 2px 3px rgba(42,22,51,.25)}
 .fl-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:2px solid var(--tinta)}
 .fl-cab span{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.03em;color:var(--tinta)}
 .fl-cab small{font-family:var(--mao);font-size:16px;color:var(--suave)}
 .fl-sem,.fl-dias{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
 .fl-sem{margin-top:10px}
 .fl-sem span{text-align:center;font-size:12px;font-weight:700;color:var(--suave)}
-.fl-dias>*{position:relative;height:58px;padding-top:6px;text-align:center;font-size:15px;font-variant-numeric:tabular-nums;color:var(--texto);border-top:1px solid #edf0f5}
+.fl-dias>*{position:relative;height:58px;padding-top:6px;text-align:center;font-size:15px;font-variant-numeric:tabular-nums;color:var(--texto);border-top:1px solid #f1eaf2}
 .fl-dias .vazio{border-top-color:transparent}
 .fl-dias .marcado{display:block;text-decoration:none;color:var(--tinta);border-radius:8px}
 .marcado b{position:relative;z-index:1;font-weight:700}
-.marcado em{position:relative;z-index:1;display:block;margin-top:2px;font-family:var(--mao);font-style:normal;font-weight:700;font-size:13px;line-height:1.05;color:var(--caneta)}
+.marcado em{position:relative;z-index:1;display:block;margin-top:2px;font-family:var(--mao);font-style:normal;font-weight:700;font-size:13px;line-height:1.05;color:var(--coral-esc)}
 .marcado:hover b,.marcado:focus-visible b{background:var(--marca-texto)}
 /* o círculo de caneta: SVG injetado pelo JS; sem JS, um contorno irregular em CSS */
-.marcado .circ{position:absolute;left:50%;top:1px;width:40px;height:34px;margin-left:-20px;color:var(--caneta);stroke-width:1.8;overflow:visible;pointer-events:none}
-html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;width:34px;height:28px;margin-left:-17px;border:1.8px solid var(--caneta);border-radius:48% 52% 45% 55%/55% 45% 55% 45%;transform:rotate(-8deg)}
+.marcado .circ{position:absolute;left:50%;top:1px;width:40px;height:34px;margin-left:-20px;color:var(--coral-esc);stroke-width:1.8;overflow:visible;pointer-events:none}
+html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;width:34px;height:28px;margin-left:-17px;border:1.8px solid var(--coral-esc);border-radius:48% 52% 45% 55%/55% 45% 55% 45%;transform:rotate(-8deg)}
 .fl-nora{position:absolute;right:-26px;bottom:-34px;width:82px;padding:0;border:0;background:none;cursor:pointer;transform:rotate(-1.2deg)}
 .fl-nora:hover .nora{transform:translateY(-3px)}
 .nora{width:100%;height:auto;transition:transform .25s var(--m-ui)}
@@ -131,8 +136,8 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .dia-data{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .dia h3{margin-top:4px;font-size:clamp(1.35rem,2.2vw,1.7rem)}
 .dia-hist>p:last-child{margin-top:12px}
-.dia-ajuda{padding:18px 20px;background:#fff;border-radius:var(--raio);border:1px solid var(--linha)}
-.ajuda-t{font-family:var(--mao);font-weight:700;font-size:17px;line-height:1.2;color:var(--caneta);margin-bottom:6px}
+.dia-ajuda{padding:18px 20px;background:var(--cartao);border-radius:var(--raio);border:1px solid var(--linha)}
+.ajuda-t{font-family:var(--mao);font-weight:700;font-size:17px;line-height:1.2;color:var(--coral-esc);margin-bottom:6px}
 .dia-ajuda p:last-child{font-size:16px}
 .dia:target .dia-n{background:linear-gradient(transparent 55%,var(--marca-texto) 55%,var(--marca-texto) 90%,transparent 90%)}
 
@@ -160,7 +165,7 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 
 /* preço */
 .planos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:780px}
-.plano{display:flex;flex-direction:column;gap:6px;padding:28px;border:1px solid var(--linha);border-radius:var(--raio);background:#fff}
+.plano{display:flex;flex-direction:column;gap:6px;padding:28px;border:1px solid var(--linha);border-radius:var(--raio);background:var(--cartao)}
 .plano h3{font-size:1.1rem;font-family:var(--corpo);font-weight:700;letter-spacing:0;color:var(--suave)}
 .preco{font-family:var(--display);font-weight:800;font-size:2.6rem;letter-spacing:-.03em;color:var(--tinta);line-height:1.1}
 .p-desc{font-size:15.5px;flex:1}
@@ -174,7 +179,7 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .faq details{border-bottom:1px solid var(--linha)}
 .faq summary{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:64px;padding:12px 0;font-weight:600;font-size:17px;color:var(--tinta);cursor:pointer;list-style:none}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";flex:none;font-size:24px;font-weight:400;line-height:1;color:var(--caneta);transition:transform .2s var(--m-ui)}
+.faq summary::after{content:"+";flex:none;font-size:24px;font-weight:400;line-height:1;color:var(--coral-esc);transition:transform .2s var(--m-ui)}
 .faq details[open] summary::after{transform:rotate(45deg)}
 .faq details p{padding:0 0 20px;max-width:64ch}
 .faq-mais{margin-top:28px}
@@ -186,18 +191,18 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .fecho h2{font-size:clamp(2rem,4.4vw,3.4rem);max-width:18ch}
 
 /* ============ RODAPÉ ============ */
-.rodape{background:var(--tinta);color:#a7b1c2;padding:64px 0 28px;font-size:15px}
+.rodape{background:var(--tinta);color:#bfb0c8;padding:64px 0 28px;font-size:15px}
 .rd-in{display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr;gap:40px}
 .rodape .marca{color:#fff}
 .rd-marca p{margin-top:14px;max-width:36ch}
 .rd-col{display:grid;align-content:start}
 .rd-col h3{color:#fff;font-family:var(--corpo);font-size:15px;letter-spacing:0;margin-bottom:6px}
-.rd-col a{display:flex;align-items:center;min-height:44px;text-decoration:none;color:#a7b1c2;transition:color .2s}
+.rd-col a{display:flex;align-items:center;min-height:44px;text-decoration:none;color:#bfb0c8;transition:color .2s}
 .rd-col a:hover,.rd-base a:hover{color:#fff}
 .rd-base{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:40px;padding-top:24px!important;border-top:1px solid rgba(255,255,255,.1);font-size:14px}
 .rodape>.rd-base:first-child{margin-top:0;border-top:0;padding-top:0!important}
-.rd-base a{display:inline-flex;align-items:center;min-height:44px;color:#a7b1c2;text-decoration:none}
-.rodape :focus-visible,.at-cab :focus-visible{outline-color:#9db0ff}
+.rd-base a{display:inline-flex;align-items:center;min-height:44px;color:#bfb0c8;text-decoration:none}
+.rodape :focus-visible,.at-cab :focus-visible{outline-color:#e2c4ff}
 
 /* ============ PÁGINAS LEGAIS ============ */
 .doc{padding:56px 0 88px}
@@ -212,13 +217,13 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .doc-cab .cab-in{justify-content:space-between}
 
 /* ============ CHAT COM A NORA ============ */
-.atende{position:fixed;z-index:60;right:24px;bottom:24px;width:min(400px,calc(100vw - 32px));height:min(600px,calc(100dvh - 120px));display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:0 30px 70px -20px rgba(20,33,61,.45),0 0 0 1px rgba(20,33,61,.08);overflow:hidden;opacity:0;transform:translateY(16px);transition:opacity .2s var(--m-ui),transform .3s var(--m-ui)}
+.atende{position:fixed;z-index:60;right:24px;bottom:24px;width:min(400px,calc(100vw - 32px));height:min(600px,calc(100dvh - 120px));display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:0 30px 70px -20px rgba(42,22,51,.45),0 0 0 1px rgba(42,22,51,.08);overflow:hidden;opacity:0;transform:translateY(16px);transition:opacity .2s var(--m-ui),transform .3s var(--m-ui)}
 .atende[hidden]{display:none}
 .atende.on{opacity:1;transform:none}
 .at-cab{display:flex;align-items:center;gap:12px;padding:14px 12px 14px 16px;background:var(--tinta);color:#fff}
 .at-av{width:40px;flex:none;margin-top:-4px}
 .at-cab h2{font-size:16px;color:#fff;letter-spacing:0}
-.at-status{display:flex;align-items:center;gap:6px;font-size:12px;color:#aab6c9}
+.at-status{display:flex;align-items:center;gap:6px;font-size:12px;color:#c9bbd1}
 .at-status.off{color:#fcd34d}
 .at-fecha{margin-left:auto;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
 .at-fecha:hover{background:rgba(255,255,255,.16)}
@@ -226,19 +231,19 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .at-msgs{flex:1;list-style:none;margin:0;padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain;background:var(--papel);font-size:14.5px;line-height:1.5}
 .at-m{max-width:88%;padding:10px 14px;border-radius:16px;overflow-wrap:anywhere}
 .at-m.eu{align-self:flex-end;background:var(--caneta);color:#fff;border-bottom-right-radius:4px}
-.at-m.ela{align-self:flex-start;background:#fff;color:var(--texto);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(20,33,61,.08)}
+.at-m.ela{align-self:flex-start;background:#fff;color:var(--texto);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(42,22,51,.08)}
 .at-m.ela b{color:var(--tinta)}
 .at-m.ela a{color:var(--caneta);font-weight:600}
 .at-email{display:flex!important;align-items:center;justify-content:center;gap:8px;margin-top:10px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--caneta-cl);color:var(--caneta-esc)!important;text-decoration:none;font-size:13.5px}
-.at-email:hover{background:#dfe6fb}
+.at-email:hover{background:#e7d9f1}
 .at-email svg{width:16px;height:16px}
 .at-dig{display:flex;gap:4px;padding:14px}
-.at-dig i{width:7px;height:7px;border-radius:50%;background:#98a3b8;animation:digita 1s infinite}
+.at-dig i{width:7px;height:7px;border-radius:50%;background:#a797b0;animation:digita 1s infinite}
 .at-dig i:nth-child(2){animation-delay:.15s}.at-dig i:nth-child(3){animation-delay:.3s}
 @keyframes digita{0%,60%,100%{transform:none}30%{transform:translateY(-4px)}}
 .at-sug{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;background:var(--papel)}
 .at-sug:not(:empty){padding-bottom:12px}
-.at-sug button{font:inherit;font-size:13px;font-weight:600;color:var(--caneta);background:#fff;border:1px solid #c6d0f5;border-radius:999px;padding:0 12px;min-height:36px;cursor:pointer}
+.at-sug button{font:inherit;font-size:13px;font-weight:600;color:var(--caneta);background:#fff;border:1px solid #d9c6e8;border-radius:999px;padding:0 12px;min-height:36px;cursor:pointer}
 .at-sug button:hover{background:var(--caneta-cl);border-color:var(--caneta)}
 .at-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--linha);background:#fff}
 .at-form input{flex:1;min-width:0;min-height:46px;padding:0 16px;border:1px solid var(--linha);border-radius:999px;font:inherit;font-size:15px;color:var(--tinta);background:var(--papel)}
@@ -264,7 +269,7 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
   .dia-ajuda{grid-column:2}
 }
 @media (max-width:960px){
-  .menu{position:fixed;inset:var(--cab-h) 0 auto;flex-direction:column;gap:0;background:#fff;padding:8px 24px 20px;border-bottom:1px solid var(--linha);box-shadow:0 20px 30px -20px rgba(20,33,61,.25);transform:translateY(-8px);opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility .2s}
+  .menu{position:fixed;inset:var(--cab-h) 0 auto;flex-direction:column;gap:0;background:var(--fundo);padding:8px 24px 20px;border-bottom:1px solid var(--linha);box-shadow:0 20px 30px -20px rgba(42,22,51,.25);transform:translateY(-8px);opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility .2s}
   .menu.aberto{opacity:1;transform:none;visibility:visible}
   .menu a{padding:14px 0;border-bottom:1px solid var(--linha);font-size:16px}
   .menu .menu-entrar{display:block;color:var(--caneta);font-weight:700;border-bottom:0}
