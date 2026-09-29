@@ -1,40 +1,26 @@
 /* =====================================================================
    FINORA LANDING — JS isolado (sem dependências)
-   Cabeçalho fixo, menu mobile, abas do FAQ e o sistema de movimento:
-   a mascote Nora, a coreografia do hero, revelações por seção e a
-   conversa animada do assistente.
-   data-login no #finora-landing define o destino de "Acessar conta".
-
-   Identidade de movimento (ver DESIGN.md):
-   • UI  — "Corporate": expo-out cubic-bezier(.16,1,.3,1), 200/400/700ms.
-   • Nora — "Playful": back-out cubic-bezier(.34,1.56,.64,1), com quique.
-   Tudo respeita prefers-reduced-motion (estado final, sem movimento).
+   Menu, links de entrada, a Nora (desenho em SVG), o chat de dúvidas e
+   o único movimento da página: a caneta circulando os dias da folhinha.
+   data-login no #finora-landing define o destino de "Entrar".
+   Com prefers-reduced-motion, os círculos aparecem prontos.
    ===================================================================== */
 (function () {
   "use strict";
   const root = document.getElementById("finora-landing");
   if (!root) return;
+  document.documentElement.classList.add("js");
   const $ = (q, c = root) => c.querySelector(q), $$ = (q, c = root) => [...c.querySelectorAll(q)];
   const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const temIO = "IntersectionObserver" in window;
 
   /* links de entrada */
   // o botão de cada plano leva a escolha junto (?plano=mensal|anual), para o app retomar na hora de assinar
   $$("[data-entrar]").forEach((a) => a.setAttribute("href", (root.dataset.login || "/app/") + (a.dataset.plano ? "?plano=" + a.dataset.plano : "")));
 
-  /* cabeçalho: compacta ao rolar e mostra o progresso de leitura */
+  /* cabeçalho ganha uma linha embaixo depois do topo */
   const cab = $(".cab");
-  let rafCab = 0;
-  const onScroll = () => {
-    cancelAnimationFrame(rafCab);
-    rafCab = requestAnimationFrame(() => {
-      cab.classList.toggle("rolou", scrollY > 8);
-      const total = document.documentElement.scrollHeight - innerHeight;
-      cab.style.setProperty("--lido", total > 0 ? Math.min(1, scrollY / total).toFixed(4) : 0);
-    });
-  };
-  addEventListener("scroll", onScroll, { passive: true });
-  addEventListener("resize", onScroll, { passive: true }); onScroll();
+  const onScroll = () => cab.classList.toggle("rolou", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   /* menu mobile */
   const btn = $(".menu-btn"), menu = $("#menu");
@@ -47,28 +33,8 @@
   $$("a", menu).forEach((a) => a.addEventListener("click", fecha));
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menu.classList.contains("aberto")) { fecha(); btn.focus(); } });
 
-  /* menu marca a seção atual */
-  const secoes = $$("a[href^='#']", menu).map((a) => [a, document.querySelector(a.getAttribute("href"))]).filter(([, s]) => s);
-  if ("IntersectionObserver" in window) {
-    // observa TODAS as seções: numa que não está no menu (topo, vitrine, negócio…), nenhum item fica aceso
-    const ioNav = new IntersectionObserver((es) => es.forEach((e) => {
-      if (!e.isIntersecting) return;
-      secoes.forEach(([a, s]) => a.setAttribute("aria-current", String(s === e.target)));
-    }), { rootMargin: "-45% 0px -50% 0px" });
-    $$("#conteudo > section").forEach((s) => ioNav.observe(s));
-  }
-
-  /* CTA fixo no celular: aparece depois do topo, some na chamada final e no rodapé */
-  const ctaMovel = $(".cta-movel"), heroEl = $(".hero"), fim = $(".cta-final"), rod = root.querySelector(".rodape");
-  if (ctaMovel && "IntersectionObserver" in window) {
-    const vis = new Map();
-    const atualiza = () => ctaMovel.classList.toggle("on", !vis.get(heroEl) && !vis.get(fim) && !vis.get(rod));
-    const ioCta = new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); atualiza(); });
-    [heroEl, fim, rod].forEach((el) => el && ioCta.observe(el));
-  }
-
-  /* compatibilidade com links antigos (#acesso, #consultor…) */
-  const antigos = { "#acesso": "#planos", "#consultor": "#nora", "#automacoes": "#nora", "#contas": "#parcelas", "#extrato": "#parcelas", "#como-resolve": "#parcelas", "#como-funciona": "#topo" };
+  /* compatibilidade com links antigos (#recursos, #parcelas, #vitrine…) */
+  const antigos = { "#acesso": "#planos", "#consultor": "#dia-30", "#automacoes": "#nora", "#recursos": "#historias", "#vitrine": "#historias", "#pra-quem": "#historias", "#parcelas": "#dia-18", "#contas": "#dia-18", "#extrato": "#dia-5", "#como-resolve": "#historias", "#como-funciona": "#topo" };
   const novo = antigos[location.hash];
   if (novo) {
     history.replaceState(null, "", novo);
@@ -78,40 +44,35 @@
   /* ------------------------------------------------------------------
      NORA — a mascote. É o próprio ícone "F" da marca ganhando corpo:
      o quadrado arredondado em degradê, a bolinha ciano virando antena.
-     Desenhada em SVG aqui (uma fonte só para todas as aparições).
      ------------------------------------------------------------------ */
   let noraN = 0;
   function nora(pose) {
     const id = "noraG" + (++noraN);
-    const moeda = pose === "pula"
-      ? `<g class="n-moeda"><circle cx="134" cy="58" r="15" fill="#fbbf24"/><circle cx="134" cy="58" r="10.5" fill="none" stroke="#b45309" stroke-width="2.5"/><path d="M134 51v14M130.5 54.5h5a2.5 2.5 0 0 1 0 5h-3a2.5 2.5 0 0 0 0 5h5" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round"/></g>` : "";
     return `<svg class="nora nora-${pose}" viewBox="0 0 160 170" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#4f46e5"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
-      <ellipse class="n-sombra" cx="80" cy="160" rx="36" ry="6" fill="#15133a" opacity=".16"/>
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b3fa8"/><stop offset=".5" stop-color="#5b2a86"/><stop offset="1" stop-color="#ff7a59"/></linearGradient></defs>
+      <ellipse class="n-sombra" cx="80" cy="160" rx="36" ry="6" fill="#2a1633" opacity=".16"/>
       <g class="n-tudo">
-        <g class="n-antena"><path d="M80 36 Q83 22 93 15" fill="none" stroke="#312e81" stroke-width="4.5" stroke-linecap="round"/><circle cx="94" cy="14" r="8" fill="#67e8f9"/><circle cx="91.5" cy="11.5" r="2.4" fill="#fff" opacity=".8"/></g>
-        <path class="n-braco-e" d="M34 100 q-16 6 -18 22" fill="none" stroke="#4338ca" stroke-width="10" stroke-linecap="round"/>
-        <g class="n-braco-d"><path d="M126 96 q18 -6 22 -26" fill="none" stroke="#0e7490" stroke-width="10" stroke-linecap="round"/>${moeda}</g>
-        <ellipse cx="60" cy="143" rx="13" ry="7" fill="#312e81"/><ellipse cx="100" cy="143" rx="13" ry="7" fill="#312e81"/>
+        <g class="n-antena"><path d="M80 36 Q83 22 93 15" fill="none" stroke="#3a1d4f" stroke-width="4.5" stroke-linecap="round"/><circle cx="94" cy="14" r="8" fill="#ff9a7e"/><circle cx="91.5" cy="11.5" r="2.4" fill="#fff" opacity=".8"/></g>
+        <path class="n-braco-e" d="M34 100 q-16 6 -18 22" fill="none" stroke="#5b2a86" stroke-width="10" stroke-linecap="round"/>
+        <g class="n-braco-d"><path d="M126 96 q18 -6 22 -26" fill="none" stroke="#e0613f" stroke-width="10" stroke-linecap="round"/></g>
+        <ellipse cx="60" cy="143" rx="13" ry="7" fill="#3a1d4f"/><ellipse cx="100" cy="143" rx="13" ry="7" fill="#3a1d4f"/>
         <rect x="30" y="36" width="100" height="104" rx="32" fill="url(#${id})"/>
         <path d="M44 52 q10 -9 26 -9" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="5" stroke-linecap="round"/>
         <g class="n-olhos">
           <ellipse cx="62" cy="80" rx="12" ry="14" fill="#fff"/><ellipse cx="98" cy="80" rx="12" ry="14" fill="#fff"/>
-          <g class="n-pupilas"><circle cx="64" cy="82" r="6.5" fill="#15133a"/><circle cx="100" cy="82" r="6.5" fill="#15133a"/><circle cx="66.5" cy="79" r="2.2" fill="#fff"/><circle cx="102.5" cy="79" r="2.2" fill="#fff"/></g>
+          <g class="n-pupilas"><circle cx="64" cy="82" r="6.5" fill="#2a1633"/><circle cx="100" cy="82" r="6.5" fill="#2a1633"/><circle cx="66.5" cy="79" r="2.2" fill="#fff"/><circle cx="102.5" cy="79" r="2.2" fill="#fff"/></g>
         </g>
-        <ellipse cx="48" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/><ellipse cx="112" cy="101" rx="7.5" ry="4.5" fill="#f9a8d4" opacity=".75"/>
-        <path class="n-boca" d="M70 102 q10 11 20 0" fill="none" stroke="#15133a" stroke-width="4.5" stroke-linecap="round"/>
+        <ellipse cx="48" cy="101" rx="7.5" ry="4.5" fill="#ffb3a1" opacity=".75"/><ellipse cx="112" cy="101" rx="7.5" ry="4.5" fill="#ffb3a1" opacity=".75"/>
+        <path class="n-boca" d="M70 102 q10 11 20 0" fill="none" stroke="#2a1633" stroke-width="4.5" stroke-linecap="round"/>
       </g>
     </svg>`;
   }
   $$("[data-nora]").forEach((el) => el.insertAdjacentHTML("afterbegin", nora(el.dataset.nora)));
 
   /* ------------------------------------------------------------------
-     CHAT COM A NORA (pré-venda). Abre ao clicar em qualquer Nora da
-     página ou nos botões [data-abre-chat]. Pergunta vai para
-     /api/vendas/chat; quando a Nora não sabe, oferece mandar a dúvida
-     por e-mail já escrita. Fica fora do bloco de movimento: funciona
-     também com movimento reduzido.
+     CHAT COM A NORA (pré-venda). Abre pelos botões [data-abre-chat].
+     Pergunta vai para /api/vendas/chat; quando a Nora não sabe, oferece
+     mandar a dúvida por e-mail já escrita.
      ------------------------------------------------------------------ */
   const EMAIL = "finora@gmail.com";
   const at = document.getElementById("atende");
@@ -186,7 +147,7 @@
     abreChat = () => {
       if (!at.hidden) { campo.focus(); return; }
       voltaFoco = document.activeElement;
-      at.hidden = false; root.classList.add("chat-aberto");
+      at.hidden = false;
       requestAnimationFrame(() => at.classList.add("on"));
       if (!conversa.length) {
         const oi = "Oi! Eu sou a **Nora**, assistente da Finora. Posso explicar como o app funciona, preços, teste grátis, segurança e o que mais você quiser saber. Qual é a sua dúvida?";
@@ -196,333 +157,23 @@
       setTimeout(() => campo.focus(), 60);
     };
     const fechaChat = () => {
-      at.classList.remove("on"); root.classList.remove("chat-aberto");
+      at.classList.remove("on");
       setTimeout(() => { if (!at.classList.contains("on")) at.hidden = true; }, 220);
       if (voltaFoco && voltaFoco.focus) voltaFoco.focus();
     };
     $("[data-fecha-chat]", at).addEventListener("click", fechaChat);
     at.addEventListener("keydown", (e) => { if (e.key === "Escape") fechaChat(); });
     $$("[data-abre-chat]").forEach((b) => b.addEventListener("click", abreChat));
-    // qualquer Nora da página abre o chat (a do hero, a da chamada final e a guia)
-    $$('[data-nora="hero"], [data-nora="pula"], .guia-mola').forEach((n) => n.addEventListener("click", abreChat));
-  }
-
-  if (reduz) return; // daqui pra baixo é só movimento
-  document.documentElement.classList.add("js-anim");
-
-  /* olhos da Nora do hero seguem o cursor (no máximo 3.5px, com rAF) */
-  const noraHero = $(".nora-hero");
-  if (noraHero) {
-    const pup = $(".n-pupilas", noraHero); let raf = 0, alvo = [0, 0];
-    addEventListener("pointermove", (e) => {
-      const r = noraHero.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height * .45);
-      const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
-      alvo = [dx / d * 3.5 * k, dy / d * 3.5 * k];
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => (pup.style.transform = `translate(${alvo[0]}px,${alvo[1]}px)`));
-    }, { passive: true });
-    // clicar/tocar na Nora: ela dá um pulinho e acena de novo
-    noraHero.closest("[data-nora]").addEventListener("click", () => {
-      const w = noraHero.closest("[data-nora]");
-      w.classList.remove("festa"); void w.offsetWidth; w.classList.add("festa");
-    });
-  }
-
-  /* contadores (valores em pt-BR; data-conta = alvo, data-dec = casas) */
-  const fmt = (v, dec) => v.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-  function conta(el, dur = 1100) {
-    const alvo = parseFloat(el.dataset.conta), dec = +(el.dataset.dec || 0), suf = el.dataset.suf || "";
-    const pre = (el.dataset.pre || "").replace(/ /g, " "); // "R$ 1,00" nunca quebra linha
-    const t0 = performance.now();
-    (function passo(t) {
-      const p = Math.min(1, (t - t0) / dur), k = 1 - Math.pow(1 - p, 4);
-      el.textContent = pre + fmt(alvo * k, dec) + suf;
-      if (p < 1) requestAnimationFrame(passo);
-    })(t0);
-  }
-
-  /* hero: coreografia de entrada no carregamento (não depende de rolagem) */
-  const hero = $(".hero");
-  requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add("entra")));
-  setTimeout(() => $$(".hero [data-conta]").forEach((el) => conta(el, 1200)), 650);
-  const noraBalao = $(".nora-balao");
-  if (noraBalao) {
-    setTimeout(() => noraBalao.classList.add("on"), 2300);
-    setTimeout(() => noraBalao.classList.remove("on"), 7800);
-  }
-
-  /* paralaxe leve na rolagem — só com mouse e tela larga (no celular, nenhuma). */
-  const fino = matchMedia("(hover:hover) and (pointer:fine) and (min-width:961px)");
-  const vis = $("[data-tilt]");
-  // paralaxe leve na rolagem (< 40px): a vitrine da fatura flutua um pouco mais devagar
-  const camadas = [[$(".fatura"), .07], [vis, .06]].filter(([el]) => el);
-  let rafPar = 0;
-  const paralaxe = () => {
-    cancelAnimationFrame(rafPar);
-    rafPar = requestAnimationFrame(() => camadas.forEach(([el, k]) => {
-      if (!fino.matches) { el.style.translate = ""; return; }
-      const r = el.parentElement.getBoundingClientRect();
-      const off = Math.max(-40, Math.min(40, (r.top + r.height / 2 - innerHeight / 2) * -k));
-      el.style.translate = `0 ${off.toFixed(1)}px`;
-    }));
-  };
-  addEventListener("scroll", paralaxe, { passive: true });
-  fino.addEventListener?.("change", paralaxe); paralaxe();
-
-  /* ------------------------------------------------------------------
-     NORA GUIA — acompanha a leitura sem roubar a cena. Cada seção com
-     data-guia é uma parada: ela some de leve, SURGE discreta no lado
-     indicado (data-lado) e, já parada, ENCENA um gesto curto para chamar
-     atenção (data-gesto: espia · acena · sim) antes de comentar no balão.
-     Se a pessoa fica parada lendo, ela repete o gesto uma vez.
-     Sai de cena na chamada final (a Nora de lá assume).
-     No celular fica sempre no canto, só trocando o gesto e a fala.
-     ------------------------------------------------------------------ */
-  const guia = $(".guia");
-  if (guia && temIO && "animate" in guia) {
-    const surge = $(".guia-surge", guia), mola = $(".guia-mola", guia), balao = $(".guia-balao", guia);
-    // só na margem de telas largas (≥1440px, onde sobra espaço fora do conteúdo); no celular e no notebook ela não aparece
-    const largo = matchMedia("(min-width:1440px)");
-    let dispensada = false;
-    try { dispensada = sessionStorage.getItem("finora-guia") === "fora"; } catch {}
-    // o balão nunca abre em cima de algo que a pessoa precisa ler ou clicar
-    const ALVO = "a, button, input, table, [role=table], [role=row], .btn, .plano, .preco, .fatura, .termos-planos, .flutua, .ct-row, .app-mock, .faq";
-    const cobreAlgo = () => {
-      const r = balao.getBoundingClientRect();
-      const pts = [[r.left + 4, r.top + 4], [r.right - 4, r.top + 4], [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4], [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
-      return pts.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => !guia.contains(el) && el.closest(ALVO)));
-    };
-    let lado = "d", parada = null, visivel = false, tBalao = 0, tGesto = 0, tLembra = 0;
-    const margem = () => (largo.matches ? 28 : 10);
-    const posX = (l) => (largo.matches && l === "e" ? margem() : document.documentElement.clientWidth - margem() - guia.offsetWidth);
-    const poe = (l) => { lado = l; guia.style.transform = `translateX(${posX(l)}px)`; guia.classList.toggle("lado-d", l === "d" || !largo.matches); };
-    const ladoDe = (s) => (largo.matches ? s.dataset.lado || "d" : "d");
-    const fala = (txt, espera = 0) => {
-      clearTimeout(tBalao); balao.classList.remove("on");
-      tBalao = setTimeout(() => {
-        balao.textContent = txt;
-        if (cobreAlgo()) return;             // sem espaço livre: fica só o gesto, sem balão
-        balao.classList.add("on");
-        tBalao = setTimeout(() => balao.classList.remove("on"), 4200);
-      }, espera);
-    };
-    // gesto = a "encenação": curto, feito já parada, depois que ela surgiu
-    const GESTOS = ["espia", "acena", "sim"];
-    const encena = (g = "espia") => {
-      GESTOS.forEach((x) => guia.classList.remove("g-" + x)); void guia.offsetWidth;
-      guia.classList.add("g-" + g);
-    };
-    // lembrete: se a pessoa ficou lendo a mesma seção, um gesto a mais (sem balão)
-    guia.addEventListener("animationend", (e) => {
-      if (["n-espia", "n-acena", "n-sim"].includes(e.animationName)) GESTOS.forEach((x) => guia.classList.remove("g-" + x));
-    });
-    const agendaLembrete = () => { clearTimeout(tLembra); tLembra = setTimeout(() => visivel && encena(parada?.dataset.gesto || "espia"), 9000); };
-
-    // chegada discreta: sobe 14px e aparece, sem quique; o gesto vem depois
-    let cena = null;
-    const troca = (a) => { cena?.cancel(); return (cena = a); };
-    const aparece = (d = 520) => troca(surge.animate(
-      [{ opacity: 0, transform: "translateY(14px) scale(.94)" }, { opacity: 1, transform: "none" }],
-      { duration: d, easing: "cubic-bezier(.16,1,.3,1)", fill: "both" }));
-    const desaparece = (d = 220) => troca(surge.animate(
-      [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(8px) scale(.96)" }],
-      { duration: d, easing: "cubic-bezier(.4,0,1,1)", fill: "both" }));
-
-    function chega(s, primeira) {
-      clearTimeout(tGesto); balao.classList.remove("on");
-      const novo = ladoDe(s), trocaLado = novo !== lado || primeira;
-      const mostra = () => {
-        poe(novo);
-        if (trocaLado) aparece();
-        tGesto = setTimeout(() => { encena(s.dataset.gesto || "espia"); fala(s.dataset.guia, 350); agendaLembrete(); }, trocaLado ? 480 : 80);
-      };
-      if (trocaLado && !primeira) desaparece().onfinish = mostra; else mostra();
-    }
-
-    function entra() {
-      if (visivel || dispensada || !largo.matches) return; visivel = true;
-      guia.classList.add("on");
-      chega(parada, true);
-    }
-    function sai() {
-      if (!visivel) return; visivel = false;
-      clearTimeout(tBalao); clearTimeout(tGesto); clearTimeout(tLembra); balao.classList.remove("on");
-      desaparece(260).onfinish = () => { if (!visivel) guia.classList.remove("on"); };
-    }
-
-    // paradas: a seção que está no meio da tela manda
-    const ioParada = new IntersectionObserver((es) => es.forEach((e) => {
-      if (!e.isIntersecting || e.target === parada) return;
-      parada = e.target;
-      visivel ? chega(parada) : avalia();
-    }), { rootMargin: "-45% 0px -45% 0px" });
-    $$("[data-guia]").forEach((s) => ioParada.observe(s));
-
-    // aparece depois do topo (a Nora do hero sai de cena) e some na chamada final e no rodapé
-    const vis = new Map(), fimEl = $(".cta-final"), rodEl = root.querySelector(".rodape");
-    function avalia() { (!vis.get(heroEl) && !vis.get(fimEl) && !vis.get(rodEl) && parada) ? entra() : sai(); }
-    const ioVis = new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); avalia(); });
-    [fimEl, rodEl].forEach((el) => el && ioVis.observe(el));
-    // o topo só "segura" a guia enquanto ocupa a parte de baixo da tela (sobra de hero não conta)
-    if (heroEl) new IntersectionObserver((es) => { es.forEach((e) => vis.set(e.target, e.isIntersecting)); avalia(); },
-      { rootMargin: "-40% 0px 0px 0px" }).observe(heroEl);
-
-    // mola discreta: um leve atraso e inclinação na rolagem; os olhos acompanham a página
-    $(".guia-fecha", guia)?.addEventListener("click", (e) => {
-      e.stopPropagation(); dispensada = true; sai();
-      try { sessionStorage.setItem("finora-guia", "fora"); } catch {}
-    });
-    largo.addEventListener?.("change", () => (largo.matches ? avalia() : sai()));
-    const pup = $(".n-pupilas", guia);
-    let yAnt = scrollY, v = 0, pos = 0, vel = 0;
-    (function laco() {
-      requestAnimationFrame(laco);
-      if (!visivel) { yAnt = scrollY; return; }
-      const dy = scrollY - yAnt; yAnt = scrollY;
-      v += (dy - v) * .2;
-      const alvo = Math.max(-8, Math.min(8, v * .6));
-      vel += (alvo - pos) * .1; vel *= .7; pos += vel;
-      const incl = Math.max(-4, Math.min(4, v * .3));
-      mola.style.transform = `translateY(${pos.toFixed(2)}px) rotate(${incl.toFixed(2)}deg)`;
-      if (pup) pup.style.transform = `translateY(${Math.max(-3, Math.min(3, v * .4)).toFixed(2)}px)`;
-      if (Math.abs(dy) > 2) agendaLembrete();
-    })();
-
-    // clique: ela acena enquanto o chat abre (o chat é ligado no bloco do chat, acima)
-    mola.addEventListener("click", () => { clearTimeout(tBalao); balao.classList.remove("on"); encena("acena"); });
-    addEventListener("resize", () => poe(largo.matches ? lado : "d"), { passive: true });
   }
 
   /* ------------------------------------------------------------------
-     CARROSSEL — usado pelo topo (.hs) e pela vitrine (.bn). A barra de
-     tempo da aba ativa é a própria animação CSS (bn-tempo); quando ela
-     termina, passa para o próximo. Pausa sozinho com o mouse em cima,
-     com foco dentro, fora da tela ou no botão de pausa. Setas (se
-     houver), ←/→ nas abas e arrastar no celular. Sem JS ou com
-     movimento reduzido, cada um tem seu estado estático no CSS.
-     pre: prefixo das classes · aoMudar(n, slide) · espera: ms antes de
-     começar a contar · reinicia: refaz a 1ª cena quando entra na tela.
+     FOLHINHA — cada dia marcado ganha um círculo de caneta, cada um
+     com um leve desvio para não parecer carimbo. Com movimento, a
+     caneta passa uma vez, dia após dia; sem movimento, já está pronto.
      ------------------------------------------------------------------ */
-  function carrossel(el, { pre, aoMudar = () => {}, espera = 0, reinicia = true }) {
-    const slides = $$(`.${pre}-slide`, el), abas = $$(`.${pre}-aba`, el);
-    if (!slides.length || slides.length !== abas.length) return;
-    let atual = -1;
-    el.classList.add("js");
-    slides.forEach((s, i) => { s.id = `${pre}-s${i}`; abas[i].id = `${pre}-a${i}`; abas[i].setAttribute("aria-controls", s.id); s.setAttribute("role", "tabpanel"); s.setAttribute("aria-labelledby", abas[i].id); });
-    function mostra(n, dir = 1) {
-      n = (n + slides.length) % slides.length;
-      if (n === atual) return;
-      el.style.setProperty("--dir", dir);
-      slides.forEach((s, i) => {
-        s.classList.toggle("sai", i === atual);
-        s.classList.toggle("ativo", i === n);
-        s.inert = i !== n;
-      });
-      abas.forEach((a, i) => { a.setAttribute("aria-selected", String(i === n)); a.tabIndex = i === n ? 0 : -1; a.classList.remove("corre"); a.classList.toggle("feita", i < n); });
-      void abas[n].offsetWidth; abas[n].classList.add("corre");   // reinicia a barra de tempo
-      atual = n;
-      aoMudar(n, slides[n]);
-    }
-    abas.forEach((a, i) => {
-      a.addEventListener("click", () => mostra(i, i > atual ? 1 : -1));
-      a.addEventListener("keydown", (e) => {
-        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-        if (!d) return;
-        e.preventDefault(); mostra(atual + d, d); abas[atual].focus();
-      });
-      a.addEventListener("animationend", (e) => { if (e.animationName === "bn-tempo") mostra(atual + 1, 1); });
-    });
-    $(`[data-${pre}-ant]`, el)?.addEventListener("click", () => mostra(atual - 1, -1));
-    $(`[data-${pre}-prox]`, el)?.addEventListener("click", () => mostra(atual + 1, 1));
-    const pausa = $(`[data-${pre}-pausa]`, el);
-    pausa?.addEventListener("click", () => {
-      const p = el.classList.toggle("pausa");
-      pausa.setAttribute("aria-pressed", String(p));
-      pausa.setAttribute("aria-label", p ? "Retomar a troca automática" : "Pausar a troca automática");
-    });
-    // arrastar para os lados (toque)
-    const palco = $(`.${pre}-palco`, el); let x0 = null;
-    palco.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") x0 = e.clientX; });
-    palco.addEventListener("pointerup", (e) => {
-      if (x0 === null) return;
-      const dx = e.clientX - x0; x0 = null;
-      if (Math.abs(dx) > 45) mostra(atual + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-    });
-    palco.addEventListener("pointercancel", () => (x0 = null));
-    // só corre o tempo quando está na tela (e, se pedido, a 1ª cena recomeça quando a pessoa chega)
-    let jaViu = !reinicia, pronto = espera === 0;
-    if (!pronto) setTimeout(() => { pronto = true; if (el.dataset.naTela) el.classList.add("visivel"); }, espera);
-    const naTela = (sim) => {
-      el.dataset.naTela = sim ? "1" : "";
-      el.classList.toggle("visivel", sim && pronto);
-      if (sim && !jaViu) {
-        jaViu = true;
-        const s = slides[atual], a = abas[atual];
-        s.classList.remove("ativo"); a.classList.remove("corre"); void s.offsetWidth;
-        s.classList.add("ativo"); a.classList.add("corre");
-      }
-    };
-    if (temIO) new IntersectionObserver((es) => es.forEach((e) => naTela(e.isIntersecting)), { threshold: .35 }).observe(el);
-    else naTela(true);
-    mostra(0);
-  }
-
-  const bn = $("[data-bn]");
-  if (bn) carrossel(bn, { pre: "bn" });
-
-  // topo: o título fica parado. Depois da entrada, o painel faz UM passeio pelos destaques
-  // (vencimentos → parcelas → contas → categorias), cada um com seu cartão, e volta ao geral.
-  const heroFoco = $(".hero");
-  if (heroFoco && $(".hero-vis")) {
-    const FOCOS = ["venc", "parc", "contas", "cats", ""];
-    setTimeout(() => {
-      heroFoco.classList.add("hs-vivo");
-      FOCOS.forEach((f, i) => setTimeout(() => { heroFoco.dataset.foco = f; }, 1600 + i * 3200));
-    }, 1800);
-  }
-
-  /* os chips de alerta ganham um índice para a cascata */
-  $$(".chips li").forEach((li, i) => li.style.setProperty("--n", i));
-
-  if (!temIO) { $$("[data-cena]").forEach((c) => c.classList.add("on")); return; }
-
-  /* revelação por cena: cada seção marcada com data-cena ganha .on ao entrar na tela;
-     o CSS decide a coreografia específica de cada uma (e o stagger via --i). */
-  $$("[data-cena]").forEach((cena) => {
-    const filhos = $$("[data-i]", cena);
-    filhos.forEach((f, i) => f.style.setProperty("--i", f.dataset.i || i));
+  $$(".marcado").forEach((a, i) => {
+    const g = [-7, 5, -3, 8, -10, 4][i % 6];
+    a.insertAdjacentHTML("afterbegin", `<svg class="circ" viewBox="0 0 40 34" aria-hidden="true" focusable="false" style="transform:rotate(${g}deg)"><path pathLength="1" d="M31 6 C25 1 11 1 5 9 C0 17 5 29 18 31 C31 33 39 24 37 14 C36 9 31 4 23 3"/></svg>`);
   });
-  const io = new IntersectionObserver((es) => es.forEach((e) => {
-    if (!e.isIntersecting) return;
-    const c = e.target; c.classList.add("on"); io.unobserve(c);
-    $$("[data-conta]", c).forEach((el) => conta(el));
-  }), { threshold: .22, rootMargin: "0px 0px -8% 0px" });
-  $$("[data-cena]").forEach((c) => io.observe(c));
-
-  /* a conversa do assistente acontece mensagem por mensagem; a Nora do cabeçalho
-     "fala" (balança) a cada resposta dela */
-  const chat = $("#chat");
-  if (chat) {
-    const msgs = $$(".msg", chat), avatar = $(".cf-nora");
-    root.classList.add("js-chat");
-    const digitando = document.createElement("li");
-    digitando.className = "digitando"; digitando.setAttribute("aria-hidden", "true");
-    digitando.innerHTML = "<i></i><i></i><i></i>";
-    const fala = () => { if (!avatar) return; avatar.classList.remove("fala"); void avatar.offsetWidth; avatar.classList.add("fala"); };
-    const toca = () => {
-      let t = 200;
-      msgs.forEach((m) => {
-        const dela = !m.classList.contains("eu");
-        if (dela) { setTimeout(() => m.before(digitando), t); t += 700; }
-        setTimeout(() => { digitando.remove(); m.classList.add("on"); if (dela) fala(); }, t);
-        t += dela ? 900 : 650;
-      });
-    };
-    const ioc = new IntersectionObserver((es) => {
-      if (!es.some((e) => e.isIntersecting)) return;
-      ioc.disconnect(); toca();
-    }, { threshold: .35 });
-    ioc.observe(chat);
-  }
+  if (!reduz) document.documentElement.classList.add("js-anim");
 })();

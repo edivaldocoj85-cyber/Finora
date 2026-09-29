@@ -23,6 +23,26 @@ Three modes: **Claro** (light), **Escuro** (dark), **Automático** (follows OS `
 
 CSS pattern (standard token-override idiom): light values live directly on `:root`; dark values are defined twice with identical tokens — once under `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }` for the automatic case, and once under `:root[data-theme="dark"]` for the explicit override. No component ever branches on theme itself; everything reads the same custom properties.
 
+## Paleta ameixa + coral (2026-09-29, supersedes every color note below, landing and panel)
+
+Owner: "revolucionar as cores, paletas mais modernas de um site profissional" — picked ameixa + coral over verde-floresta + lima and grafite + azul-elétrico, and chose to change the logo/Nora too and to apply it to the whole product.
+- **Brand gradient** (logo tile, calendar tack, Nora body, app icon): `#5b2a86 → #a8488f → #ff7a59`, 135°. Icon dot `#ffd6c9`. Nora: antenna ball `#ff9a7e`, arms `#5b2a86`/`#e0613f`, feet/antenna `#3a1d4f`, face `#2a1633`, cheeks `#ffb3a1`.
+- **Landing tokens:** `--fundo #fbf8f6` (warm white) · `--papel #f3ecf5` (alternate sections) · `--cartao #fff` · `--tinta #2a1633` · `--texto #4a3a55` · `--suave #6e6078` (5:1 on papel) · `--linha #e9e1ec` · action `--caneta #5b2a86` / hover `#47206a` (white text 9.9:1) · `--coral #ff7a59` (fills only, 2.6:1) · `--coral-esc #c4432a` (5:1 — the handwriting, calendar circles, "Com a Finora" labels, FAQ +) · highlighter `--marca-texto #ffc9b8`. Footer and chat header on `--tinta`; light text `#bfb0c8` (8:1), focus ring on dark `#e2c4ff`.
+- **Panel tokens (light):** bg `#f8f5f6`, surface `#fff`, surface-2 `#f1eaf2`, border `#e9e1ec`, text `#2a1633`, muted `#6e6078`, primary `#5b2a86`, primary-2 `#7b3fa8`, primary-bg `#f1e9f7`, `--ink #2a1633` (dashboard hero card). **Dark:** bg `#150c1b`, surface `#1f1427`, surface-2 `#2a1d33`, border `#3a2a45`, text `#f3eaf5`, muted `#a897b0`, primary `#c9a6f0` (links/text), primary-bg `#2c1b3d`. Filled buttons read `--btn-1/--btn-2` (light `#5b2a86→#7b3fa8`, dark `#7a45b3→#8a55c4`) so white text stays ≥4.5:1 in both modes.
+- **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
+- Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
+
+## Landing v7 — "Um mês como qualquer outro" (2026-09-29, supersedes every earlier Landing section below)
+
+Owner: "tirar toda a landing de app e criar algo mais humanizado". What bothered them: too many app screens, salesman tone, too many effects. Chosen direction: real-life stories. The v3–v6.1 notes below remain as history only; where they conflict, this section wins.
+- **Thesis / signature:** a wall calendar ("folhinha") for October, pinned with a brand-gradient tack, with six days circled by pen and annotated in handwriting (salário, luz!, cartão fecha, salão, fatura, sobrou?). Each circled day links to its story. Handwriting (Kalam) appears **only** here and in the "Com a Finora" note labels.
+- **Structure:** abertura (h1 "Dinheiro dá menos medo quando você sabe o que vem pela frente." + folhinha) · "Um mês como qualquer outro" (6 days, each: big pen-blue day number · 2–3 sentence story about a fictional person · "Com a Finora" note stating the real feature in plain words) · Nora (static mascot + a 3-line example exchange, no phone frame) · "Seu dinheiro continua no banco." (3 plain paragraphs) · "Quanto custa" (two simple options, `?plano=` kept) · Dúvidas · fecho "O seu próximo dia 25 pode ser mais tranquilo." · footer.
+- **Removed:** app mock, floating cards, trust strip, comparison table, feature cards, banner carousel, invoice mock, automation chips, business mini-mocks, Nora guia, sticky mobile CTA, reading-progress bar, parallax/tilt, counters, scroll reveals.
+- **Honesty:** characters are declared invented in the section intro ("As pessoas são inventadas; as situações, nem tanto."). Only real features are described; "não emite nota fiscal nem boleto" and "conteúdo educativo, não recomendação de investimento" stay.
+- **Type:** Bricolage Grotesque 800/700 (display) + Public Sans (body) + Kalam (handwriting, sparingly). **Color:** white and `--papel #f5f7fb` alternating, ink `#14213d`, one action color `--caneta #2340d8`, highlighter `#ffe27a` for `mark` and hover annotation. Brand gradient only on the logo, the calendar tack and Nora.
+- **Motion:** one moment — on load the pen circles the six days in sequence (stroke draw, 0.22s apart) and the handwritten notes fade in. Nothing else moves except hover states and the chat panel. Reduced motion or no JS: circles render finished (CSS fallback ring without JS).
+- **Kept:** Nora pre-sales chat (`#atende`, `/api/vendas/chat`), `[data-entrar]` href rewrite, old-hash redirects (now to `#historias`/`#dia-*`), legal pages (`.doc`) on the same stylesheet.
+
 ## Landing v3 — critique fixes (2026-09-23, after critique 23/36)
 
 Supersedes the section-level color and structure notes above where they conflict.
