@@ -833,3 +833,24 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   /* no celular a legenda vira uma faixa colada na base do print */
   .fm-legenda{left:0;right:0;bottom:0;max-width:none;border-radius:0;padding:9px 14px;background:rgba(42,22,51,.94)}
 }
+
+/* ============ v8.6 — filme nítido: prints no tamanho real, câmera só desce (sem zoom) ============ */
+.fm-janela{transform:none}                       /* sem inclinação 3D: ela borra a imagem */
+.filme:hover .fm-janela{transform:none}
+.fm-tela{aspect-ratio:4/3}
+.fm-img{inset:auto;top:0;left:0;width:100%;height:auto;object-fit:initial;transform:translate3d(0,var(--p0,0%),0);will-change:transform,opacity;backface-visibility:hidden}
+.fm-img.on{animation:fm-desce var(--dur,5.2s) cubic-bezier(.45,0,.25,1) forwards}
+@keyframes fm-desce{from{transform:translate3d(0,var(--p0,0%),0)}to{transform:translate3d(0,var(--p1,0%),0)}}
+.filme{--dur:5.2s}
+@media (prefers-reduced-motion:reduce){ .fm-img.on{animation:none;transform:translate3d(0,var(--p0,0%),0)} }
+/* barra de progresso numa faixa própria, sem cobrir o print */
+.fm-prog{position:static;display:flex;gap:4px;padding:0 12px;background:#fff;border-bottom:1px solid var(--linha)}
+.fm-seg{height:14px;padding:5px 0}
+.fm-seg i{height:4px}
+/* legenda compacta, no canto */
+.fm-legenda{max-width:300px;padding:10px 14px;gap:1px}
+.fm-legenda b{font-size:1rem}
+.fm-legenda span{font-size:13px}
+/* a câmera segura o topo da tela por um instante antes de descer */
+@keyframes fm-desce{0%,16%{transform:translate3d(0,var(--p0,0%),0)}100%{transform:translate3d(0,var(--p1,0%),0)}}
+@media (max-width:600px){ .fm-prog{padding:0 8px} .fm-legenda{max-width:none} }
