@@ -376,7 +376,7 @@
     };
     const atual = () => {
       const v = +r.value, p = v / LIM, est = p > 1 ? "passou" : p >= 0.8 ? "alerta" : "ok";
-      dor.style.setProperty("--p", (p * 100).toFixed(1) + "%");
+      dor.style.setProperty("--pn", Math.min(p, 1).toFixed(3));
       out.textContent = "R$ " + v;
       if (est !== dor.dataset.estado) { dor.dataset.estado = est; txt.textContent = MSG[est]; }
     };
@@ -481,8 +481,9 @@
   if (fixo && IO) {
     let passou = false;
     const vistos = new Set();
-    const atualiza = () => fixo.classList.toggle("on", passou && !vistos.size);
-    new IO(([e]) => { passou = !e.isIntersecting && e.boundingClientRect.top < 0; atualiza(); }).observe($(".abre-cta"));
+    // enquanto a barra aparece, o "Testar grátis" do cabeçalho some: um botão de teste por vez
+    const atualiza = () => { const on = passou && !vistos.size; fixo.classList.toggle("on", on); document.documentElement.classList.toggle("cta-fixo-on", on); };
+    new IO(([e]) => { passou = !e.isIntersecting && e.boundingClientRect.top < 0; atualiza(); }).observe($(".abre"));
     const o = new IO((es) => { es.forEach((e) => (e.isIntersecting ? vistos.add(e.target) : vistos.delete(e.target))); atualiza(); });
     [$("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
   }
