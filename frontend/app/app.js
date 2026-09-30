@@ -354,8 +354,9 @@ async function initAuth() {
     localSet("finora_token", state.token);
   });
 
+  let session = null;
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    ({ data: { session } } = await sb.auth.getSession());
     if (session) await ensureMfaThenBoot(); else showAuth();
   } catch {
     $("#authError").textContent = "Não foi possível recuperar sua sessão. Tente entrar de novo.";
@@ -501,7 +502,10 @@ function route() {
   document.querySelectorAll("[data-r]").forEach((a) => a.classList.toggle("active", a.dataset.r === r.id));
   $("#pageTitle").textContent = r.label;
   state.charts.forEach((c) => c.destroy()); state.charts = [];
-  const view = $("#view");
+  // cada navegação ganha um #view novo: se a tela anterior ainda estiver carregando (ex.:
+  // Mercado esperando o Banco Central), ela termina num elemento solto e não sobrescreve esta
+  const old = $("#view"), view = old.cloneNode(false);
+  old.replaceWith(view);
   view.innerHTML = `<div class="empty">Carregando…</div>`;
   (VIEWS[r.id] || VIEWS.dashboard)(view)
     .then(() => animateViewIn(view))

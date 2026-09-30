@@ -645,6 +645,7 @@ def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(curre
     account_id = data.account_id or r.account_id
     if not account_id:
         raise HTTPException(400, "Escolha em qual conta o valor entrou.")
+    _check_fk(db, u.workspace_id, Account, account_id)  # só contas do próprio workspace
     if r.received_at:
         raise HTTPException(400, "Este recebível já foi baixado.")
     recv_date = data.date or date.today()

@@ -50,7 +50,10 @@ def indicators(force: bool = False) -> dict:
     selic, ipca = out.get("selic"), out.get("ipca_12m")
     if selic and ipca:
         out["real_rate"] = round(((1 + selic["value"] / 100) / (1 + ipca["value"] / 100) - 1) * 100, 2)
-    _cache.update(data=out, exp=time.time() + 3600)
+    # falhou alguma série do Banco Central? tenta de novo em 5 min em vez de mostrar
+    # "indisponível" por 1 h inteira
+    completo = all(out.get(k) for k in SERIES)
+    _cache.update(data=out, exp=time.time() + (3600 if completo else 300))
     return out
 
 
