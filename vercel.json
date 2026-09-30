@@ -1,17 +1,52 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "frontend/**", "use": "@vercel/static" }
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/app", "dest": "/frontend/app/index.html" },
-    { "src": "/app/", "dest": "/frontend/app/index.html" },
-    { "src": "/app/(.*)", "dest": "/frontend/app/$1" },
-    { "src": "/(.*)", "dest": "/frontend/$1" }
+    {
+      "src": "/(.*)",
+      "continue": true,
+      "headers": {
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      }
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/app",
+      "dest": "/frontend/app/index.html"
+    },
+    {
+      "src": "/app/",
+      "dest": "/frontend/app/index.html"
+    },
+    {
+      "src": "/app/(.*)",
+      "dest": "/frontend/app/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
   ],
   "crons": [
-    { "path": "/api/cron/sync", "schedule": "0 */6 * * *" }
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 */6 * * *"
+    }
   ]
 }

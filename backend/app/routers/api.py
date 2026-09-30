@@ -250,6 +250,9 @@ def delete_me(u: User = Depends(current_user), db: Session = Depends(get_db)):
     """Direito de exclusão (LGPD): remove o usuário, seus dados e os itens na Pluggy."""
     for it in db.query(PluggyItem).filter_by(user_id=u.id):
         pluggy.delete_item(it.item_id)
+    for (path,) in db.query(Transaction.receipt_path).filter(Transaction.user_id == u.id,
+                                                            Transaction.receipt_path.isnot(None)):
+        storage.delete(path)  # arquivos no disco/Supabase Storage não saem com o DELETE do banco
     for M in (Transaction, CategoryRule, Contract, Income, Goal, Alert, AdvisorReport, PluggyItem,
               Account, Category):
         db.query(M).filter_by(user_id=u.id).delete()
@@ -1081,7 +1084,10 @@ def _webhook_sync(item_id: str):
 
 @router.post("/pluggy/webhook")
 async def pluggy_webhook(request: Request, bg: BackgroundTasks):
-    secret = get_settings().pluggy_webhook_secret
+    s = get_settings()
+    secret = s.pluggy_webhook_secret
+    if not secret and s.public_url.startswith("https://"):
+        raise HTTPException(503, "PLUGGY_WEBHOOK_SECRET não configurado.")  # em produção, nunca aberto
     if secret and not hmac.compare_digest(request.query_params.get("secret", ""), secret):
         raise HTTPException(401, "invalid")
     body = await request.json()

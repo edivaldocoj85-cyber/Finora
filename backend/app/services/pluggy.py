@@ -90,9 +90,10 @@ def sync_item(db: Session, user_id: int, item_id: str, days: int = 90) -> dict:
     try:
         item = _req("GET", f"/items/{item_id}")
         # segurança multi-inquilino: o item precisa pertencer a este usuário
-        client_user = item.get("clientUserId")
-        if client_user and client_user != str(user_id):
-            raise PluggyError("Este item pertence a outro usuário.")
+        # item sem clientUserId (criado fora do nosso connect token) também é recusado:
+        # sem ele não há como provar que a conexão é desta pessoa
+        if item.get("clientUserId") != str(user_id):
+            raise PluggyError("Esta conexão não pertence à sua conta.")
         item_row.connector_name = (item.get("connector") or {}).get("name", "")
         item_row.status = item.get("status", "")
 

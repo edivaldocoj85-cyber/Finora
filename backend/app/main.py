@@ -1,4 +1,5 @@
 import asyncio
+import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -164,7 +165,10 @@ def public_config():
 async def cron_sync(request: Request):
     """Chamado pela Vercel Cron no lugar da tarefa em segundo plano (ver vercel.json)."""
     s = get_settings()
-    if s.cron_secret and request.headers.get("authorization") != f"Bearer {s.cron_secret}":
+    if not s.cron_secret:
+        if ON_VERCEL or s.public_url.startswith("https://"):
+            raise HTTPException(503, "CRON_SECRET não configurado.")  # em produção, nunca aberto
+    elif not hmac.compare_digest(request.headers.get("authorization", ""), f"Bearer {s.cron_secret}"):
         raise HTTPException(401, "Não autorizado")
     if not pluggy.enabled():
         return {"synced": 0}

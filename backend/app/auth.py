@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
@@ -22,7 +23,10 @@ _attempts: dict[str, deque] = defaultdict(deque)
 def rate_limit(key_prefix: str, max_attempts: int, window_seconds: int):
     """Limita tentativas por IP (janela deslizante em memória)."""
     def dep(request: Request):
-        ip = request.client.host if request.client else "unknown"
+        # na Vercel a conexão chega pelo proxy (todo mundo teria o mesmo IP); o x-real-ip é
+        # definido pela própria Vercel. Em Docker, o uvicorn já roda com --proxy-headers.
+        ip = (request.headers.get("x-real-ip") if os.environ.get("VERCEL") else None) \
+            or (request.client.host if request.client else "unknown")
         q = _attempts[f"{key_prefix}:{ip}"]
         now = time.time()
         while q and now - q[0] > window_seconds:
