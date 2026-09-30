@@ -23,7 +23,6 @@
     <a class="marca" href="#topo" aria-label="Finora, início"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
     <nav class="menu" id="menu" aria-label="Principal">
       <a href="#historias">Um mês comum</a>
-      <a href="#telas">O app</a>
       <a href="#nora">A Nora</a>
       <a href="#planos">Quanto custa</a>
       <a href="#duvidas">Dúvidas</a>
@@ -40,7 +39,7 @@
 
 <main id="conteudo">
 
-<!-- ============ ABERTURA: a folhinha do mês ============ -->
+<!-- ============ ABERTURA: o app passando sozinho ============ -->
 <section class="abre" data-luz>
   <div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
   <div class="wrap abre-in">
@@ -59,35 +58,35 @@
       </ul>
     </div>
 
-    <div class="fl-palco">
-      <figure class="folhinha" aria-labelledby="fl-leg">
-        <span class="fl-reflexo" aria-hidden="true"></span>
-        <figcaption class="fl-cab"><span id="fl-leg">Outubro</span><small>um mês como qualquer outro</small></figcaption>
-        <div class="fl-sem" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
-        <div class="fl-dias">
-          <span class="vazio"></span><span class="vazio"></span><span class="vazio"></span><span class="vazio"></span>
-          <span>1</span><span>2</span><span>3</span><span>4</span>
-          <a class="marcado" href="#dia-5" style="--o:0" data-dia="5"><b>5</b><em>salário</em><span class="sr">: o salário caiu</span></a>
-          <span>6</span><span>7</span><span>8</span><span>9</span>
-          <a class="marcado" href="#dia-10" style="--o:1" data-dia="10"><b>10</b><em>luz!</em><span class="sr">: a conta de luz</span></a>
-          <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
-          <a class="marcado" href="#dia-18" style="--o:2" data-dia="18"><b>18</b><em>cartão fecha</em><span class="sr">: o cartão fecha</span></a>
-          <span>19</span><span>20</span><span>21</span>
-          <a class="marcado" href="#dia-22" style="--o:3" data-dia="22"><b>22</b><em>salão</em><span class="sr">: as contas do salão</span></a>
-          <span>23</span><span>24</span>
-          <a class="marcado" href="#dia-25" style="--o:4" data-dia="25"><b>25</b><em>fatura</em><span class="sr">: a fatura chega</span></a>
-          <span>26</span><span>27</span><span>28</span><span>29</span>
-          <a class="marcado" href="#dia-30" style="--o:5" data-dia="30"><b>30</b><em>sobrou?</em><span class="sr">: o fim do mês</span></a>
-          <span>31</span>
+    <!-- o "filme" do app: as 12 funções passam sozinhas, com zoom no que importa em cada tela -->
+    <section class="filme" aria-roledescription="carrossel" aria-label="Tour pelas telas da Finora">
+      <div class="fm-janela">
+        <div class="fm-barra" aria-hidden="true"><i></i><i></i><i></i><span>finora · <em class="fm-nome">Painel</em></span></div>
+        <div class="fm-prog"><button type="button" class="fm-seg" aria-label="Ver Painel"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Lançamentos"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Cartões e parcelas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Contas fixas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver A receber"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Orçamentos e regras"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Metas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Reserva de emergência"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Patrimônio"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Mercado e simulador"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Consultor"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Nora"><i></i></button></div>
+        <div class="fm-tela">
+          <img class="fm-img on" src="/img/telas/painel.webp" width="1200" height="921" alt="Tela Painel do app Finora" style="--fx:38%;--fy:30%" loading="eager" decoding="async" fetchpriority="high" data-t="Painel" data-l="Saldo, receitas, despesas e o que vence, na primeira tela.">
+          <img class="fm-img" src="/img/telas/lancamentos.webp" width="1200" height="921" alt="Tela Lançamentos do app Finora" style="--fx:40%;--fy:38%" loading="eager" decoding="async" data-t="Lançamentos" data-l="Extrato do banco ou CSV, já separado por categoria.">
+          <img class="fm-img" src="/img/telas/cartoes.webp" width="1200" height="921" alt="Tela Cartões e parcelas do app Finora" style="--fx:28%;--fy:36%" loading="lazy" decoding="async" data-t="Cartões e parcelas" data-l="Fatura, limite e cada parcela com quanto falta.">
+          <img class="fm-img" src="/img/telas/fixas.webp" width="1200" height="921" alt="Tela Contas fixas do app Finora" style="--fx:34%;--fy:30%" loading="lazy" decoding="async" data-t="Contas fixas" data-l="Aluguel, luz, DAS do MEI: aviso antes de vencer.">
+          <img class="fm-img" src="/img/telas/receber.webp" width="1200" height="921" alt="Tela A receber do app Finora" style="--fx:34%;--fy:28%" loading="lazy" decoding="async" data-t="A receber" data-l="Quem te deve, quanto e quando.">
+          <img class="fm-img" src="/img/telas/orcamento.webp" width="1200" height="921" alt="Tela Orçamentos e regras do app Finora" style="--fx:70%;--fy:24%" loading="lazy" decoding="async" data-t="Orçamentos e regras" data-l="Limite por categoria e regras automáticas.">
+          <img class="fm-img" src="/img/telas/metas.webp" width="1200" height="921" alt="Tela Metas do app Finora" style="--fx:36%;--fy:28%" loading="lazy" decoding="async" data-t="Metas" data-l="Quanto falta e quanto guardar por mês.">
+          <img class="fm-img" src="/img/telas/reserva.webp" width="1200" height="921" alt="Tela Reserva de emergência do app Finora" style="--fx:36%;--fy:24%" loading="lazy" decoding="async" data-t="Reserva de emergência" data-l="Quantos meses do seu custo estão guardados.">
+          <img class="fm-img" src="/img/telas/patrimonio.webp" width="1200" height="921" alt="Tela Patrimônio do app Finora" style="--fx:36%;--fy:24%" loading="lazy" decoding="async" data-t="Patrimônio" data-l="Imóvel, carro e investimentos somados.">
+          <img class="fm-img" src="/img/telas/mercado.webp" width="1200" height="921" alt="Tela Mercado e simulador do app Finora" style="--fx:50%;--fy:20%" loading="lazy" decoding="async" data-t="Mercado e simulador" data-l="Selic, CDI, IPCA e quanto seu dinheiro rende.">
+          <img class="fm-img" src="/img/telas/consultor.webp" width="1200" height="921" alt="Tela Consultor do app Finora" style="--fx:36%;--fy:46%" loading="lazy" decoding="async" data-t="Consultor" data-l="Um relatório do seu mês, com onde economizar.">
+          <img class="fm-img" src="/img/telas/nora.webp" width="1200" height="921" alt="Tela Nora do app Finora" style="--fx:82%;--fy:46%" loading="lazy" decoding="async" data-t="Nora" data-l="“gastei 80 na farmácia” vira lançamento.">
+          <div class="fm-legenda" aria-live="polite"><b>Painel</b><span>Saldo, receitas, despesas e o que vence, na primeira tela.</span></div>
         </div>
-        <button class="fl-nora" type="button" data-abre-chat aria-label="Tirar dúvidas com a Nora"><span data-nora="mini"></span></button>
-      </figure>
-      <!-- aviso que gira junto com os dias circulados (decorativo: o mesmo conteúdo está nas histórias) -->
-      <div class="aviso" aria-hidden="true">
-        <span class="av-ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
-        <span class="av-corpo"><small>Aviso da Finora · dia <b class="av-dia">10</b></small><span class="av-txt">A conta de luz vence em 3 dias.</span></span>
       </div>
-    </div>
+      <div class="fm-controles">
+        <button type="button" class="fm-bt fm-ant" aria-label="Tela anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button type="button" class="fm-bt fm-play" aria-label="Pausar o tour"><svg class="ic-pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"/><path d="M15 5v14"/></svg><svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
+        <button type="button" class="fm-bt fm-prox" aria-label="Próxima tela"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <span class="fm-conta" aria-hidden="true"><b>1</b> / 12</span>
+        <span class="fm-nota">Prints reais do app · valores ilustrativos</span>
+      </div>
+    </section>
   </div>
 </section>
 
@@ -265,51 +264,6 @@
       </li>
     </ol>
 
-  </div>
-</section>
-
-<!-- ============ O APP: prints reais de cada função ============ -->
-<section class="sec sec-telas" id="telas">
-  <div class="wrap">
-    <header class="sec-cab" data-rev>
-      <h2>Tudo o que a Finora faz, em 12 telas.</h2>
-      <p>Prints reais do app, com uma pessoa inventada e valores ilustrativos. Escolha uma função para ver.</p>
-    </header>
-    <div class="tl-grade" data-rev>
-      <div class="tl-abas" role="tablist" aria-label="Funções da Finora" aria-orientation="vertical">
-          <button class="tl-aba" type="button" role="tab" id="aba-painel" aria-controls="tela-painel" aria-selected="true" tabindex="0"><b>Painel</b><span>Saldo, receitas, despesas e o que vence, tudo na primeira tela.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-lancamentos" aria-controls="tela-lancamentos" aria-selected="false" tabindex="-1"><b>Lançamentos</b><span>Extrato do banco ou CSV, já separado por categoria.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-cartoes" aria-controls="tela-cartoes" aria-selected="false" tabindex="-1"><b>Cartões e parcelas</b><span>Fatura aberta, limite e cada parcela com quanto falta.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-fixas" aria-controls="tela-fixas" aria-selected="false" tabindex="-1"><b>Contas fixas</b><span>Aluguel, luz, DAS do MEI: aviso antes e “marcar pago” num toque.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-receber" aria-controls="tela-receber" aria-selected="false" tabindex="-1"><b>A receber</b><span>Quem te deve, quanto e quando. Recebeu, entrou no saldo.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-orcamento" aria-controls="tela-orcamento" aria-selected="false" tabindex="-1"><b>Orçamentos e regras</b><span>Limite por categoria e regras como “iFood → Restaurantes”.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-metas" aria-controls="tela-metas" aria-selected="false" tabindex="-1"><b>Metas</b><span>Viagem, carro novo: quanto falta e quanto guardar por mês.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-reserva" aria-controls="tela-reserva" aria-selected="false" tabindex="-1"><b>Reserva de emergência</b><span>Quantos meses do seu custo você já tem guardados.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-patrimonio" aria-controls="tela-patrimonio" aria-selected="false" tabindex="-1"><b>Patrimônio</b><span>Imóvel, carro e investimentos somados ao seu saldo.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-mercado" aria-controls="tela-mercado" aria-selected="false" tabindex="-1"><b>Mercado e simulador</b><span>Selic, CDI, IPCA e dólar do dia, e quanto seu dinheiro rende.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-consultor" aria-controls="tela-consultor" aria-selected="false" tabindex="-1"><b>Consultor</b><span>Um relatório do seu mês com onde dá para economizar.</span></button>
-          <button class="tl-aba" type="button" role="tab" id="aba-nora" aria-controls="tela-nora" aria-selected="false" tabindex="-1"><b>Nora</b><span>Escreva “gastei 80 na farmácia” e ela prepara o lançamento.</span></button>
-      </div>
-      <div class="tl-palco">
-        <div class="tl-janela">
-          <div class="tl-barra" aria-hidden="true"><i></i><i></i><i></i><span>finora · <em class="tl-nome">Painel</em></span></div>
-          <figure class="tl-tela" role="tabpanel" id="tela-painel" aria-labelledby="aba-painel"><img src="/img/telas/painel.webp" width="1200" height="921" alt="Tela Painel do app Finora, com valores ilustrativos" loading="eager" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-lancamentos" aria-labelledby="aba-lancamentos" hidden><img src="/img/telas/lancamentos.webp" width="1200" height="921" alt="Tela Lançamentos do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-cartoes" aria-labelledby="aba-cartoes" hidden><img src="/img/telas/cartoes.webp" width="1200" height="921" alt="Tela Cartões e parcelas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-fixas" aria-labelledby="aba-fixas" hidden><img src="/img/telas/fixas.webp" width="1200" height="921" alt="Tela Contas fixas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-receber" aria-labelledby="aba-receber" hidden><img src="/img/telas/receber.webp" width="1200" height="921" alt="Tela A receber do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-orcamento" aria-labelledby="aba-orcamento" hidden><img src="/img/telas/orcamento.webp" width="1200" height="921" alt="Tela Orçamentos e regras do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-metas" aria-labelledby="aba-metas" hidden><img src="/img/telas/metas.webp" width="1200" height="921" alt="Tela Metas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-reserva" aria-labelledby="aba-reserva" hidden><img src="/img/telas/reserva.webp" width="1200" height="921" alt="Tela Reserva de emergência do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-patrimonio" aria-labelledby="aba-patrimonio" hidden><img src="/img/telas/patrimonio.webp" width="1200" height="921" alt="Tela Patrimônio do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-mercado" aria-labelledby="aba-mercado" hidden><img src="/img/telas/mercado.webp" width="1200" height="921" alt="Tela Mercado e simulador do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-consultor" aria-labelledby="aba-consultor" hidden><img src="/img/telas/consultor.webp" width="1200" height="921" alt="Tela Consultor do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-          <figure class="tl-tela" role="tabpanel" id="tela-nora" aria-labelledby="aba-nora" hidden><img src="/img/telas/nora.webp" width="1200" height="921" alt="Tela Nora do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
-        </div>
-        <p class="tl-descr" aria-live="polite">Saldo, receitas, despesas e o que vence, tudo na primeira tela.</p>
-        <figure class="tl-cel" aria-hidden="true"><img src="/img/telas/cel-dashboard.webp" width="420" height="909" alt="" loading="lazy" decoding="async"></figure>
-      </div>
-    </div>
     <div class="tl-cta" data-rev>
       <p><b>No computador e no celular.</b> Instala na tela inicial, sem loja de aplicativos.</p>
       <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
@@ -441,7 +395,7 @@
       <a class="marca" href="#topo" aria-label="Finora, voltar ao topo"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
       <p>Controle financeiro para a casa e para quem trabalha por conta própria.</p>
     </div>
-    <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#telas">O app</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
+    <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
     <nav class="rd-col" aria-label="Conta"><h3>Conta</h3><a href="/app/" data-entrar>Entrar</a><a href="/app/" data-entrar>Testar grátis</a></nav>
     <nav class="rd-col" aria-label="Legal e contato"><h3>Legal e contato</h3><a href="/privacidade.html">Política de Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="mailto:finora@gmail.com">finora@gmail.com</a></nav>
   </div>

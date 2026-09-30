@@ -233,7 +233,7 @@
 
   /* ABERTURA: holofote segue o cursor, a folhinha inclina e reflete a luz */
   const abre = $(".abre"), palco = $(".fl-palco"), folha = $(".folhinha");
-  if (anima && fino && abre) {
+  if (anima && fino && abre && palco && folha) {
     abre.addEventListener("pointermove", (e) => {
       const r = abre.getBoundingClientRect();
       abre.style.setProperty("--mx", e.clientX - r.left + "px"); abre.style.setProperty("--my", e.clientY - r.top + "px");
@@ -469,28 +469,51 @@
     });
   }
 
-  /* O APP EM 12 TELAS — abas com teclado (setas, Home/End); no celular, a aba escolhida
-     rola para o meio da faixa */
-  const abasTl = $$(".tl-aba"), nomeTl = $(".tl-nome");
-  const escolhe = (aba, foco) => {
-    abasTl.forEach((a) => {
-      const on = a === aba;
-      a.setAttribute("aria-selected", String(on)); a.tabIndex = on ? 0 : -1;
-      document.getElementById(a.getAttribute("aria-controls")).hidden = !on;
+  /* O FILME DO APP (topo) — as telas passam sozinhas: o segmento da barra é o relógio
+     (animationend avança). Pausa com o botão, com o mouse ou o foco dentro, fora da tela
+     ou com a aba oculta. Com movimento reduzido, começa parado e sem zoom. */
+  const fm = $(".filme");
+  if (fm) {
+    const fotos = $$(".fm-img", fm), segs = $$(".fm-seg", fm), leg = $(".fm-legenda", fm);
+    const nome = $(".fm-nome", fm), conta = $(".fm-conta b", fm), play = $(".fm-play", fm);
+    let atual = 0, pausaUsuario = !anima, pausaHover = false, fora = false;
+    const pausado = () => pausaUsuario || pausaHover || fora || document.hidden;
+    const sincroniza = () => {
+      fm.classList.toggle("pausado", pausado());
+      play.setAttribute("aria-label", pausaUsuario ? "Continuar o tour" : "Pausar o tour");
+    };
+    const vai = (i) => {
+      atual = (i + fotos.length) % fotos.length;
+      fotos.forEach((f, k) => { f.classList.toggle("on", k === atual); });
+      segs.forEach((s, k) => { s.classList.toggle("on", k === atual); s.classList.toggle("feito", k < atual); });
+      // reinicia as animações do slide atual
+      [fotos[atual], $("i", segs[atual])].forEach((el) => { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; });
+      const f = fotos[atual];
+      $("b", leg).textContent = f.dataset.t; $("span", leg).textContent = f.dataset.l;
+      leg.classList.remove("troca"); void leg.offsetWidth; leg.classList.add("troca");
+      nome.textContent = f.dataset.t; conta.textContent = atual + 1;
+      const prox = fotos[(atual + 1) % fotos.length]; if (prox.loading === "lazy") prox.loading = "eager";  // pré-carrega a próxima
+      sincroniza();
+    };
+    segs.forEach((s, k) => {
+      $("i", s).addEventListener("animationend", () => { if (k === atual && !pausado()) vai(atual + 1); });
+      s.addEventListener("click", () => vai(k));
     });
-    if (nomeTl) nomeTl.textContent = $("b", aba).textContent;
-    const descr = $(".tl-descr"); if (descr) descr.textContent = $("span", aba).textContent;  // no celular a linha da aba fica escondida
-    if (foco) aba.focus();
-    if (innerWidth <= 960) aba.scrollIntoView({ block: "nearest", inline: "center", behavior: anima ? "smooth" : "auto" });
-  };
-  abasTl.forEach((a, i) => {
-    a.addEventListener("click", () => escolhe(a));
-    a.addEventListener("keydown", (e) => {
-      const n = abasTl.length, alvo = { ArrowDown: i + 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowLeft: i - 1, Home: 0, End: n - 1 }[e.key];
-      if (alvo === undefined) return;
-      e.preventDefault(); escolhe(abasTl[(alvo + n) % n], true);
+    $(".fm-ant", fm).addEventListener("click", () => vai(atual - 1));
+    $(".fm-prox", fm).addEventListener("click", () => vai(atual + 1));
+    play.addEventListener("click", () => { pausaUsuario = !pausaUsuario; sincroniza(); });
+    fm.addEventListener("mouseenter", () => { pausaHover = true; sincroniza(); });
+    fm.addEventListener("mouseleave", () => { pausaHover = false; sincroniza(); });
+    fm.addEventListener("focusin", () => { pausaHover = true; sincroniza(); });
+    fm.addEventListener("focusout", (e) => { if (!fm.contains(e.relatedTarget)) { pausaHover = false; sincroniza(); } });
+    document.addEventListener("visibilitychange", sincroniza);
+    if (IO) new IO(([e]) => { fora = !e.isIntersecting; sincroniza(); }, { threshold: 0.25 }).observe(fm);
+    fm.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") { e.preventDefault(); vai(atual + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); vai(atual - 1); }
     });
-  });
+    vai(0);
+  }
 
   /* preços correm até o valor quando aparecem */
   if (anima && IO) $$("[data-conta]").forEach((el) => {

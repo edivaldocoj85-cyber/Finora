@@ -773,3 +773,63 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .tl-cta{padding:22px 20px}
   .tl-cta .btn{width:100%}
 }
+
+/* ============ v8.5 — o filme do app no topo (substitui a folhinha) ============ */
+.abre-in{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:56px}
+.filme{position:relative;min-width:0}
+.fm-janela{position:relative;border-radius:16px;overflow:hidden;background:#f8f5f6;border:1px solid var(--linha);box-shadow:0 50px 90px -40px rgba(42,22,51,.6),0 10px 24px -12px rgba(42,22,51,.25);transform:perspective(1400px) rotateY(-4deg) rotateX(1deg);transition:transform .6s var(--m-ui)}
+.filme:hover .fm-janela{transform:none}
+.fm-barra{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--linha)}
+.fm-barra i{width:10px;height:10px;border-radius:50%;background:#e4d8ea}
+.fm-barra span{margin-left:10px;font-size:13px;font-weight:600;color:var(--suave)}
+.fm-barra em{font-style:normal;color:var(--tinta)}
+/* barra de progresso estilo stories: cada segmento é uma tela */
+.fm-prog{position:absolute;left:12px;right:12px;top:44px;z-index:3;display:flex;gap:4px}
+.fm-seg{flex:1;height:22px;padding:9px 0;border:0;background:none;cursor:pointer}
+.fm-seg i{display:block;height:4px;border-radius:2px;background:rgba(42,22,51,.14);overflow:hidden;position:relative}
+.fm-seg i::after{content:"";position:absolute;inset:0;background:var(--grad);transform:scaleX(0);transform-origin:left}
+.fm-seg.feito i::after{transform:none}
+.fm-seg.on i::after{animation:fm-enche var(--dur,4.6s) linear forwards}
+.filme.pausado .fm-seg.on i::after{animation-play-state:paused}
+@keyframes fm-enche{to{transform:none}}
+.fm-tela{position:relative;aspect-ratio:1200/921;overflow:hidden;background:#f8f5f6}
+.fm-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transform-origin:var(--fx) var(--fy);transition:opacity .7s var(--m-ui)}
+.fm-img.on{opacity:1;animation:fm-zoom var(--dur,4.6s) cubic-bezier(.45,0,.2,1) forwards}
+.filme.pausado .fm-img.on{animation-play-state:paused}
+@keyframes fm-zoom{from{transform:scale(1.02)}to{transform:scale(1.42)}}
+/* legenda que entra a cada tela */
+.fm-legenda{position:absolute;left:14px;bottom:14px;z-index:3;display:grid;gap:2px;max-width:min(82%,380px);padding:12px 16px;border-radius:12px;background:rgba(42,22,51,.9);color:#e8dcef;box-shadow:0 16px 30px -14px rgba(42,22,51,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.fm-legenda b{font-family:var(--display);font-size:1.1rem;color:#fff}
+.fm-legenda span{font-size:14px;line-height:1.4}
+.fm-legenda.troca{animation:fm-leg .6s var(--m-ui)}
+@keyframes fm-leg{from{opacity:0;transform:translateY(10px)}}
+.fm-controles{display:flex;align-items:center;gap:6px;margin-top:16px}
+.fm-bt{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--linha);border-radius:12px;background:#fff;color:var(--caneta);cursor:pointer;transition:border-color .2s,box-shadow .25s}
+.fm-bt:hover{border-color:var(--caneta);box-shadow:var(--glow)}
+.fm-bt svg{width:18px;height:18px}
+.fm-play .ic-play,.filme.pausado .fm-play .ic-pausa{display:none}
+.filme.pausado .fm-play .ic-play{display:block}
+.fm-conta{margin-left:6px;font-size:14px;color:var(--suave);font-variant-numeric:tabular-nums}
+.fm-conta b{color:var(--tinta)}
+.fm-nota{margin-left:auto;font-size:13px;color:var(--suave)}
+@media (max-width:960px){
+  .abre-in{grid-template-columns:minmax(0,1fr);gap:40px}
+  .fm-janela{transform:none}
+}
+@media (max-width:600px){
+  .fm-legenda{left:8px;bottom:8px;padding:8px 12px;max-width:88%}
+  .fm-legenda b{font-size:1rem}
+  .fm-legenda span{font-size:12.5px}
+  .fm-prog{left:8px;right:8px;top:40px;gap:3px}
+  .fm-nota{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .fm-img.on{animation:none;transform:none}
+  .fm-janela{transform:none}
+}
+.abre h1{font-size:clamp(2.3rem,4.3vw,3.55rem)}
+@keyframes fm-zoom{from{transform:scale(1.02)}to{transform:scale(1.28)}}
+@media (max-width:600px){
+  /* no celular a legenda vira uma faixa colada na base do print */
+  .fm-legenda{left:0;right:0;bottom:0;max-width:none;border-radius:0;padding:9px 14px;background:rgba(42,22,51,.94)}
+}
