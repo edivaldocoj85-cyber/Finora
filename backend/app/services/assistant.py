@@ -345,7 +345,9 @@ def answer(db: Session, user: User, message: str) -> dict:
     for parser in (_parse_transaction, _parse_goal):
         draft = parser(db, user, message)
         if draft:
-            reply = f"Entendi — {draft['confirm_label'].lower()}"
+            label = draft["confirm_label"]
+            # só a primeira letra vira minúscula: .lower() estragava "R$" e nomes ("r$ 80,00")
+            reply = f"Entendi — {label[:1].lower() + label[1:]}"
             if draft.get("summary"):
                 reply += f" ({draft['summary']})"
             reply += ". Confirma?"

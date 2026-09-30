@@ -23,6 +23,7 @@
     <a class="marca" href="#topo" aria-label="Finora, início"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
     <nav class="menu" id="menu" aria-label="Principal">
       <a href="#historias">Um mês comum</a>
+      <a href="#telas">O app</a>
       <a href="#nora">A Nora</a>
       <a href="#planos">Quanto custa</a>
       <a href="#duvidas">Dúvidas</a>
@@ -264,27 +265,54 @@
       </li>
     </ol>
 
-    <!-- recorte fiel da tela "Cartões" do app (mesma estrutura de app.js), com os números do Diego -->
-    <div class="cta-meio" data-rev>
-      <div class="cm-txt">
-        <h3>É assim dentro da Finora.</h3>
-        <p>Esta é a tela de parcelamentos do app, com as compras do Diego. O seu mês pode ficar claro assim.</p>
-        <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
-        <p class="nota">Sem cartão de crédito. Funciona no navegador e no celular.</p>
+  </div>
+</section>
+
+<!-- ============ O APP: prints reais de cada função ============ -->
+<section class="sec sec-telas" id="telas">
+  <div class="wrap">
+    <header class="sec-cab" data-rev>
+      <h2>Tudo o que a Finora faz, em 12 telas.</h2>
+      <p>Prints reais do app, com uma pessoa inventada e valores ilustrativos. Escolha uma função para ver.</p>
+    </header>
+    <div class="tl-grade" data-rev>
+      <div class="tl-abas" role="tablist" aria-label="Funções da Finora" aria-orientation="vertical">
+          <button class="tl-aba" type="button" role="tab" id="aba-painel" aria-controls="tela-painel" aria-selected="true" tabindex="0"><b>Painel</b><span>Saldo, receitas, despesas e o que vence, tudo na primeira tela.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-lancamentos" aria-controls="tela-lancamentos" aria-selected="false" tabindex="-1"><b>Lançamentos</b><span>Extrato do banco ou CSV, já separado por categoria.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-cartoes" aria-controls="tela-cartoes" aria-selected="false" tabindex="-1"><b>Cartões e parcelas</b><span>Fatura aberta, limite e cada parcela com quanto falta.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-fixas" aria-controls="tela-fixas" aria-selected="false" tabindex="-1"><b>Contas fixas</b><span>Aluguel, luz, DAS do MEI: aviso antes e “marcar pago” num toque.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-receber" aria-controls="tela-receber" aria-selected="false" tabindex="-1"><b>A receber</b><span>Quem te deve, quanto e quando. Recebeu, entrou no saldo.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-orcamento" aria-controls="tela-orcamento" aria-selected="false" tabindex="-1"><b>Orçamentos e regras</b><span>Limite por categoria e regras como “iFood → Restaurantes”.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-metas" aria-controls="tela-metas" aria-selected="false" tabindex="-1"><b>Metas</b><span>Viagem, carro novo: quanto falta e quanto guardar por mês.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-reserva" aria-controls="tela-reserva" aria-selected="false" tabindex="-1"><b>Reserva de emergência</b><span>Quantos meses do seu custo você já tem guardados.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-patrimonio" aria-controls="tela-patrimonio" aria-selected="false" tabindex="-1"><b>Patrimônio</b><span>Imóvel, carro e investimentos somados ao seu saldo.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-mercado" aria-controls="tela-mercado" aria-selected="false" tabindex="-1"><b>Mercado e simulador</b><span>Selic, CDI, IPCA e dólar do dia, e quanto seu dinheiro rende.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-consultor" aria-controls="tela-consultor" aria-selected="false" tabindex="-1"><b>Consultor</b><span>Um relatório do seu mês com onde dá para economizar.</span></button>
+          <button class="tl-aba" type="button" role="tab" id="aba-nora" aria-controls="tela-nora" aria-selected="false" tabindex="-1"><b>Nora</b><span>Escreva “gastei 80 na farmácia” e ela prepara o lançamento.</span></button>
       </div>
-      <figure class="tela" aria-labelledby="tela-leg">
-        <div class="tela-barra" aria-hidden="true"><i></i><i></i><i></i><span>finora · Cartões</span></div>
-        <div class="tela-corpo">
-          <h4>Parcelamentos em aberto</h4>
-          <p class="tl-resumo">Este mês entram <b>2</b> parcela(s) somando <b>R$&nbsp;680,00</b> nas faturas.</p>
-          <ul class="tl-lista">
-            <li><div class="tl-info"><b>Notebook</b><small>Cartão Roxo · parcela 4/10 · próxima em 18/11</small><span class="tl-barra"><i style="--p:.4"></i></span></div><div class="tl-valor"><b>R$&nbsp;420,00</b><small>faltam 6x · R$&nbsp;2.520,00</small></div></li>
-            <li><div class="tl-info"><b>Geladeira</b><small>Cartão Roxo · parcela 3/6 · próxima em 18/11</small><span class="tl-barra"><i style="--p:.5"></i></span></div><div class="tl-valor"><b>R$&nbsp;260,00</b><small>faltam 3x · R$&nbsp;780,00</small></div></li>
-            <li><div class="tl-info"><b>Passagem de dezembro</b><small>Cartão Roxo · parcela 1/5 · próxima em 18/12</small><span class="tl-barra"><i style="--p:0"></i></span></div><div class="tl-valor"><b class="tl-mudo">não cobra este mês</b><small>faltam 5x · R$&nbsp;1.550,00</small></div></li>
-          </ul>
+      <div class="tl-palco">
+        <div class="tl-janela">
+          <div class="tl-barra" aria-hidden="true"><i></i><i></i><i></i><span>finora · <em class="tl-nome">Painel</em></span></div>
+          <figure class="tl-tela" role="tabpanel" id="tela-painel" aria-labelledby="aba-painel"><img src="/img/telas/painel.webp" width="1200" height="921" alt="Tela Painel do app Finora, com valores ilustrativos" loading="eager" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-lancamentos" aria-labelledby="aba-lancamentos" hidden><img src="/img/telas/lancamentos.webp" width="1200" height="921" alt="Tela Lançamentos do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-cartoes" aria-labelledby="aba-cartoes" hidden><img src="/img/telas/cartoes.webp" width="1200" height="921" alt="Tela Cartões e parcelas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-fixas" aria-labelledby="aba-fixas" hidden><img src="/img/telas/fixas.webp" width="1200" height="921" alt="Tela Contas fixas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-receber" aria-labelledby="aba-receber" hidden><img src="/img/telas/receber.webp" width="1200" height="921" alt="Tela A receber do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-orcamento" aria-labelledby="aba-orcamento" hidden><img src="/img/telas/orcamento.webp" width="1200" height="921" alt="Tela Orçamentos e regras do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-metas" aria-labelledby="aba-metas" hidden><img src="/img/telas/metas.webp" width="1200" height="921" alt="Tela Metas do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-reserva" aria-labelledby="aba-reserva" hidden><img src="/img/telas/reserva.webp" width="1200" height="921" alt="Tela Reserva de emergência do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-patrimonio" aria-labelledby="aba-patrimonio" hidden><img src="/img/telas/patrimonio.webp" width="1200" height="921" alt="Tela Patrimônio do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-mercado" aria-labelledby="aba-mercado" hidden><img src="/img/telas/mercado.webp" width="1200" height="921" alt="Tela Mercado e simulador do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-consultor" aria-labelledby="aba-consultor" hidden><img src="/img/telas/consultor.webp" width="1200" height="921" alt="Tela Consultor do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
+          <figure class="tl-tela" role="tabpanel" id="tela-nora" aria-labelledby="aba-nora" hidden><img src="/img/telas/nora.webp" width="1200" height="921" alt="Tela Nora do app Finora, com valores ilustrativos" loading="lazy" decoding="async"></figure>
         </div>
-        <figcaption id="tela-leg">Tela do app · valores ilustrativos</figcaption>
-      </figure>
+        <p class="tl-descr" aria-live="polite">Saldo, receitas, despesas e o que vence, tudo na primeira tela.</p>
+        <figure class="tl-cel" aria-hidden="true"><img src="/img/telas/cel-dashboard.webp" width="420" height="909" alt="" loading="lazy" decoding="async"></figure>
+      </div>
+    </div>
+    <div class="tl-cta" data-rev>
+      <p><b>No computador e no celular.</b> Instala na tela inicial, sem loja de aplicativos.</p>
+      <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
     </div>
   </div>
 </section>
@@ -413,7 +441,7 @@
       <a class="marca" href="#topo" aria-label="Finora, voltar ao topo"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
       <p>Controle financeiro para a casa e para quem trabalha por conta própria.</p>
     </div>
-    <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
+    <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#telas">O app</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
     <nav class="rd-col" aria-label="Conta"><h3>Conta</h3><a href="/app/" data-entrar>Entrar</a><a href="/app/" data-entrar>Testar grátis</a></nav>
     <nav class="rd-col" aria-label="Legal e contato"><h3>Legal e contato</h3><a href="/privacidade.html">Política de Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="mailto:finora@gmail.com">finora@gmail.com</a></nav>
   </div>

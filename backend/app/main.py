@@ -33,9 +33,6 @@ def _migrate(engine):
     with engine.begin() as conn:
         if "users" in tables:
             cols = {c["name"] for c in insp.get_columns("users")}
-            if "google_id" not in cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN google_id VARCHAR(64)"))
-                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_id ON users (google_id)"))
             if "avatar_url" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
             if "onboarded_at" not in cols:
@@ -52,6 +49,10 @@ def _migrate(engine):
             # Autenticação migrou pro Supabase Auth — essas colunas guardavam credenciais
             # do sistema de login caseiro (senha aleatória, segredo TOTP, códigos de backup)
             # e não têm mais uso; removidas para não deixar segredo morto no banco.
+            # colunas do login antigo (antes do Supabase Auth): saem uma vez e não voltam mais —
+            # antes o google_id era recriado num boot e apagado no seguinte, a cada partida
+            if "google_id" in cols:
+                conn.execute(text("DROP INDEX IF EXISTS ix_users_google_id"))  # SQLite não apaga coluna indexada
             for legacy_col in ("password_hash", "google_id", "mfa_secret", "mfa_enabled_at", "mfa_backup_codes"):
                 if legacy_col in cols:
                     conn.execute(text(f"ALTER TABLE users DROP COLUMN {legacy_col}"))

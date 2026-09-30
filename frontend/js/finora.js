@@ -469,6 +469,29 @@
     });
   }
 
+  /* O APP EM 12 TELAS — abas com teclado (setas, Home/End); no celular, a aba escolhida
+     rola para o meio da faixa */
+  const abasTl = $$(".tl-aba"), nomeTl = $(".tl-nome");
+  const escolhe = (aba, foco) => {
+    abasTl.forEach((a) => {
+      const on = a === aba;
+      a.setAttribute("aria-selected", String(on)); a.tabIndex = on ? 0 : -1;
+      document.getElementById(a.getAttribute("aria-controls")).hidden = !on;
+    });
+    if (nomeTl) nomeTl.textContent = $("b", aba).textContent;
+    const descr = $(".tl-descr"); if (descr) descr.textContent = $("span", aba).textContent;  // no celular a linha da aba fica escondida
+    if (foco) aba.focus();
+    if (innerWidth <= 960) aba.scrollIntoView({ block: "nearest", inline: "center", behavior: anima ? "smooth" : "auto" });
+  };
+  abasTl.forEach((a, i) => {
+    a.addEventListener("click", () => escolhe(a));
+    a.addEventListener("keydown", (e) => {
+      const n = abasTl.length, alvo = { ArrowDown: i + 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowLeft: i - 1, Home: 0, End: n - 1 }[e.key];
+      if (alvo === undefined) return;
+      e.preventDefault(); escolhe(abasTl[(alvo + n) % n], true);
+    });
+  });
+
   /* preços correm até o valor quando aparecem */
   if (anima && IO) $$("[data-conta]").forEach((el) => {
     const v = +el.dataset.conta, f = (x) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -485,6 +508,6 @@
     const atualiza = () => { const on = passou && !vistos.size; fixo.classList.toggle("on", on); document.documentElement.classList.toggle("cta-fixo-on", on); };
     new IO(([e]) => { passou = !e.isIntersecting && e.boundingClientRect.top < 0; atualiza(); }).observe($(".abre"));
     const o = new IO((es) => { es.forEach((e) => (e.isIntersecting ? vistos.add(e.target) : vistos.delete(e.target))); atualiza(); });
-    [$(".cta-meio"), $("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
+    [$(".tl-cta"), $("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
   }
 })();
