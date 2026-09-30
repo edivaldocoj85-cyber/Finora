@@ -729,3 +729,41 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
 @media (max-width:600px){
   .dx-nome{white-space:normal}
 }
+
+/* ============ v8.3 — um recorte real do app, junto da chamada ============ */
+.cta-meio{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:center;gap:48px;padding:40px}
+.cm-txt h3{font-size:clamp(1.6rem,2.6vw,2.1rem);font-weight:800;letter-spacing:-.025em}
+.cm-txt>p:first-of-type{margin:12px 0 24px;font-size:1.08rem;max-width:40ch}
+.cm-txt .nota{margin-top:12px}
+.tela{margin:0;border-radius:14px;background:#f8f5f6;border:1px solid var(--linha);box-shadow:0 30px 60px -30px rgba(42,22,51,.45),0 6px 16px -8px rgba(42,22,51,.18);overflow:hidden}
+.tela-barra{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--linha)}
+.tela-barra i{width:10px;height:10px;border-radius:50%;background:#e4d8ea}
+.tela-barra span{margin-left:10px;font-size:13px;font-weight:600;color:var(--suave)}
+.tela-corpo{margin:16px;padding:18px;border-radius:12px;background:#fff;border:1px solid var(--linha)}
+.tela-corpo h4{margin:0;font-family:var(--display);font-size:1.05rem;font-weight:700;color:var(--tinta)}
+.tl-resumo{margin-top:6px;font-size:13.5px;color:var(--suave)}
+.tl-resumo b{color:var(--tinta)}
+.tl-lista{list-style:none;margin:10px 0 0;padding:0}
+.tl-lista li{display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-top:1px solid #f1eaf2}
+.tl-info{flex:1;min-width:0;display:grid;gap:2px}
+.tl-info b,.tl-valor b{font-size:14.5px;color:var(--tinta);font-variant-numeric:tabular-nums}
+.tl-info small,.tl-valor small{font-size:13px;color:var(--suave)}
+.tl-valor{flex:none;display:grid;justify-items:end;gap:2px;text-align:right}
+.tl-mudo{font-weight:500!important;color:var(--suave)!important}
+.tl-barra{display:block;height:6px;margin-top:6px;border-radius:999px;background:#f1eaf2;overflow:hidden}
+.tl-barra i{display:block;height:100%;width:100%;transform:scaleX(var(--p));transform-origin:left;border-radius:inherit;background:linear-gradient(90deg,#5b2a86,#7b3fa8);transition:transform 1s .4s var(--m-ui)}
+.js-anim .cta-meio:not(.vis) .tl-barra i{transform:scaleX(0)}
+.tela figcaption{padding:0 16px 12px;font-size:12.5px;color:var(--suave)}
+@media (max-width:960px){
+  .cta-meio{grid-template-columns:minmax(0,1fr);gap:32px;padding:28px 24px}
+}
+@media (max-width:600px){
+  .cta-meio{padding:22px 16px}
+  .tela-corpo{margin:10px;padding:14px}
+  .tl-lista li{flex-direction:column;gap:6px}
+  .tl-valor{justify-items:start;text-align:left}
+}
+.cta-meio .tl-resumo{font-size:13.5px;color:var(--suave)}
+.cta-meio .tl-resumo b{margin:0;font-family:inherit;font-size:inherit}
+.cta-meio .nota{font-size:14.5px}
+.cta-meio .cm-txt>p:first-of-type{font-size:1.08rem}

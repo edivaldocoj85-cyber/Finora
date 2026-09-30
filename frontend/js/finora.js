@@ -485,6 +485,6 @@
     const atualiza = () => { const on = passou && !vistos.size; fixo.classList.toggle("on", on); document.documentElement.classList.toggle("cta-fixo-on", on); };
     new IO(([e]) => { passou = !e.isIntersecting && e.boundingClientRect.top < 0; atualiza(); }).observe($(".abre"));
     const o = new IO((es) => { es.forEach((e) => (e.isIntersecting ? vistos.add(e.target) : vistos.delete(e.target))); atualiza(); });
-    [$("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
+    [$(".cta-meio"), $("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
   }
 })();
