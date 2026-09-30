@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v8.1 — mais curto e mais venda (2026-09-30)
+
+Owner: "diminuir o conteúdo, mais resumido e intuitivo, chamando as pessoas para contratar". Copy cut to one short sentence per story and per "Com a Finora" note; trust cards and FAQ trimmed (FAQ 8 → 6: app and end-of-trial moved out, the latter lives in the plan terms). Conversion: CTA card "O seu mês pode ser assim." right after the stories, pricing headline "Comece grátis. Continue se gostar." with a 6-item checklist instead of the long "inclui" paragraph, and on phones a fixed bottom "Testar grátis por 10 dias" bar that appears after the hero and hides over pricing and the closing band. Bug fixes: reveal now animates `translate` (not `transform`) so card hover lifts work; count-up prices start at 0 instead of flashing the final value. Required disclaimers kept (invented people, illustrative values, consultor is educational, no nota fiscal/boleto).
+
 ## Landing v8 — movimento, brilho e demos (2026-09-29, on top of v7)
 
 Owner, right after v7 shipped: "levou toda a animação do site; precisamos de animações futuristas do ramo para chamar a atenção, todo o conteúdo interativo, fácil de compreender, e mais brilho". Skills: motion-design (Premium personality for the page — expo-out, no bounce; Playful only for Nora) + frontend-design. v7's story structure and copy stay; this pass adds light and interaction. Where v7's "Motion" and "Removed" notes conflict, this section wins.

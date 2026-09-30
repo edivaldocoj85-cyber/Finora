@@ -228,7 +228,7 @@
     if (!el.parentElement.matches(".confia,.planos")) return;
     el.style.setProperty("--i", [...el.parentElement.children].indexOf(el));
   });
-  const mostra = (el) => { el.classList.add("vis"); setTimeout(() => el.classList.add("assentou"), 1200); };
+  const mostra = (el) => el.classList.add("vis");
   revs.forEach((el) => (anima ? aoVer(el, mostra, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }) : mostra(el)));
 
   /* ABERTURA: holofote segue o cursor, a folhinha inclina e reflete a luz */
@@ -472,6 +472,18 @@
   /* preços correm até o valor quando aparecem */
   if (anima && IO) $$("[data-conta]").forEach((el) => {
     const v = +el.dataset.conta, f = (x) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    el.textContent = f(0);   // já começa do zero, para não piscar o valor final antes de contar
     aoVer(el, () => conta(el, 0, v, f, 1100), { threshold: 0.6 });
   });
+
+  /* celular: botão de teste fixo embaixo depois do topo; some nos preços e no fecho */
+  const fixo = $(".cta-fixo");
+  if (fixo && IO) {
+    let passou = false;
+    const vistos = new Set();
+    const atualiza = () => fixo.classList.toggle("on", passou && !vistos.size);
+    new IO(([e]) => { passou = !e.isIntersecting && e.boundingClientRect.top < 0; atualiza(); }).observe($(".abre-cta"));
+    const o = new IO((es) => { es.forEach((e) => (e.isIntersecting ? vistos.add(e.target) : vistos.delete(e.target))); atualiza(); });
+    [$("#planos"), $(".fecho")].forEach((x) => x && o.observe(x));
+  }
 })();
