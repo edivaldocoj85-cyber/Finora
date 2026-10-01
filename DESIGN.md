@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v8.8 — filme "tecnológico" (2026-10-01)
+
+Owner: "mais tecnológico, flutuando, mudando de formas como um site profissional". Kept the crisp rule (nothing scales or rotates the print). The window floats (7s translate loop) and follows the pointer slightly (`--px/--py`, translate); each new screen opens over the previous one through a shape (`clip-path`: circle from the top-right, a rounded card growing from the center, a diagonal wipe — cycled), a light band sweeps across during the swap, a halo behind the window shifts to each function's color (`@property --tom`), and two HTML data cards float around the window (`.fm-chip`, numbers matching the prints, e.g. "Fatura aberta R$ 1.068 · vence 25/10") and morph at each swap (text blurs out/in, icon tile reshapes). Pausing only freezes the camera, never a half-open shape; float and cards pause off-screen or when paused. Phones: one card above the window. Reduced motion: no float/parallax/sweep/morph, swaps are a 0.4s dissolve.
+
 ## Landing v8.7 — revisão do movimento (2026-10-01, impeccable animate)
 
 Motion thesis: the one authored moment is the hero film (real screens playing on their own); everything else explains state (demos, FAQ, tabs) or acknowledges a gesture. Changes:

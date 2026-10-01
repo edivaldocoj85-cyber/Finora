@@ -436,6 +436,8 @@
   const fm = $(".filme");
   if (fm) {
     const fotos = $$(".fm-img", fm), segs = $$(".fm-seg", fm), leg = $(".fm-legenda", fm);
+    const varre = $(".fm-varre", fm), chips = $$(".fm-chip", fm);
+    let anterior = -1, forma = 0;
     const nome = $(".fm-nome", fm), conta = $(".fm-conta b", fm), play = $(".fm-play", fm);
     let atual = 0, pausaUsuario = !anima, pausaHover = false, fora = false, entrando = anima;
     const pausado = () => pausaUsuario || pausaHover || fora || entrando || document.hidden;
@@ -445,8 +447,26 @@
       play.setAttribute("aria-label", pausaUsuario ? "Continuar o tour" : "Pausar o tour");
     };
     const vai = (i) => {
-      atual = (i + fotos.length) % fotos.length;
-      fotos.forEach((f, k) => { f.classList.toggle("on", k === atual); });
+      const novo = (i + fotos.length) % fotos.length;
+      if (novo === atual && anterior !== -1) return;
+      anterior = atual; atual = novo;
+      // a anterior fica embaixo; a nova entra por cima, aberta por uma forma (círculo, cartão, diagonal)
+      fotos.forEach((f, k) => {
+        f.classList.remove("on", "sai", "revela", "f0", "f1", "f2");
+        if (k === anterior && anterior !== atual) f.classList.add("sai");
+      });
+      const fNova = fotos[atual];
+      fNova.classList.add("on");
+      if (anima && anterior !== atual && anterior !== -1) { fNova.classList.add("revela", "f" + (forma++ % 3)); varre.classList.remove("passa"); void varre.offsetWidth; varre.classList.add("passa"); }
+      else fNova.classList.add("revela", "f0");
+      fm.style.setProperty("--tom", fNova.dataset.tom);
+      chips.forEach((c, n) => {
+        const [rot, val] = fNova.dataset["c" + (n + 1)].split("|");
+        const troca = () => { $("small", c).textContent = rot; $("b", c).textContent = val; };
+        if (!anima) { troca(); return; }
+        c.classList.remove("muda"); void c.offsetWidth; c.classList.add("muda");
+        setTimeout(troca, 260 + n * 90);   // o texto troca no meio da transformação
+      });
       segs.forEach((s, k) => { s.classList.toggle("on", k === atual); s.classList.toggle("feito", k < atual); });
       // reinicia as animações do slide atual
       [fotos[atual], $("i", segs[atual])].forEach((el) => { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; });
@@ -475,6 +495,17 @@
       if (e.key === "ArrowRight") { e.preventDefault(); vai(atual + 1); }
       if (e.key === "ArrowLeft") { e.preventDefault(); vai(atual - 1); }
     });
+    // a anterior some quando a nova termina de abrir
+    fotos.forEach((f) => f.addEventListener("animationend", (e) => { if (e.animationName.startsWith("fm-") && e.animationName !== "fm-desce" && f.classList.contains("on")) fotos.forEach((o) => o.classList.remove("sai")); }));
+    // a janela e os cartões seguem o mouse de leve (só translate)
+    if (anima && fino) {
+      fm.addEventListener("pointermove", (e) => {
+        const r = fm.getBoundingClientRect();
+        fm.style.setProperty("--px", (((e.clientX - r.left) / r.width - 0.5) * 10).toFixed(1) + "px");
+        fm.style.setProperty("--py", (((e.clientY - r.top) / r.height - 0.5) * 8).toFixed(1) + "px");
+      });
+      fm.addEventListener("pointerleave", () => { fm.style.setProperty("--px", "0px"); fm.style.setProperty("--py", "0px"); });
+    }
     vai(0);
     if (entrando) setTimeout(() => { entrando = false; sincroniza(); }, 1300);  // a janela termina de entrar
   }

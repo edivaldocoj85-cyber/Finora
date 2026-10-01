@@ -750,3 +750,70 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .btn,.fm-bt,.plano,.confia>div,[data-spot]{transition-property:background-color,border-color,color,box-shadow,opacity}
   .atende{transition:opacity .2s}
 }
+
+/* =====================================================================
+   FILME TECNOLÓGICO (2026-10-01): a janela flutua e segue o mouse de leve,
+   cada tela nova é revelada por uma forma que se abre (círculo, cartão,
+   diagonal), um brilho varre a troca, o halo muda de cor por função e dois
+   cartões de dados flutuam em volta e se transformam. Só translate e
+   clip-path sobre o print: nada amplia nem gira a imagem (fica nítida).
+   ===================================================================== */
+@property --tom{syntax:"<color>";inherits:true;initial-value:#7b3fa8}
+.filme{--tom:#7b3fa8;transition:--tom 1.2s var(--m-ui)}
+.fm-aura{position:absolute;inset:6% -4% 10% 4%;z-index:-1;border-radius:40%;background:radial-gradient(closest-side,color-mix(in oklab,var(--tom) 55%,transparent),transparent);filter:blur(40px);opacity:.8;pointer-events:none}
+.fm-flutua{position:relative;translate:var(--px,0) var(--py,0);transition:translate .6s var(--m-ui)}
+.fm-janela{animation:fm-boia 7s ease-in-out infinite alternate}
+@keyframes fm-boia{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-12px,0)}}
+/* troca por forma: a tela nova fica por cima e se abre; a anterior espera embaixo */
+.fm-img{transition:none;clip-path:none}
+.fm-img.sai{opacity:1;z-index:1}
+.fm-img.on{z-index:2}
+.fm-img.revela{animation:var(--forma) 1s cubic-bezier(.7,0,.2,1) both,fm-desce var(--dur) cubic-bezier(.45,0,.25,1) forwards}
+.fm-img.f0{--forma:fm-circ}.fm-img.f1{--forma:fm-cartao}.fm-img.f2{--forma:fm-diag}
+@keyframes fm-circ{from{clip-path:circle(0% at 72% 22%)}to{clip-path:circle(150% at 72% 22%)}}
+@keyframes fm-cartao{from{clip-path:inset(38% 30% 38% 30% round 28px)}to{clip-path:inset(0 0 0 0 round 0)}}
+@keyframes fm-diag{from{clip-path:polygon(0 0,0 0,-30% 100%,-30% 100%)}to{clip-path:polygon(0 0,130% 0,100% 100%,-30% 100%)}}
+/* brilho que varre a janela no meio da troca */
+.fm-varre{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%)}
+.fm-varre.passa{animation:fm-varre 1.1s .15s cubic-bezier(.6,0,.2,1)}
+@keyframes fm-varre{to{transform:translateX(120%)}}
+/* cartões de dados que flutuam em volta */
+.fm-chip{position:absolute;z-index:4;display:flex;align-items:center;gap:10px;padding:10px 14px 10px 10px;border-radius:14px;background:rgba(255,255,255,.92);border:1px solid rgba(233,225,236,.9);box-shadow:0 24px 40px -18px rgba(42,22,51,.5),0 0 0 1px rgba(255,255,255,.6) inset;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);translate:calc(var(--px,0) * 1.6) calc(var(--py,0) * 1.6);transition:translate .6s var(--m-ui)}
+.fm-chip i{width:30px;height:30px;flex:none;border-radius:10px;background:linear-gradient(135deg,var(--tom),color-mix(in oklab,var(--tom) 55%,#ff7a59));box-shadow:0 6px 14px -6px var(--tom)}
+.fm-chip span{display:grid;line-height:1.2}
+.fm-chip small{font-size:12px;color:var(--suave)}
+.fm-chip b{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--tinta);white-space:nowrap}
+.fm-chip-a{top:18%;right:-34px;animation:fm-boia-a 6s ease-in-out infinite alternate}
+.fm-chip-b{bottom:20%;left:-38px;animation:fm-boia-b 8s ease-in-out infinite alternate}
+@keyframes fm-boia-a{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-16px,0)}}
+@keyframes fm-boia-b{from{transform:translate3d(0,-10px,0)}to{transform:translate3d(0,8px,0)}}
+.fm-chip.muda span{animation:fm-chip-muda .7s var(--m-ui)}
+.fm-chip.muda i{animation:fm-chip-ic .7s var(--m-ui)}
+@keyframes fm-chip-muda{0%{opacity:1;filter:none}40%{opacity:0;filter:blur(6px);transform:translateY(6px)}41%{transform:translateY(-6px)}100%{opacity:1;filter:none;transform:none}}
+@keyframes fm-chip-ic{40%{border-radius:50%;transform:scale(.6) rotate(-45deg)}100%{border-radius:10px;transform:none}}
+/* pausas: fora da tela ou pausado pelo usuário, o ambiente também para */
+.abre:not(.vivo) .fm-janela,.abre:not(.vivo) .fm-chip,.filme.pausado .fm-janela,.filme.pausado .fm-chip{animation-play-state:paused}
+@media (max-width:960px){
+  .fm-chip-a{right:-8px;top:12%}
+  .fm-chip-b{left:-8px;bottom:22%}
+}
+@media (max-width:600px){
+  .fm-chip{padding:7px 10px 7px 7px;gap:8px}
+  .fm-chip i{width:24px;height:24px}
+  .fm-chip b{font-size:13.5px}
+  .fm-chip small{font-size:11px}
+  .fm-chip-a{right:6px;top:auto;bottom:calc(100% - 26px)}
+  .fm-chip-b{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .fm-janela,.fm-chip,.fm-chip.muda span,.fm-chip.muda i,.fm-varre.passa{animation:none}
+  .fm-img.revela{animation:fm-dissolve .4s ease both}
+  .fm-flutua,.fm-chip{translate:none}
+}
+@keyframes fm-dissolve{from{opacity:0}}
+/* pausar não congela a forma no meio da abertura: só a câmera (2ª animação) para */
+.filme.pausado .fm-img.revela{animation-play-state:running,paused}
+/* cartões sem disputar espaço com a legenda nem com o título da janela */
+.fm-chip-b{top:42%;bottom:auto}
+@media (max-width:960px){ .fm-chip-b{top:46%} }
+@media (max-width:600px){ .fm-chip-a{top:-30px;bottom:auto;right:10px} }
