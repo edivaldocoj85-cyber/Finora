@@ -1,9 +1,9 @@
 /* =====================================================================
    FINORA LANDING — JS isolado (sem dependências)
-   Menu, links de entrada, a Nora (desenho em SVG), o chat de dúvidas e
-   o único movimento da página: a caneta circulando os dias da folhinha.
+   Menu, links de entrada, a Nora (desenho em SVG), o chat de dúvidas, o
+   filme do app no topo, as demos das histórias e o movimento de apoio.
    data-login no #finora-landing define o destino de "Entrar".
-   Com prefers-reduced-motion, os círculos aparecem prontos.
+   Com prefers-reduced-motion, nada desliza sozinho e o filme começa pausado.
    ===================================================================== */
 (function () {
   "use strict";
@@ -166,15 +166,6 @@
     $$("[data-abre-chat]").forEach((b) => b.addEventListener("click", abreChat));
   }
 
-  /* ------------------------------------------------------------------
-     FOLHINHA — cada dia marcado ganha um círculo de caneta, cada um
-     com um leve desvio para não parecer carimbo. Com movimento, a
-     caneta passa uma vez, dia após dia; sem movimento, já está pronto.
-     ------------------------------------------------------------------ */
-  $$(".marcado").forEach((a, i) => {
-    const g = [-7, 5, -3, 8, -10, 4][i % 6];
-    a.insertAdjacentHTML("afterbegin", `<svg class="circ" viewBox="0 0 40 34" aria-hidden="true" focusable="false" style="transform:rotate(${g}deg)"><path pathLength="1" d="M31 6 C25 1 11 1 5 9 C0 17 5 29 18 31 C31 33 39 24 37 14 C36 9 31 4 23 3"/></svg>`);
-  });
   const anima = !reduz;
   if (anima) document.documentElement.classList.add("js-anim");
 
@@ -219,8 +210,19 @@
   }
 
   /* barra de leitura no cabeçalho */
-  const lido = () => { const h = document.documentElement.scrollHeight - innerHeight; cab.style.setProperty("--lido", h > 0 ? (scrollY / h).toFixed(4) : 0); };
-  addEventListener("scroll", lido, { passive: true }); lido();
+  let lidoPend = false;
+  const lido = () => {
+    lidoPend = false;
+    const h = document.documentElement.scrollHeight - innerHeight;
+    cab.style.setProperty("--lido", h > 0 ? (scrollY / h).toFixed(4) : 0);
+  };
+  addEventListener("scroll", () => { if (!lidoPend) { lidoPend = true; requestAnimationFrame(lido); } }, { passive: true }); lido();
+
+  /* ambiente (aurora, halo e flutuar da Nora) só anima com a seção na tela */
+  if (IO) {
+    const vivo = new IO((es) => es.forEach((e) => e.target.classList.toggle("vivo", e.isIntersecting)), { rootMargin: "80px 0px" });
+    $$("[data-luz]").forEach((el) => vivo.observe(el));
+  } else $$("[data-luz]").forEach((el) => el.classList.add("vivo"));
 
   /* entradas ao rolar; cartões lado a lado entram em cascata */
   const revs = $$("[data-rev]");
@@ -231,54 +233,13 @@
   const mostra = (el) => el.classList.add("vis");
   revs.forEach((el) => (anima ? aoVer(el, mostra, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }) : mostra(el)));
 
-  /* ABERTURA: holofote segue o cursor, a folhinha inclina e reflete a luz */
-  const abre = $(".abre"), palco = $(".fl-palco"), folha = $(".folhinha");
-  if (anima && fino && abre && palco && folha) {
+  /* ABERTURA: o holofote do fundo segue o cursor */
+  const abre = $(".abre");
+  if (anima && fino && abre) {
     abre.addEventListener("pointermove", (e) => {
       const r = abre.getBoundingClientRect();
       abre.style.setProperty("--mx", e.clientX - r.left + "px"); abre.style.setProperty("--my", e.clientY - r.top + "px");
     });
-    palco.addEventListener("pointermove", (e) => {
-      if (innerWidth <= 960) return;
-      const r = palco.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
-      folha.style.setProperty("--ry", ((px - 0.5) * 10).toFixed(2) + "deg");
-      folha.style.setProperty("--rx", ((0.5 - py) * 8).toFixed(2) + "deg");
-      folha.style.setProperty("--gx", (px * 100).toFixed(1) + "%"); folha.style.setProperty("--gy", (py * 100).toFixed(1) + "%");
-    });
-    palco.addEventListener("pointerleave", () => { folha.style.setProperty("--rx", "0deg"); folha.style.setProperty("--ry", "0deg"); });
-  }
-
-  /* o aviso da Finora gira pelos dias circulados; passar o mouse num dia mostra o dele */
-  const AVISOS = {
-    5: "O salário caiu. Os lançamentos já vieram separados.",
-    10: "A conta de luz vence em 3 dias.",
-    18: "O cartão fecha hoje: parcela 4 de 10 do notebook.",
-    22: "A Marina ainda te deve R$ 60,00.",
-    25: "Restaurantes: você já usou 80% do que separou.",
-    30: "Sobraram R$ 300 este mês. Que tal a reserva?",
-  };
-  const aviso = $(".aviso"), marcados = $$(".marcado");
-  if (aviso && marcados.length) {
-    const avDia = $(".av-dia", aviso), avTxt = $(".av-txt", aviso);
-    let k = 1, parado = false;
-    const mostraDia = (i) => {
-      marcados.forEach((d, j) => d.classList.toggle("agora", j === i));
-      const n = marcados[i].dataset.dia;
-      if (!anima) { avDia.textContent = n; avTxt.textContent = AVISOS[n]; return; }
-      aviso.classList.add("troca"); aviso.classList.remove("toca");
-      setTimeout(() => { avDia.textContent = n; avTxt.textContent = AVISOS[n]; aviso.classList.remove("troca"); aviso.classList.add("toca"); }, 300);
-    };
-    marcados.forEach((d, i) => {
-      const segura = () => { if (k !== i || !parado) { k = i; mostraDia(i); } parado = true; };
-      d.addEventListener("mouseenter", segura); d.addEventListener("focus", segura);
-      d.addEventListener("mouseleave", () => { parado = false; }); d.addEventListener("blur", () => { parado = false; });
-    });
-    if (anima) {
-      setTimeout(() => {
-        mostraDia(k);
-        setInterval(() => { if (!parado && !document.hidden) { k = (k + 1) % marcados.length; mostraDia(k); } }, 3400);
-      }, 2700);
-    } else mostraDia(k);
   }
 
   /* HISTÓRIAS: o número do dia que está no meio da tela acende */
@@ -330,7 +291,7 @@
     const pinta = (sim) => cols.forEach((c) => {
       const v = +c.dataset.v;
       c.style.setProperty("--h", ((v / MAX) * 100).toFixed(1) + "%");
-      c.style.setProperty("--hn", sim ? ((NOVO / MAX) * 100).toFixed(1) + "%" : "0%");
+      c.style.setProperty("--hn", ((NOVO / MAX) * 100).toFixed(1) + "%");
       c.classList.toggle("sobe", sim);
       $("b", c).textContent = (v + (sim ? NOVO : 0)).toLocaleString("pt-BR");
     });
@@ -476,8 +437,9 @@
   if (fm) {
     const fotos = $$(".fm-img", fm), segs = $$(".fm-seg", fm), leg = $(".fm-legenda", fm);
     const nome = $(".fm-nome", fm), conta = $(".fm-conta b", fm), play = $(".fm-play", fm);
-    let atual = 0, pausaUsuario = !anima, pausaHover = false, fora = false;
-    const pausado = () => pausaUsuario || pausaHover || fora || document.hidden;
+    let atual = 0, pausaUsuario = !anima, pausaHover = false, fora = false, entrando = anima;
+    const pausado = () => pausaUsuario || pausaHover || fora || entrando || document.hidden;
+    segs.forEach((s, k) => s.style.setProperty("--k", k));
     const sincroniza = () => {
       fm.classList.toggle("pausado", pausado());
       play.setAttribute("aria-label", pausaUsuario ? "Continuar o tour" : "Pausar o tour");
@@ -496,7 +458,8 @@
       sincroniza();
     };
     segs.forEach((s, k) => {
-      $("i", s).addEventListener("animationend", () => { if (k === atual && !pausado()) vai(atual + 1); });
+      // só o fim do preenchimento (fm-enche) avança; a entrada dos traços também dispara animationend
+      $("i", s).addEventListener("animationend", (e) => { if (e.animationName === "fm-enche" && k === atual && !pausado()) vai(atual + 1); });
       s.addEventListener("click", () => vai(k));
     });
     $(".fm-ant", fm).addEventListener("click", () => vai(atual - 1));
@@ -513,6 +476,7 @@
       if (e.key === "ArrowLeft") { e.preventDefault(); vai(atual - 1); }
     });
     vai(0);
+    if (entrando) setTimeout(() => { entrando = false; sincroniza(); }, 1300);  // a janela termina de entrar
   }
 
   /* preços correm até o valor quando aparecem */

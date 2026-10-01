@@ -1,13 +1,14 @@
 /* =====================================================================
-   FINORA — landing pública (v7, "um mês como qualquer outro")
-   Humanizada: histórias do dia a dia em vez de telas do app.
+   FINORA — landing pública (v8: filme do app no topo + "um mês como
+   qualquer outro" com demos). Movimento revisado em 2026-10-01: ver o
+   bloco MOVIMENTO no fim do arquivo.
    Paleta ameixa + coral (2026-09-29): branco quente, seções em lilás
    claríssimo, tinta ameixa, uma cor de ação (roxo-ameixa) e o coral como
    a caneta de quem anota — marca-texto, círculos e letra de mão. Coral
    puro (#ff7a59) só em preenchimento; em texto e traço, o coral escuro
-   (--coral-esc, 5:1 no branco). A letra de mão (Kalam) aparece só na
-   folhinha e nas notas "Com a Finora". Degradê da marca (ameixa → coral)
-   no logo, no percevejo da folhinha e na Nora.
+   (--coral-esc, 5:1 no branco). A letra de mão (Kalam) aparece só nas
+   notas "Com a Finora" e nas etiquetas "exemplo". Degradê da marca
+   (ameixa → coral) no logo, na Nora e nos brilhos.
    Tipos: Bricolage Grotesque (títulos) + Public Sans (texto).
    Também serve às páginas legais (.doc). Ver DESIGN.md.
    ===================================================================== */
@@ -98,26 +99,6 @@ mark{background:linear-gradient(transparent 58%,var(--marca-texto) 58%, var(--ma
 .lead{margin-top:24px;font-size:clamp(1.1rem,1.6vw,1.25rem);max-width:40ch;color:var(--texto)}
 .abre-cta{margin-top:36px;display:grid;justify-items:start;gap:12px}
 
-/* a folhinha: um calendário de parede com alguns dias circulados à mão */
-.folhinha{position:relative;margin:0;background:var(--cartao);border:1px solid var(--linha);border-radius:var(--raio);padding:22px 22px 26px;box-shadow:var(--sombra);transform:rotate(1.2deg)}
-.folhinha::before{content:"";position:absolute;top:-9px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--grad);box-shadow:0 2px 3px rgba(42,22,51,.25)}
-.fl-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:2px solid var(--tinta)}
-.fl-cab span{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.03em;color:var(--tinta)}
-.fl-cab small{font-family:var(--mao);font-size:16px;color:var(--suave)}
-.fl-sem,.fl-dias{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
-.fl-sem{margin-top:10px}
-.fl-sem span{text-align:center;font-size:12px;font-weight:700;color:var(--suave)}
-.fl-dias>*{position:relative;height:58px;padding-top:6px;text-align:center;font-size:15px;font-variant-numeric:tabular-nums;color:var(--texto);border-top:1px solid #f1eaf2}
-.fl-dias .vazio{border-top-color:transparent}
-.fl-dias .marcado{display:block;text-decoration:none;color:var(--tinta);border-radius:8px}
-.marcado b{position:relative;z-index:1;font-weight:700}
-.marcado em{position:relative;z-index:1;display:block;margin-top:2px;font-family:var(--mao);font-style:normal;font-weight:700;font-size:13px;line-height:1.05;color:var(--coral-esc)}
-.marcado:hover b,.marcado:focus-visible b{background:var(--marca-texto)}
-/* o círculo de caneta: SVG injetado pelo JS; sem JS, um contorno irregular em CSS */
-.marcado .circ{position:absolute;left:50%;top:1px;width:40px;height:34px;margin-left:-20px;color:var(--coral-esc);stroke-width:1.8;overflow:visible;pointer-events:none}
-html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;width:34px;height:28px;margin-left:-17px;border:1.8px solid var(--coral-esc);border-radius:48% 52% 45% 55%/55% 45% 55% 45%;transform:rotate(-8deg)}
-.fl-nora{position:absolute;right:-26px;bottom:-34px;width:82px;padding:0;border:0;background:none;cursor:pointer;transform:rotate(-1.2deg)}
-.fl-nora:hover .nora{transform:translateY(-3px)}
 .nora{width:100%;height:auto;transition:transform .25s var(--m-ui)}
 
 /* ============ SEÇÕES ============ */
@@ -255,11 +236,6 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .at-rod{padding:0 16px 12px;font-size:12px;color:var(--suave);background:#fff}
 .at-rod a{color:var(--caneta);font-weight:600}
 
-/* ============ MOVIMENTO (um só momento: a caneta circula os dias) ============ */
-.js-anim .marcado .circ path{stroke-dasharray:1;stroke-dashoffset:1;animation:circula .7s var(--m-ui) forwards;animation-delay:calc(.5s + var(--o) * .22s)}
-.js-anim .marcado em{opacity:0;animation:aparece .4s ease-out forwards;animation-delay:calc(.8s + var(--o) * .22s)}
-@keyframes circula{to{stroke-dashoffset:0}}
-@keyframes aparece{to{opacity:1}}
 
 /* ============ RESPONSIVO ============ */
 @media (max-width:1080px){
@@ -279,7 +255,6 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
   .menu-btn{display:flex}
   .abre{padding:40px 0 72px}
   .abre-in{grid-template-columns:minmax(0,1fr);gap:56px}
-  .folhinha{max-width:460px;width:100%;justify-self:center}
   .nora-in{grid-template-columns:minmax(0,1fr);gap:28px}
   .nora-fig{max-width:150px}
   .confia{grid-template-columns:minmax(0,1fr);gap:32px}
@@ -293,11 +268,6 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
   .cab .logo{width:30px;height:30px;font-size:15px}
   .cab .marca-txt small{display:none}
   .cab-acoes .btn{min-height:40px;padding:0 14px;font-size:14.5px}
-  .folhinha{padding:18px 12px 22px;transform:none}
-  .fl-cab{flex-wrap:wrap}
-  .fl-dias>*{height:52px;font-size:14px}
-  .marcado em{font-size:11.5px}
-  .fl-nora{right:-6px;bottom:-40px;width:64px}
   .dia{grid-template-columns:minmax(0,1fr);padding:36px 0}
   .dia-n{font-size:4rem}
   .dia-ajuda{grid-column:auto}
@@ -337,8 +307,6 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .btn-pri:hover{background:linear-gradient(135deg,#47206a,#6a3494 60%,#7b3589);box-shadow:var(--glow-forte)}
 .btn-pri::after,.btn-luz::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.38) 48%,transparent 66%);transform:translateX(-120%);transition:transform .8s var(--m-ui)}
 .btn-pri:hover::after,.btn-luz:hover::after{transform:translateX(120%)}
-.btn-lg.btn-pri{animation:respira 4.5s ease-in-out infinite}
-@keyframes respira{0%,100%{box-shadow:var(--glow)}50%{box-shadow:var(--glow-forte)}}
 
 /* aurora: manchas de luz que derivam devagar atrás do conteúdo */
 [data-luz]{position:relative;overflow:hidden;isolation:isolate}
@@ -358,7 +326,6 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .selo-topo{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px;padding:7px 14px 7px 10px;border-radius:999px;font-size:14px;font-weight:600;color:var(--caneta-esc);background:linear-gradient(#fff,#fff) padding-box,linear-gradient(120deg,#c9a6f0,#ff9a7e) border-box;border:1px solid transparent;box-shadow:0 6px 20px -12px rgba(123,63,168,.5)}
 .pulso{position:relative;width:9px;height:9px;border-radius:50%;background:#ff7a59}
 
-@keyframes pulsa{to{transform:scale(3.2);opacity:0}}
 .abre-selos{list-style:none;margin:28px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:10px 24px}
 .abre-selos li{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;color:var(--tinta)}
 .abre-selos svg{width:17px;height:17px;color:var(--coral-esc)}
@@ -366,37 +333,9 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .js-anim .abre h1 mark{background:linear-gradient(transparent 58%,var(--marca-texto) 58%,var(--marca-texto) 92%,transparent 92%) no-repeat 0 0/0% 100%;animation:grifa .9s .75s var(--m-ui) forwards}
 @keyframes grifa{to{background-size:100% 100%}}
 
-/* palco da folhinha: flutua, inclina com o cursor e reflete a luz */
-.fl-palco{position:relative;perspective:1000px}
-.folhinha{transform:rotate(1.2deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transform-style:preserve-3d;transition:transform .5s var(--m-ui),box-shadow .4s;box-shadow:var(--sombra),0 40px 80px -40px rgba(123,63,168,.55)}
-.fl-palco:hover .folhinha{box-shadow:var(--sombra),0 50px 90px -40px rgba(168,72,143,.7)}
-.fl-reflexo{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;background:radial-gradient(420px circle at var(--gx,30%) var(--gy,0%),rgba(255,255,255,.55),transparent 55%);mix-blend-mode:soft-light;opacity:0;transition:opacity .4s}
-.fl-palco:hover .fl-reflexo{opacity:1}
-.marcado{transition:transform .3s var(--m-ui)}
-.marcado:hover{transform:translateY(-2px)}
-/* o dia da vez: o círculo acende */
-.marcado .circ{transition:filter .4s,color .4s}
-.marcado.agora .circ{color:#ff7a59;filter:drop-shadow(0 2px 6px rgba(255,122,89,.8))}
-.marcado.agora b{background:var(--marca-texto);border-radius:4px}
-.marcado.agora::after{content:"";position:absolute;left:50%;top:17px;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:radial-gradient(rgba(255,122,89,.28),transparent 70%);animation:acende 1.6s ease-out infinite;pointer-events:none}
-@keyframes acende{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.5);opacity:0}}
 
-/* aviso flutuante que troca junto com o dia aceso */
-.aviso{position:absolute;left:-44px;bottom:-66px;z-index:3;display:flex;align-items:center;gap:12px;max-width:290px;padding:12px 16px 12px 12px;border-radius:16px;background:rgba(255,255,255,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(233,225,236,.9);box-shadow:0 24px 50px -20px rgba(42,22,51,.45),0 0 0 1px rgba(255,255,255,.6) inset;transition:opacity .35s var(--m-ui),transform .45s var(--m-ui)}
-.aviso.troca{opacity:0;transform:translateY(10px) scale(.97)}
-.av-ic{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;background:var(--grad);color:#fff;box-shadow:0 8px 18px -8px rgba(255,122,89,.9)}
-.av-ic svg{width:19px;height:19px;transform-origin:50% 10%}
-.aviso.toca .av-ic svg{animation:sino .7s ease-in-out}
 @keyframes sino{0%,100%{transform:rotate(0)}20%{transform:rotate(16deg)}40%{transform:rotate(-13deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
-.av-corpo{display:grid;gap:1px;line-height:1.3}
-.av-corpo small{font-size:12px;color:var(--suave)}
-.av-corpo small b{color:var(--coral-esc)}
-.av-txt{font-size:14.5px;font-weight:700;color:var(--tinta)}
 
-/* indicador de rolagem */
-.rolar{position:absolute;left:50%;bottom:28px;width:26px;height:42px;margin-left:-13px;border:2px solid #cdb9da;border-radius:14px}
-.rolar span{position:absolute;left:50%;top:8px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:var(--grad);animation:desce 1.8s var(--m-ui) infinite}
-@keyframes desce{0%{opacity:0;transform:translateY(-4px)}40%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
 
 /* ============ HISTÓRIAS ============ */
 #historias{position:relative}
@@ -432,7 +371,8 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .dx-lista b{color:var(--tinta);font-weight:700}
 .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;color:var(--c);background:var(--c-bg);transition:transform .4s var(--m-mola),opacity .3s}
 .dx-barra{display:flex;height:10px;margin-top:14px;border-radius:999px;overflow:hidden;background:#efe6f2;gap:2px}
-.dx-barra i{width:var(--w);background:var(--c);transition:width .9s var(--m-ui),opacity .3s}
+.dx-barra{transition:clip-path .9s var(--m-ui)}
+.dx-barra i{width:var(--w);background:var(--c);transition:opacity .3s}
 .dx-leg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .dx-leg button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border-radius:999px;border:1px solid var(--linha);background:#fff;font:inherit;font-size:12.5px;font-weight:600;color:var(--texto);cursor:pointer;transition:border-color .2s,box-shadow .2s}
 .dx-leg button i{width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -443,11 +383,11 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .demo-extrato.filtra .dx-barra i:not(.on){opacity:.25}
 .js-anim .demo-extrato:not(.play) li{opacity:0;transform:translateX(14px)}
 .js-anim .demo-extrato:not(.play) .tag{opacity:0;transform:scale(.4)}
-.js-anim .demo-extrato:not(.play) .dx-barra i{width:0}
+.js-anim .demo-extrato:not(.play) .dx-barra{clip-path:inset(0 100% 0 0)}
 .js-anim .demo-extrato.play li{transition-delay:calc(var(--i) * 110ms)}
 .js-anim .demo-extrato.play .tag{transition-delay:calc(var(--i) * 110ms + 380ms)}
-.js-anim .demo-extrato.play .dx-barra i{transition-delay:.8s}
-.js-anim .demo-extrato.play.pronto li,.js-anim .demo-extrato.play.pronto .tag,.js-anim .demo-extrato.play.pronto .dx-barra i{transition-delay:0s}
+.js-anim .demo-extrato.play .dx-barra{transition-delay:.8s}
+.js-anim .demo-extrato.play.pronto li,.js-anim .demo-extrato.play.pronto .tag,.js-anim .demo-extrato.play.pronto .dx-barra{transition-delay:0s}
 
 /* dia 10: o aviso três dias antes */
 .dc-semana{position:relative;list-style:none;margin:2px 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);text-align:center}
@@ -492,13 +432,13 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .dp-col.sobe b{color:#b45309}
 .dp-pilha{display:flex;flex-direction:column;justify-content:flex-end;width:100%;max-width:34px;height:96px}
 .dp-pilha i{display:block;width:100%;transform-origin:bottom}
-.dp-base{height:var(--h,50%);border-radius:6px;background:linear-gradient(180deg,#8d4fc0,#5b2a86);transition:height .8s var(--m-ui),border-radius .2s}
-.dp-novo{height:var(--hn,0%);border-radius:6px 6px 0 0;background:linear-gradient(180deg,#fbbf24,#d97706);box-shadow:0 4px 12px -2px rgba(217,119,6,.55);transition:height .7s var(--m-ui)}
+.dp-base{height:var(--h,50%);border-radius:6px;background:linear-gradient(180deg,#8d4fc0,#5b2a86);transition:border-radius .2s}
+.dp-novo{height:var(--hn,0%);border-radius:6px 6px 0 0;background:linear-gradient(180deg,#fbbf24,#d97706);box-shadow:0 4px 12px -2px rgba(217,119,6,.55)}
 .dp-col.sobe .dp-base{border-radius:0 0 6px 6px}
 .dp-col small{font-size:12px;color:var(--suave)}
 .js-anim .demo-parc:not(.play) .dp-pilha i{transform:scaleY(0)}
 .js-anim .demo-parc:not(.play) .dp-trilho i{transform:scaleX(0)}
-.demo-parc .dp-pilha i{transition:transform .8s var(--m-ui),height .7s var(--m-ui)}
+.demo-parc .dp-pilha i{transition:transform .8s var(--m-ui)}
 .demo-parc .dp-col:nth-child(2) .dp-pilha i{transition-delay:.06s}.demo-parc .dp-col:nth-child(3) .dp-pilha i{transition-delay:.12s}.demo-parc .dp-col:nth-child(4) .dp-pilha i{transition-delay:.18s}.demo-parc .dp-col:nth-child(5) .dp-pilha i{transition-delay:.24s}.demo-parc .dp-col:nth-child(6) .dp-pilha i{transition-delay:.3s}
 .dp-diz{margin-top:10px;font-size:13.5px}
 
@@ -636,19 +576,12 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
 .js-anim .abre-txt>*{animation:sobe .9s var(--m-ui) backwards}
 .js-anim .abre-txt>:nth-child(2){animation-delay:.08s}.js-anim .abre-txt>:nth-child(3){animation-delay:.16s}.js-anim .abre-txt>:nth-child(4){animation-delay:.24s}.js-anim .abre-txt>:nth-child(5){animation-delay:.32s}
 @keyframes sobe{from{opacity:0;transform:translateY(24px)}}
-.js-anim .fl-palco{animation:chega 1.1s .2s var(--m-ui) backwards}
-@keyframes chega{from{opacity:0;transform:translateY(40px) scale(.94)}}
-.js-anim .aviso{animation:sobe .8s 1.9s var(--m-ui) backwards}
 .demo.zera,.demo.zera *{transition:none!important}
-.js-anim .marcado .circ path{animation-delay:calc(1s + var(--o) * .22s)}
-.js-anim .marcado em{animation-delay:calc(1.3s + var(--o) * .22s)}
 /* a entrada usa "translate", não "transform": assim o hover dos cartões (transform) continua funcionando */
 .js-anim [data-rev]{opacity:0;translate:0 26px;transition:opacity .8s var(--m-ui),translate .9s var(--m-ui),transform .35s var(--m-ui),box-shadow .35s;transition-delay:calc(var(--i,0) * 90ms),calc(var(--i,0) * 90ms),0s,0s}
 .js-anim [data-rev].vis{opacity:1;translate:none}
 
 @media (max-width:960px){
-  .aviso{position:relative;left:auto;top:auto;margin:52px auto 0;max-width:340px}
-  .rolar{display:none}
   .abre{padding-bottom:72px}
   .aurora .a1{width:90vw;height:90vw}.aurora .a2{width:80vw;height:80vw}
 }
@@ -657,23 +590,13 @@ html:not(.js) .marcado::before{content:"";position:absolute;left:50%;top:3px;wid
   .dm-meses{gap:4px}
   .abre-selos li{font-size:13px;padding:7px 12px}
   .dp-barras{gap:5px}
-  .folhinha{transform:none}
 }
 @media (hover:none){
   [data-spot]::before,[data-spot]::after{display:none}
 }
-@media (prefers-reduced-motion:reduce){
-  .aurora i,.pulso::after,.btn-lg.btn-pri,.rolar span,.nora-halo,.nora-fig .nora,.brilha,.marcado.agora::after,.cv-dig i{animation:none!important}
-  .btn::after{display:none}
-  .folhinha{transform:rotate(1.2deg)}
-  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
 
-/* ============ v8.1 — mais curto, mais chamada para testar ============ */
 .dia{padding:40px 0}
-.cta-meio{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:48px;padding:28px 32px;border-radius:16px;background:linear-gradient(#fff,#fff) padding-box,var(--grad) border-box;border:2px solid transparent;box-shadow:var(--glow)}
-.cta-meio p{font-size:1.15rem;color:var(--texto)}
-.cta-meio b{margin-right:4px;font-family:var(--display);font-size:1.35rem;color:var(--tinta)}
 ul.inclui{list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;max-width:780px}
 ul.inclui li{display:flex;align-items:center;gap:10px;font-size:15.5px;font-weight:600;color:var(--tinta)}
 ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:50%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 10.5l2.6 2.6L14 7.5' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat,var(--grad);box-shadow:0 4px 10px -4px rgba(255,122,89,.8)}
@@ -685,12 +608,9 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .cta-fixo .btn{width:100%}
 }
 @media (max-width:600px){
-  .cta-meio{padding:22px 20px}
-  .cta-meio .btn{width:100%}
   ul.inclui{grid-template-columns:minmax(0,1fr)}
 }
 
-/* ============ v8.2 — correções da crítica (2026-09-30) ============ */
 /* texto pequeno: nada abaixo de 12.5px */
 .tag{font-size:12.5px}.do-80{font-size:12.5px}.dp-item small,.dk-deve small,.dm-obs,.at-rod,.dp-col b,.dp-col small,.dp-leg{font-size:13px}
 /* demos têm cara de exemplo, não de botão de compra: contorno, sem degradê */
@@ -730,43 +650,10 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .dx-nome{white-space:normal}
 }
 
-/* ============ v8.4 — o app em 12 telas (prints reais) ============ */
-.sec-telas{background:var(--fundo)}
-.tl-grade{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:40px;align-items:start}
-.tl-abas{display:grid;gap:4px}
-.tl-aba{display:grid;gap:2px;padding:12px 16px;border:0;border-radius:12px;background:none;text-align:left;font:inherit;cursor:pointer;color:var(--texto);transition:background-color .2s,box-shadow .25s}
-.tl-aba b{font-family:var(--display);font-size:1.02rem;font-weight:700;color:var(--tinta)}
-.tl-aba span{font-size:14px;line-height:1.45;color:var(--suave)}
-.tl-aba:hover{background:var(--caneta-cl)}
-.tl-aba[aria-selected="true"]{background:#fff;box-shadow:inset 3px 0 0 var(--caneta),0 10px 28px -18px rgba(42,22,51,.45)}
-.tl-aba[aria-selected="true"] b{color:var(--caneta)}
-.tl-palco{position:relative;position:sticky;top:96px}
-.tl-janela{border-radius:14px;overflow:hidden;background:#f8f5f6;border:1px solid var(--linha);box-shadow:0 40px 80px -40px rgba(42,22,51,.5),0 8px 20px -10px rgba(42,22,51,.2)}
-.tl-barra{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--linha)}
-.tl-barra i{width:10px;height:10px;border-radius:50%;background:#e4d8ea}
-.tl-barra span{margin-left:10px;font-size:13px;font-weight:600;color:var(--suave)}
-.tl-barra em{font-style:normal;color:var(--tinta)}
-.tl-tela{margin:0}
-.tl-tela img{display:block;width:100%;height:auto;aspect-ratio:1200/921;object-fit:cover;object-position:top}
-.tl-tela:not([hidden]){animation:tl-entra .45s var(--m-ui)}
-@keyframes tl-entra{from{opacity:0;transform:translateY(6px)}}
-.tl-descr{display:none}
-.tl-cel{position:absolute;right:-28px;bottom:-44px;width:150px;margin:0;padding:6px;border-radius:26px;background:#2a1633;box-shadow:0 30px 50px -20px rgba(42,22,51,.6)}
-.tl-cel img{display:block;width:100%;height:auto;border-radius:20px}
 .tl-cta{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:72px;padding:28px 32px;border-radius:16px;background:linear-gradient(#fff,#fff) padding-box,var(--grad) border-box;border:2px solid transparent;box-shadow:var(--glow)}
 .tl-cta p{font-size:1.1rem}
 .tl-cta b{margin-right:4px;font-family:var(--display);font-size:1.3rem;color:var(--tinta)}
 @media (max-width:960px){
-  .tl-grade{grid-template-columns:minmax(0,1fr);gap:20px}
-  .tl-abas{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 10px;margin:0 -16px;scrollbar-width:none}
-  .tl-abas::-webkit-scrollbar{display:none}
-  .tl-aba{flex:none;scroll-snap-align:start;padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--linha);min-height:44px;align-content:center}
-  .tl-aba span{display:none}
-  .tl-aba[aria-selected="true"]{background:var(--caneta);border-color:var(--caneta);box-shadow:none}
-  .tl-aba[aria-selected="true"] b{color:#fff}
-  .tl-palco{position:static}
-  .tl-cel{display:none}
-  .tl-descr{display:block;margin-top:14px;font-size:15.5px;color:var(--texto)}
   .tl-cta{margin-top:40px}
 }
 @media (max-width:600px){
@@ -774,83 +661,92 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .tl-cta .btn{width:100%}
 }
 
-/* ============ v8.5 — o filme do app no topo (substitui a folhinha) ============ */
+/* =====================================================================
+   MOVIMENTO — revisão de 2026-10-01 (impeccable animate)
+   Tese: o momento autoral é o FILME do app no topo (telas reais que
+   passam sozinhas). O resto só explica estado (demos, abas, FAQ) ou
+   dá retorno a um gesto. Ambiente (aurora, halo e flutuar da Nora) só
+   roda com a seção visível (.vivo, via IntersectionObserver).
+   ===================================================================== */
+
+/* ---------- o filme ---------- */
 .abre-in{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:56px}
-.filme{position:relative;min-width:0}
-.fm-janela{position:relative;border-radius:16px;overflow:hidden;background:#f8f5f6;border:1px solid var(--linha);box-shadow:0 50px 90px -40px rgba(42,22,51,.6),0 10px 24px -12px rgba(42,22,51,.25);transform:perspective(1400px) rotateY(-4deg) rotateX(1deg);transition:transform .6s var(--m-ui)}
-.filme:hover .fm-janela{transform:none}
+.abre h1{font-size:clamp(2.3rem,4.3vw,3.55rem)}
+.filme{--dur:5.2s;position:relative;min-width:0}
+.fm-janela{position:relative;border-radius:16px;overflow:hidden;background:#f8f5f6;border:1px solid var(--linha);box-shadow:0 50px 90px -40px rgba(42,22,51,.6),0 10px 24px -12px rgba(42,22,51,.25)}
 .fm-barra{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--linha)}
 .fm-barra i{width:10px;height:10px;border-radius:50%;background:#e4d8ea}
 .fm-barra span{margin-left:10px;font-size:13px;font-weight:600;color:var(--suave)}
 .fm-barra em{font-style:normal;color:var(--tinta)}
-/* barra de progresso estilo stories: cada segmento é uma tela */
-.fm-prog{position:absolute;left:12px;right:12px;top:44px;z-index:3;display:flex;gap:4px}
-.fm-seg{flex:1;height:22px;padding:9px 0;border:0;background:none;cursor:pointer}
-.fm-seg i{display:block;height:4px;border-radius:2px;background:rgba(42,22,51,.14);overflow:hidden;position:relative}
+/* progresso estilo stories: cada segmento é uma tela e é o relógio do filme */
+.fm-prog{display:flex;gap:4px;padding:0 12px;background:#fff;border-bottom:1px solid var(--linha)}
+.fm-seg{flex:1;height:14px;padding:5px 0;border:0;background:none;cursor:pointer}
+.fm-seg i{position:relative;display:block;height:4px;border-radius:2px;background:rgba(42,22,51,.14);overflow:hidden}
 .fm-seg i::after{content:"";position:absolute;inset:0;background:var(--grad);transform:scaleX(0);transform-origin:left}
+.fm-seg:hover i{background:rgba(42,22,51,.26)}
 .fm-seg.feito i::after{transform:none}
-.fm-seg.on i::after{animation:fm-enche var(--dur,4.6s) linear forwards}
+.fm-seg.on i::after{animation:fm-enche var(--dur) linear forwards}
 .filme.pausado .fm-seg.on i::after{animation-play-state:paused}
 @keyframes fm-enche{to{transform:none}}
-.fm-tela{position:relative;aspect-ratio:1200/921;overflow:hidden;background:#f8f5f6}
-.fm-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transform-origin:var(--fx) var(--fy);transition:opacity .7s var(--m-ui)}
-.fm-img.on{opacity:1;animation:fm-zoom var(--dur,4.6s) cubic-bezier(.45,0,.2,1) forwards}
+/* a tela: troca por dissolve e a "câmera" desce sem ampliar (translate mantém o texto nítido) */
+.fm-tela{position:relative;aspect-ratio:4/3;overflow:hidden;background:#f8f5f6}
+.fm-img{position:absolute;top:0;left:0;width:100%;height:auto;opacity:0;transform:translate3d(0,var(--p0,0%),0);transition:opacity .7s var(--m-ui);backface-visibility:hidden}
+.fm-img.on{opacity:1;will-change:transform;animation:fm-desce var(--dur) cubic-bezier(.45,0,.25,1) forwards}
 .filme.pausado .fm-img.on{animation-play-state:paused}
-@keyframes fm-zoom{from{transform:scale(1.02)}to{transform:scale(1.42)}}
-/* legenda que entra a cada tela */
-.fm-legenda{position:absolute;left:14px;bottom:14px;z-index:3;display:grid;gap:2px;max-width:min(82%,380px);padding:12px 16px;border-radius:12px;background:rgba(42,22,51,.9);color:#e8dcef;box-shadow:0 16px 30px -14px rgba(42,22,51,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.fm-legenda b{font-family:var(--display);font-size:1.1rem;color:#fff}
-.fm-legenda span{font-size:14px;line-height:1.4}
-.fm-legenda.troca{animation:fm-leg .6s var(--m-ui)}
-@keyframes fm-leg{from{opacity:0;transform:translateY(10px)}}
+@keyframes fm-desce{0%,16%{transform:translate3d(0,var(--p0,0%),0)}100%{transform:translate3d(0,var(--p1,0%),0)}}
+/* legenda compacta que entra a cada tela */
+.fm-legenda{position:absolute;left:14px;bottom:14px;z-index:3;display:grid;gap:1px;max-width:300px;padding:10px 14px;border-radius:12px;background:rgba(42,22,51,.9);color:#e8dcef;box-shadow:0 16px 30px -14px rgba(42,22,51,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.fm-legenda b{font-family:var(--display);font-size:1rem;color:#fff}
+.fm-legenda span{font-size:13px;line-height:1.4}
+.fm-legenda.troca{animation:fm-leg .55s var(--m-ui)}
+@keyframes fm-leg{from{opacity:0;transform:translateY(8px)}}
 .fm-controles{display:flex;align-items:center;gap:6px;margin-top:16px}
-.fm-bt{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--linha);border-radius:12px;background:#fff;color:var(--caneta);cursor:pointer;transition:border-color .2s,box-shadow .25s}
+.fm-bt{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--linha);border-radius:12px;background:#fff;color:var(--caneta);cursor:pointer;transition:border-color .15s,box-shadow .2s,transform .12s}
 .fm-bt:hover{border-color:var(--caneta);box-shadow:var(--glow)}
+.fm-bt:active{transform:scale(.94)}
 .fm-bt svg{width:18px;height:18px}
 .fm-play .ic-play,.filme.pausado .fm-play .ic-pausa{display:none}
 .filme.pausado .fm-play .ic-play{display:block}
 .fm-conta{margin-left:6px;font-size:14px;color:var(--suave);font-variant-numeric:tabular-nums}
 .fm-conta b{color:var(--tinta)}
 .fm-nota{margin-left:auto;font-size:13px;color:var(--suave)}
+/* entrada do filme: a janela sobe e foca depois do título (o momento principal da página) */
+.js-anim .filme{animation:fm-entra 1s .35s var(--m-ui) backwards}
+@keyframes fm-entra{from{opacity:0;transform:translateY(32px) scale(.98);filter:blur(4px)}}
+.js-anim .fm-seg i{animation:fm-traco .5s var(--m-ui) backwards;animation-delay:calc(.9s + var(--k,0) * 35ms)}
+@keyframes fm-traco{from{transform:scaleX(0);transform-origin:left}}
+
+/* ---------- ambiente: só roda com a seção na tela ---------- */
+[data-luz]:not(.vivo) .aurora i,[data-luz]:not(.vivo) .nora-halo,[data-luz]:not(.vivo) .nora-fig .nora{animation-play-state:paused}
+
+/* ---------- histórias das demos: barras por transform ---------- */
+.dp-novo{transform-origin:bottom;transition:transform .7s var(--m-ui)}
+.dp-col:not(.sobe) .dp-novo{transform:scaleY(0)}
+
 @media (max-width:960px){
   .abre-in{grid-template-columns:minmax(0,1fr);gap:40px}
-  .fm-janela{transform:none}
+  .abre{padding-bottom:72px}
+  .aurora .a1{width:90vw;height:90vw}.aurora .a2{width:80vw;height:80vw}
 }
 @media (max-width:600px){
-  .fm-legenda{left:8px;bottom:8px;padding:8px 12px;max-width:88%}
-  .fm-legenda b{font-size:1rem}
+  .fm-prog{padding:0 8px;gap:3px}
+  .fm-legenda{left:0;right:0;bottom:0;max-width:none;border-radius:0;padding:9px 14px;background:rgba(42,22,51,.94)}
   .fm-legenda span{font-size:12.5px}
-  .fm-prog{left:8px;right:8px;top:40px;gap:3px}
   .fm-nota{display:none}
 }
-@media (prefers-reduced-motion:reduce){
-  .fm-img.on{animation:none;transform:none}
-  .fm-janela{transform:none}
-}
-.abre h1{font-size:clamp(2.3rem,4.3vw,3.55rem)}
-@keyframes fm-zoom{from{transform:scale(1.02)}to{transform:scale(1.28)}}
-@media (max-width:600px){
-  /* no celular a legenda vira uma faixa colada na base do print */
-  .fm-legenda{left:0;right:0;bottom:0;max-width:none;border-radius:0;padding:9px 14px;background:rgba(42,22,51,.94)}
-}
 
-/* ============ v8.6 — filme nítido: prints no tamanho real, câmera só desce (sem zoom) ============ */
-.fm-janela{transform:none}                       /* sem inclinação 3D: ela borra a imagem */
-.filme:hover .fm-janela{transform:none}
-.fm-tela{aspect-ratio:4/3}
-.fm-img{inset:auto;top:0;left:0;width:100%;height:auto;object-fit:initial;transform:translate3d(0,var(--p0,0%),0);will-change:transform,opacity;backface-visibility:hidden}
-.fm-img.on{animation:fm-desce var(--dur,5.2s) cubic-bezier(.45,0,.25,1) forwards}
-@keyframes fm-desce{from{transform:translate3d(0,var(--p0,0%),0)}to{transform:translate3d(0,var(--p1,0%),0)}}
-.filme{--dur:5.2s}
-@media (prefers-reduced-motion:reduce){ .fm-img.on{animation:none;transform:translate3d(0,var(--p0,0%),0)} }
-/* barra de progresso numa faixa própria, sem cobrir o print */
-.fm-prog{position:static;display:flex;gap:4px;padding:0 12px;background:#fff;border-bottom:1px solid var(--linha)}
-.fm-seg{height:14px;padding:5px 0}
-.fm-seg i{height:4px}
-/* legenda compacta, no canto */
-.fm-legenda{max-width:300px;padding:10px 14px;gap:1px}
-.fm-legenda b{font-size:1rem}
-.fm-legenda span{font-size:13px}
-/* a câmera segura o topo da tela por um instante antes de descer */
-@keyframes fm-desce{0%,16%{transform:translate3d(0,var(--p0,0%),0)}100%{transform:translate3d(0,var(--p1,0%),0)}}
-@media (max-width:600px){ .fm-prog{padding:0 8px} .fm-legenda{max-width:none} }
+/* ---------- movimento reduzido: menos deslocamento, mesmo retorno ----------
+   Sai o que desloca ou gira sozinho (aurora, halo, flutuar, câmera do filme,
+   entradas, brilho que passa no botão, tremida do orçamento). Fica o que
+   comunica estado: troca de tela por dissolve, cores, barras dos demos,
+   progresso do filme (é um relógio, e o filme começa pausado). */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .aurora .a1,.aurora .a2,.aurora .a3,.nora-halo,.nora-fig .nora,.cv-dig i,.at-dig i{animation:none}
+  .fm-img.on{animation:none;transform:translate3d(0,var(--p0,0%),0)}
+  .js-anim .filme,.js-anim .fm-seg i,.fm-legenda.troca,.dk-painel,.faq details[open] p,.cv.chega{animation:none}
+  .demo-orc[data-estado="passou"] .do-medidor{animation:none}
+  .btn::after{display:none}
+  .btn,.fm-bt,.plano,.confia>div,[data-spot]{transition-property:background-color,border-color,color,box-shadow,opacity}
+  .atende{transition:opacity .2s}
+}

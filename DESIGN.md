@@ -32,6 +32,15 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v8.7 — revisão do movimento (2026-10-01, impeccable animate)
+
+Motion thesis: the one authored moment is the hero film (real screens playing on their own); everything else explains state (demos, FAQ, tabs) or acknowledges a gesture. Changes:
+- **Film:** entrance (window rises, sharpens from 4px blur, progress strokes draw in a 35ms cascade) and the clock waits 1.3s for it; only the fill animation (`fm-enche`) advances slides — the stroke entrance also fired `animationend` and was skipping slides; `will-change` only on the active print.
+- **Reduced motion:** the global "every duration = 0.01ms" kill was removed — with it, pressing play advanced through all 12 screens instantly. Now reduced motion removes self-moving/spatial motion (aurora, Nora halo and float, film pan, entrances, button shine, budget shake) and keeps state feedback (crossfade, colors, demo bars, film progress at its normal pace; film starts paused).
+- **Ambient loops** (aurora in three bands, Nora halo/float) run only while their section is on screen (`[data-luz].vivo` via IntersectionObserver). The infinite box-shadow "breathing" on big CTAs and the pulsing dot were removed.
+- **No layout animation:** extrato share bar reveals with `clip-path`, the "nova parcela" segment toggles with `scaleY` (fixed height), budget/installment bars were already `scaleX` — detector layout-transition 16 → 0.
+- **Cleanup:** all folhinha/aviso/scroll-cue/12-tabs/cta-meio CSS and JS removed; the film CSS (v8.5 + v8.6 overrides, duplicate keyframes) is one block at the end of `finora.css` ("MOVIMENTO"); header reading bar writes once per frame (rAF).
+
 ## Landing v8.6 — filme nítido (2026-09-30)
 
 Owner: "ficou com imagem ruim, desfocado". Causes: full 1100px-wide desktop screens shrunk into a ~570px frame (text became 6–7px), then scaled up 1.28×, inside a 3D-tilted frame, from JPEG → WebP double compression. Fix: prints re-captured with the app at 1040px (cards reflow to 2 columns), DPR 2, lossless PNG of the content area only (800×1180 CSS), then one WebP pass at 1300px wide q90 (`frontend/img/telas/*.webp`, ~1.2 MB total, lazy + next preloaded). The frame is flat (no rotateY), 4:3, and the "camera" only pans down (translate3d, no scale), holding the top for the first 16% of each 5.2s slide; per-screen start/end in `--p0/--p1` (Nora starts lower, where the chat is). Progress segments live in their own white strip under the title bar; the caption is compact (max 300px) and becomes a full-width bottom strip on phones.
