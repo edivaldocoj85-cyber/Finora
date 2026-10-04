@@ -860,3 +860,37 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .js-anim .dia .dia-foto img{clip-path:none;scale:1}
   .fecho-nora{animation:none}
 }
+
+/* ============ v9.1 — fotos com contexto (2026-10-03) ============
+   Cada foto mostra a pessoa no momento da história e, por cima, o aviso ou
+   cartão da Finora que ela está vendo no celular (mesmos números da demo ao
+   lado). O selo "Imagem ilustrativa" sobe para o canto. */
+.dia-foto figcaption.foto-selo{left:auto;right:12px;top:12px;bottom:auto}
+.foto-app{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.7);box-shadow:0 20px 40px -18px rgba(20,8,28,.7);backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2)}
+.fa-ic{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;color:#fff;background:var(--fa,#7b3fa8);box-shadow:0 8px 16px -8px var(--fa,#7b3fa8)}
+.fa-ic svg{width:19px;height:19px}
+.fa-txt{display:grid;gap:2px;min-width:0;line-height:1.25}
+.fa-txt small{font-size:12px;font-weight:600;color:var(--suave)}
+.fa-txt b{font-size:14.5px;font-weight:700;color:var(--tinta)}
+.fa-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.fa-tags i{font-style:normal;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:#f1e9f7;color:#5b2a86}
+.fa-tags i:nth-child(2){background:#e8e9fb;color:#4338ca}.fa-tags i:nth-child(3){background:#e0f2f6;color:#0e7490}.fa-tags i:nth-child(4){background:#ffe9e2;color:#a3361f}
+.fa-barra{display:block;height:6px;margin-top:6px;border-radius:999px;background:#f1e9f7;overflow:hidden}
+.fa-barra i{display:block;height:100%;width:100%;transform:scaleX(var(--p));transform-origin:left;border-radius:inherit;background:linear-gradient(90deg,#f59e0b,#ff7a59)}
+.t-roxo{--fa:#7b3fa8}.t-ambar{--fa:#d97706}.t-rosa{--fa:#a8488f}.t-verde{--fa:#047857}.t-coral{--fa:#e0613f}.t-azul{--fa:#0e7490}
+/* o cartão chega como uma notificação, logo depois que a foto se revela */
+.foto-app{transition:opacity .6s .55s var(--m-ui),translate .7s .55s var(--m-ui)}
+.js-anim .dia:not(.vis) .foto-app{opacity:0;translate:0 18px}
+.fa-barra i{transition:transform 1s 1s var(--m-ui)}
+.js-anim .dia:not(.vis) .fa-barra i{transform:scaleX(0)}
+@media (max-width:600px){
+  .dia-foto{aspect-ratio:4/4.2}
+  .foto-app{left:8px;right:8px;bottom:8px;padding:10px 12px;gap:10px}
+  .fa-ic{width:32px;height:32px}
+  .fa-txt b{font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  .foto-app,.fa-barra i{transition:none}
+  .js-anim .dia .foto-app{opacity:1;translate:none}
+  .js-anim .dia .fa-barra i{transform:scaleX(var(--p))}
+}
