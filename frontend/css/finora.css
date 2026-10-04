@@ -949,3 +949,19 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
 .fecho:not(.vivo) .sobra img{animation-play-state:paused}
 .fecho-in{position:relative;z-index:1}
 @media (prefers-reduced-motion:reduce){ .sobra{display:none} }
+
+/* ============ v9.5 — ganhos (2026-10-04) ============
+   O que muda quando o dinheiro está sob controle: contas em dia, mês no azul,
+   lazer no plano e tranquilidade. Afirma o caminho, não promete resultado. */
+.sec-ganhos{background:var(--fundo)}
+.sec-ganhos .sec-cab{max-width:760px}
+.ganhos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.ganho{display:grid;align-content:start;gap:10px;padding:26px 24px 28px;border-radius:18px;background:#fff;border:1px solid var(--linha);transition:transform .35s var(--m-ui),box-shadow .35s}
+.ganho:hover{transform:translateY(-4px);box-shadow:var(--glow)}
+.ganho-ic{display:block;width:72px;height:72px;margin-bottom:6px}
+.ganho-ic .ic3d{filter:drop-shadow(0 12px 14px rgba(91,42,134,.28))}
+.ganho h3{font-size:1.2rem}
+.ganho p{font-size:15.5px;color:var(--texto)}
+.ganhos .ganho:nth-child(2){--i:1}.ganhos .ganho:nth-child(3){--i:2}.ganhos .ganho:nth-child(4){--i:3}
+@media (max-width:1080px){ .ganhos{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:600px){ .ganhos{grid-template-columns:minmax(0,1fr);gap:12px} .ganho{grid-template-columns:56px minmax(0,1fr);column-gap:16px;padding:18px} .ganho-ic{grid-row:span 2;width:56px;height:56px;margin:0} }

@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v9.5 — ganhos (2026-10-04)
+
+Owner wanted the page to land the outcome: closing the month with money left, bills paid calmly, more leisure, better quality of life and emotional calm. Section `#ganhos` after the stories: h2 "Conta em dia, sobra no fim do mês e a cabeça mais leve." + "Quando você enxerga o mês inteiro, o dinheiro deixa de ser susto e volta a ser escolha. É para isso que a Finora existe." and four cards with the 3D icons — Contas pagas no prazo (sino), O mês fechando no azul (alvo), Lazer sem culpa (pizza), A cabeça mais leve (pessoa). Worded as what control makes possible, never a promised result, and no health claim ("tranquilidade", not "saúde"). 4 columns → 2 → 1 (icon left) on phones; staggered reveal.
+
 ## Landing v9.4 — dinheiro que sobra (2026-10-04)
 
 Owner sent a Pinterest "money rain" reference (third-party video of floating US$100 bills). Not copied (no license, wrong currency, "get rich" tone). Recreated authorially: stylized 3D notes (no real currency design, no text) and coins generated in Canva in the brand gradient, chroma-keyed to `frontend/img/dinheiro/*.webp` (38 KB). In the closing dark band, 16 pieces (9 on phones) drift slowly UP — money left over at month's end — in side lanes only (center kept clear for the headline/CTA), with depth by size, blur and opacity, randomized once; CSS transform loop 16–28s, paused off-screen, absent under reduced motion.

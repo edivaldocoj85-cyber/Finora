@@ -213,7 +213,7 @@
   /* entradas ao rolar; cartões lado a lado entram em cascata */
   const revs = $$("[data-rev]");
   revs.forEach((el) => {
-    if (!el.parentElement.matches(".confia,.planos")) return;
+    if (!el.parentElement.matches(".confia,.planos,.ganhos")) return;
     el.style.setProperty("--i", [...el.parentElement.children].indexOf(el));
   });
   const mostra = (el) => el.classList.add("vis");
