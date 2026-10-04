@@ -914,3 +914,23 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
   .dia-foto img{object-position:center 26%}
 }
 @media (max-width:600px){ .dia-foto{aspect-ratio:2/1;margin-top:18px} .dia-foto img{object-position:center 24%} }
+
+/* ============ v9.3 — ícones 3D (Canva) no lugar dos ícones de traço (2026-10-04) ============
+   Um conjunto único gerado no Canva (mesmo material, luz e degradê ameixa→coral),
+   recortado em chroma key: frontend/img/icones/*-{96,192}.webp. Ficam sem
+   "azulejo" colorido atrás: o próprio ícone tem volume e sombra. */
+.ic3d{display:block;width:100%;height:100%;object-fit:contain}
+.abre-selos li{gap:10px}
+.abre-selos .ic3d{width:26px;height:26px;flex:none;filter:drop-shadow(0 3px 4px rgba(91,42,134,.25))}
+.cf-ic{width:64px;height:64px;margin-bottom:16px;background:none;box-shadow:none;border-radius:0}
+.cf-ic .ic3d{filter:drop-shadow(0 10px 12px rgba(91,42,134,.28))}
+.dc-sino{width:38px;height:38px;background:none;border-radius:0}
+.dc-sino .ic3d{filter:drop-shadow(0 4px 5px rgba(217,119,6,.3))}
+.demo-conta.play .dc-sino .ic3d{animation:sino .8s 1.2s ease-in-out 2;transform-origin:50% 10%}
+.fa-ic{width:32px;height:32px;background:none;box-shadow:none;border-radius:0}
+.fa-ic .ic3d{filter:drop-shadow(0 3px 4px rgba(42,22,51,.25))}
+.fm-chip i{width:34px;height:34px;background:none;box-shadow:none;border-radius:0;display:block}
+.fm-chip i .ic3d{filter:drop-shadow(0 4px 6px rgba(42,22,51,.25))}
+@keyframes fm-chip-ic{40%{transform:scale(.55) rotate(-30deg);opacity:.2}100%{transform:none;opacity:1}}
+@media (max-width:600px){ .fm-chip i{width:28px;height:28px} .fa-ic{width:28px;height:28px} }
+@media (prefers-reduced-motion:reduce){ .demo-conta.play .dc-sino .ic3d{animation:none} }

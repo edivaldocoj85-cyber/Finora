@@ -446,7 +446,8 @@
       fm.style.setProperty("--tom", fNova.dataset.tom);
       chips.forEach((c, n) => {
         const [rot, val] = fNova.dataset["c" + (n + 1)].split("|");
-        const troca = () => { $("small", c).textContent = rot; $("b", c).textContent = val; };
+        const icone = fNova.dataset["i" + (n + 1)];
+        const troca = () => { $("small", c).textContent = rot; $("b", c).textContent = val; $("i img", c).src = `/img/icones/${icone}-96.webp`; };
         if (!anima) { troca(); return; }
         c.classList.remove("muda"); void c.offsetWidth; c.classList.add("muda");
         setTimeout(troca, 260 + n * 90);   // o texto troca no meio da transformação

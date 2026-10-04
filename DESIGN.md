@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v9.3 — ícones 3D (2026-10-04)
+
+Owner: "essas linhas, sino etc. ficaram horríveis; use o Canva, realista, profissional e minimalista". One coherent 9-icon set generated in Canva (soft matte 3D, top-left light, plum→coral gradient): sino, olho (shield), cartão, extrato, upload, cadeado, pizza, alvo, pessoa — background removed in Canva, exported over pure green and chroma-keyed locally with despill → `frontend/img/icones/*-{96,192}.webp` (84 KB). They replace every line icon on the landing: hero highlights, trust cards (64px, no gradient tile), the dia-10 bell, the app cards over the story photos and the film's floating chips (icon swaps per screen via `data-i1/i2`). Videos were not made: the Canva connector only generates images and Higgsfield had no credits.
+
 ## Landing v9.2 — fotos compactas (2026-10-03)
 
 Owner: "a página ficou com imagens grandes". Story photos went from 340×425 portrait to a 4:3 card of at most 300px (280 on tablets) that fits inside the height of the demo beside it; phones get a 2:1 strip. The app card over the photo was scaled down (28px icon, 12.5px text; category tags hidden at this size). Page height desktop ~9.0k px.
