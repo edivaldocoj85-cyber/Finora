@@ -33,13 +33,15 @@
   $$("a", menu).forEach((a) => a.addEventListener("click", fecha));
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menu.classList.contains("aberto")) { fecha(); btn.focus(); } });
 
-  /* compatibilidade com links antigos (#recursos, #parcelas, #vitrine…) */
-  const antigos = { "#acesso": "#planos", "#consultor": "#dia-30", "#automacoes": "#nora", "#recursos": "#historias", "#vitrine": "#historias", "#pra-quem": "#historias", "#parcelas": "#dia-18", "#contas": "#dia-18", "#extrato": "#dia-5", "#como-resolve": "#historias", "#como-funciona": "#topo" };
-  const novo = antigos[location.hash];
-  if (novo) {
-    history.replaceState(null, "", novo);
-    addEventListener("load", () => document.querySelector(novo)?.scrollIntoView());
-  }
+  /* abrir ou atualizar a página sempre começa no topo: o navegador não restaura a
+     rolagem anterior e um #âncora que sobrou na URL (de um clique no menu) é limpo */
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  const vaiTopo = () => scrollTo({ top: 0, left: 0, behavior: "instant" });
+  vaiTopo();
+  // o navegador pode pular para a âncora depois do load: garante o topo no quadro seguinte também
+  addEventListener("load", () => { vaiTopo(); requestAnimationFrame(() => setTimeout(vaiTopo, 0)); });
+  addEventListener("pageshow", (e) => { if (e.persisted) vaiTopo(); });   // voltar pelo histórico (bfcache)
 
   /* ------------------------------------------------------------------
      NORA — a mascote. É o próprio ícone "F" da marca ganhando corpo:
