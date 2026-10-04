@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v9.2 — fotos compactas (2026-10-03)
+
+Owner: "a página ficou com imagens grandes". Story photos went from 340×425 portrait to a 4:3 card of at most 300px (280 on tablets) that fits inside the height of the demo beside it; phones get a 2:1 strip. The app card over the photo was scaled down (28px icon, 12.5px text; category tags hidden at this size). Page height desktop ~9.0k px.
+
 ## Landing v9.1 — fotos com contexto (2026-10-03)
 
 Owner: "as imagens reais ficaram muito sem contexto". Each story photo now carries, at its bottom, the Finora card that person is looking at on the phone — same numbers as the demo beside it (Rafael: extrato do mês, 4 gastos separados + category tags; Júlia: "Conta de luz vence em 3 dias · R$ 187,40"; Diego: "Notebook · parcela 4 de 10 · faltam R$ 2.520"; Carla: "Marina te deve R$ 60,00"; Bia: "Restaurantes · 80% do que você separou" + bar; Paulo: "Reserva pronta em agosto de 2027"). Glass white card with a colored icon tile per role; it arrives like a notification 0.55s after the photo reveal. "Imagem ilustrativa" moved to the top-right badge. Phones: photo ratio 4:4.2 so the card doesn't cover the face.
