@@ -497,6 +497,22 @@
     if (entrando) setTimeout(() => { entrando = false; sincroniza(); }, 1300);  // a janela termina de entrar
   }
 
+  /* FECHO — notas e moedas 3D sobem devagar, como dinheiro que sobrou no fim do mês.
+     Posição, tamanho, profundidade, giro e tempo sorteados uma vez; o movimento é só CSS
+     (transform), pausa fora da tela e não existe com movimento reduzido. */
+  const sobra = $(".sobra");
+  if (sobra && anima) {
+    const pecas = ["nota1", "nota2", "nota3", "moeda1", "moeda2", "moeda3"];
+    const n = innerWidth < 600 ? 9 : 16, sorte = (a, b) => a + Math.random() * (b - a);
+    sobra.innerHTML = Array.from({ length: n }, (_, i) => {
+      const nome = pecas[i % pecas.length], z = sorte(0.45, 1);   // z: perto (1) ou longe
+      const cel = innerWidth < 600, larg = (nome.startsWith("nota") ? (cel ? 70 : 120) : (cel ? 40 : 64)) * z;
+      // só nas laterais: o meio fica livre para o título e o botão
+      const x = i % 2 ? sorte(cel ? 78 : 72, 96) : sorte(cel ? -4 : 2, cel ? 14 : 26);
+      return `<img src="/img/dinheiro/${nome}.webp" alt="" style="--x:${x.toFixed(1)}%;--w:${larg.toFixed(0)}px;--z:${z.toFixed(2)};--d:${sorte(16, 28).toFixed(1)}s;--a:-${sorte(0, 28).toFixed(1)}s;--g0:${sorte(-35, 35).toFixed(0)}deg;--g1:${sorte(-40, 40).toFixed(0)}deg;--ox:${sorte(-60, 60).toFixed(0)}px" loading="lazy" decoding="async">`;
+    }).join("");
+  }
+
   /* preços correm até o valor quando aparecem */
   if (anima && IO) $$("[data-conta]").forEach((el) => {
     const v = +el.dataset.conta, f = (x) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

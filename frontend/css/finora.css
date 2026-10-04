@@ -934,3 +934,18 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
 @keyframes fm-chip-ic{40%{transform:scale(.55) rotate(-30deg);opacity:.2}100%{transform:none;opacity:1}}
 @media (max-width:600px){ .fm-chip i{width:28px;height:28px} .fa-ic{width:28px;height:28px} }
 @media (prefers-reduced-motion:reduce){ .demo-conta.play .dc-sino .ic3d{animation:none} }
+
+/* ============ v9.4 — dinheiro que sobra (2026-10-04) ============
+   Inspirado no efeito "money rain" que o dono enviou, mas autoral: notas e
+   moedas 3D estilizadas (Canva, sem moeda real) que SOBEM devagar atrás do
+   convite final. Profundidade por tamanho, desfoque e opacidade. */
+.sobra{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;-webkit-mask:linear-gradient(transparent,#000 18%,#000 80%,transparent);mask:linear-gradient(transparent,#000 18%,#000 80%,transparent)}
+.sobra img{position:absolute;left:var(--x);bottom:-160px;width:var(--w);height:auto;opacity:calc(var(--z) * .85);filter:blur(calc((1 - var(--z)) * 3px)) drop-shadow(0 14px 16px rgba(0,0,0,.35));animation:sobe-sobra var(--d) linear var(--a) infinite;will-change:transform}
+@keyframes sobe-sobra{
+  0%{transform:translate3d(0,0,0) rotate(var(--g0))}
+  50%{transform:translate3d(var(--ox),-60vh,0) rotate(calc((var(--g0) + var(--g1)) / 2))}
+  100%{transform:translate3d(calc(var(--ox) * -.4),-120vh,0) rotate(var(--g1))}
+}
+.fecho:not(.vivo) .sobra img{animation-play-state:paused}
+.fecho-in{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){ .sobra{display:none} }
