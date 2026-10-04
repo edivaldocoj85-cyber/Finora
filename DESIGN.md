@@ -32,6 +32,10 @@ Owner: "revolucionar as cores, paletas mais modernas de um site profissional" �
 - **Role colors kept** (green income, rose danger, amber due, cyan sync) except `--violet` (installments/analysis), which moved to anil `#4338ca` / dark `#a5b4fc` so it no longer reads as the plum action color. Coral is never used for "negative" — rose `#be123c` stays the only danger color.
 - Login brand panel is flat `#2a1633`; highlighter `#ffc9b8`. Manifest theme `#5b2a86`, background `#2a1633`. User-chosen category colors (data) were not touched.
 
+## Landing v9.6 — refino de interação (2026-10-04)
+
+Owner pasted a generic "studio-grade landing" brief; chose to refine the current Finora page (keep brand, Nora, 3D icons, photos, vanilla stack — no Tailwind/React). Added: **living SVG logo** (gradient tile, the F strokes draw on load, the icon's coral dot pulses like a signal, tilt on hover; also on legal pages); **cursor light** (fixed 520px radial glow following the pointer with easing, multiply blend, mouse only); **tilt** on `[data-tilt]` cards (ganhos, confiança, planos) up to 6° combined with the hover lift and the existing spotlight border; **magnetic** on header/plan/Nora buttons too; **subtle parallax** `[data-par]` on day numbers, Nora and benefit icons (translate, rAF); **frosted-glass header** (blur 16px + saturate). All off under reduced motion; pointer effects only on fine pointers.
+
 ## Landing v9.5 — ganhos (2026-10-04)
 
 Owner wanted the page to land the outcome: closing the month with money left, bills paid calmly, more leisure, better quality of life and emotional calm. Section `#ganhos` after the stories: h2 "Conta em dia, sobra no fim do mês e a cabeça mais leve." + "Quando você enxerga o mês inteiro, o dinheiro deixa de ser susto e volta a ser escolha. É para isso que a Finora existe." and four cards with the 3D icons — Contas pagas no prazo (sino), O mês fechando no azul (alvo), Lazer sem culpa (pizza), A cabeça mais leve (pessoa). Worded as what control makes possible, never a promised result, and no health claim ("tranquilidade", not "saúde"). 4 columns → 2 → 1 (icon left) on phones; staggered reveal.

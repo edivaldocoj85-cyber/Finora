@@ -407,7 +407,7 @@
       const r = el.getBoundingClientRect();
       el.style.setProperty("--sx", e.clientX - r.left + "px"); el.style.setProperty("--sy", e.clientY - r.top + "px");
     }));
-    if (anima) $$(".btn-lg").forEach((b) => {
+    if (anima) $$(".btn-lg, .cab-acoes .btn-pri, .plano .btn, .btn-luz").forEach((b) => {
       b.addEventListener("pointermove", (e) => {
         const r = b.getBoundingClientRect();
         b.style.translate = `${(((e.clientX - r.left) / r.width - 0.5) * 8).toFixed(1)}px ${(((e.clientY - r.top) / r.height - 0.5) * 6).toFixed(1)}px`;
@@ -511,6 +511,48 @@
       const x = i % 2 ? sorte(cel ? 78 : 72, 96) : sorte(cel ? -4 : 2, cel ? 14 : 26);
       return `<img src="/img/dinheiro/${nome}.webp" alt="" style="--x:${x.toFixed(1)}%;--w:${larg.toFixed(0)}px;--z:${z.toFixed(2)};--d:${sorte(16, 28).toFixed(1)}s;--a:-${sorte(0, 28).toFixed(1)}s;--g0:${sorte(-35, 35).toFixed(0)}deg;--g1:${sorte(-40, 40).toFixed(0)}deg;--ox:${sorte(-60, 60).toFixed(0)}px" loading="lazy" decoding="async">`;
     }).join("");
+  }
+
+  /* REFINO DE INTERAÇÃO (2026-10-04)
+     · luz que segue o cursor pela página toda (mouse apenas)
+     · cartões [data-tilt] inclinam até 6° com reflexo onde a luz bate
+     · parallax sutil em [data-par] (fator = quanto desloca por px rolado)
+     Tudo por transform, uma escrita por quadro, e nada disso com movimento reduzido. */
+  if (anima && fino) {
+    const luz = $(".luz-cursor");
+    let lx = innerWidth / 2, ly = innerHeight / 2, ax = lx, ay = ly, rodando = false;
+    const passo = () => {
+      ax += (lx - ax) * 0.14; ay += (ly - ay) * 0.14;
+      luz.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`;
+      rodando = Math.abs(lx - ax) + Math.abs(ly - ay) > 0.5;
+      if (rodando) requestAnimationFrame(passo);
+    };
+    addEventListener("pointermove", (e) => { lx = e.clientX; ly = e.clientY; luz.classList.add("on"); if (!rodando) { rodando = true; requestAnimationFrame(passo); } }, { passive: true });
+    document.addEventListener("pointerleave", () => luz.classList.remove("on"));
+
+    $$("[data-tilt]").forEach((c) => {
+      c.addEventListener("pointermove", (e) => {
+        const r = c.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
+        c.style.setProperty("--ty", (px * 6).toFixed(2) + "deg");
+        c.style.setProperty("--tx", (-py * 6).toFixed(2) + "deg");
+      });
+      c.addEventListener("pointerleave", () => { c.style.setProperty("--ty", "0deg"); c.style.setProperty("--tx", "0deg"); });
+    });
+  }
+  if (anima) {
+    const par = $$("[data-par]");
+    let pend = false;
+    const move = () => {
+      pend = false;
+      const meio = innerHeight / 2;
+      par.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -200 || r.top > innerHeight + 200) return;
+        el.style.translate = `0 ${((r.top + r.height / 2 - meio) * +el.dataset.par).toFixed(1)}px`;
+      });
+    };
+    addEventListener("scroll", () => { if (!pend) { pend = true; requestAnimationFrame(move); } }, { passive: true });
+    move();
   }
 
   /* preços correm até o valor quando aparecem */

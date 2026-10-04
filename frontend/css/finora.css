@@ -965,3 +965,33 @@ ul.inclui li::before{content:"";flex:none;width:20px;height:20px;border-radius:5
 .ganhos .ganho:nth-child(2){--i:1}.ganhos .ganho:nth-child(3){--i:2}.ganhos .ganho:nth-child(4){--i:3}
 @media (max-width:1080px){ .ganhos{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:600px){ .ganhos{grid-template-columns:minmax(0,1fr);gap:12px} .ganho{grid-template-columns:56px minmax(0,1fr);column-gap:16px;padding:18px} .ganho-ic{grid-row:span 2;width:56px;height:56px;margin:0} }
+
+/* ============ v9.6 — refino de interação (2026-10-04) ============ */
+/* cabeçalho em vidro fosco */
+.cab{background:rgba(251,248,246,.72);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}
+.cab.rolou{box-shadow:0 10px 30px -22px rgba(42,22,51,.45)}
+/* logo F viva: o F se desenha, o ponto acende como sinal; no hover o degradê gira */
+.logo-viva{width:36px;height:36px;flex:none;display:block;background:none;border-radius:11px;overflow:visible;transition:transform .35s var(--m-ui),filter .35s}
+.cab .logo-viva{filter:drop-shadow(0 6px 10px rgba(168,72,143,.35))}
+.marca:hover .logo-viva{transform:rotate(-6deg) scale(1.06)}
+.lg-ponto{transform-origin:28.5px 27.5px;animation:lg-sinal 3.2s ease-in-out infinite}
+@keyframes lg-sinal{0%,70%,100%{transform:scale(1);opacity:1}82%{transform:scale(1.45);opacity:.75}}
+.js-anim .cab .lg-f{stroke-dasharray:1;stroke-dashoffset:1;animation:lg-desenha .9s .2s var(--m-ui) forwards}
+@keyframes lg-desenha{to{stroke-dashoffset:0}}
+.marca:hover .lg-brilho{animation:lg-reluz .7s var(--m-ui)}
+@keyframes lg-reluz{from{stroke-opacity:.9}}
+@media (max-width:600px){ .cab .logo-viva{width:30px;height:30px} }
+/* luz que segue o cursor */
+.luz-cursor{position:fixed;left:0;top:0;z-index:39;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,122,89,.12),rgba(168,72,143,.06) 55%,transparent);mix-blend-mode:multiply;opacity:0;transition:opacity .5s}
+.luz-cursor.on{opacity:1}
+@media (hover:none){ .luz-cursor{display:none} }
+/* tilt: inclina e mantém a subida do hover */
+[data-tilt]{--tx:0deg;--ty:0deg;--ly:0px;transform:perspective(900px) rotateX(var(--tx)) rotateY(var(--ty)) translateY(var(--ly));transform-style:preserve-3d;transition:transform .45s var(--m-ui),box-shadow .35s,opacity .8s var(--m-ui),translate .9s var(--m-ui)}
+[data-tilt]:hover{--ly:-4px;transform:perspective(900px) rotateX(var(--tx)) rotateY(var(--ty)) translateY(var(--ly))}
+.js-anim [data-tilt][data-rev]{transition:transform .45s var(--m-ui),box-shadow .35s,opacity .8s var(--m-ui) calc(var(--i,0) * 90ms),translate .9s var(--m-ui) calc(var(--i,0) * 90ms)}
+[data-parallax-off]{translate:none!important}
+@media (prefers-reduced-motion:reduce){
+  .lg-ponto,.js-anim .cab .lg-f{animation:none;stroke-dashoffset:0}
+  .luz-cursor{display:none}
+  [data-tilt]{transform:none}
+}

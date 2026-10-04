@@ -15,12 +15,13 @@
 </head>
 <body>
 <div id="finora-landing" data-login="/app/">
+<div class="luz-cursor" aria-hidden="true"></div>
 
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
 <header class="cab" id="topo">
   <div class="cab-in">
-    <a class="marca" href="#topo" aria-label="Finora, início"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+    <a class="marca" href="#topo" aria-label="Finora, início"><svg class="logo logo-viva" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><defs><linearGradient id="lgcab" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="lg-a" offset="0" stop-color="#5b2a86"/><stop offset=".55" stop-color="#a8488f"/><stop class="lg-c" offset="1" stop-color="#ff7a59"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lgcab)"/><path class="lg-brilho" d="M7 12 q4-5 11-5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4" stroke-linecap="round"/><path class="lg-f" pathLength="1" d="M15 30 V11 H26 M15 20 H23" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-ponto" cx="28.5" cy="27.5" r="3" fill="#ffd6c9"/></svg><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
     <nav class="menu" id="menu" aria-label="Principal">
       <a href="#historias">Um mês comum</a>
       <a href="#nora">A Nora</a>
@@ -106,7 +107,7 @@
 
     <ol class="dias">
       <li class="dia" id="dia-5" data-rev>
-        <p class="dia-n" aria-hidden="true">5</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">5</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 5</p>
           <h3>O salário caiu. Três dias depois, parecia que não.</h3>
@@ -136,7 +137,7 @@
       </li>
 
       <li class="dia" id="dia-10" data-rev>
-        <p class="dia-n" aria-hidden="true">10</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">10</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 10</p>
           <h3>A conta de luz venceu ontem.</h3>
@@ -161,7 +162,7 @@
       </li>
 
       <li class="dia" id="dia-18" data-rev>
-        <p class="dia-n" aria-hidden="true">18</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">18</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 18</p>
           <h3>O cartão fechou. Parcela 4 de 10 do notebook.</h3>
@@ -193,7 +194,7 @@
       </li>
 
       <li class="dia" id="dia-22" data-rev>
-        <p class="dia-n" aria-hidden="true">22</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">22</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 22</p>
           <h3>Dinheiro do salão e de casa na mesma conta.</h3>
@@ -233,7 +234,7 @@
       </li>
 
       <li class="dia" id="dia-25" data-rev>
-        <p class="dia-n" aria-hidden="true">25</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">25</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 25</p>
           <h3>A fatura chegou do tamanho que ela esperava.</h3>
@@ -254,7 +255,7 @@
       </li>
 
       <li class="dia" id="dia-30" data-rev>
-        <p class="dia-n" aria-hidden="true">30</p>
+        <p class="dia-n" aria-hidden="true" data-par=".06">30</p>
         <div class="dia-hist">
           <p class="dia-data">Dia 30</p>
           <h3>Sobraram R$&nbsp;300. E agora?</h3>
@@ -291,10 +292,10 @@
       <p>Quando você enxerga o mês inteiro, o dinheiro deixa de ser susto e volta a ser escolha. É para isso que a Finora existe.</p>
     </header>
     <div class="ganhos">
-      <article class="ganho" data-rev data-spot><span class="ganho-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/sino-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Contas pagas no prazo</h3><p>O aviso chega antes do vencimento. Menos juros, menos multa, menos correria.</p></article>
-      <article class="ganho" data-rev data-spot><span class="ganho-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/alvo-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>O mês fechando no azul</h3><p>Você vê para onde vai cada real e ajusta antes de faltar, não depois.</p></article>
-      <article class="ganho" data-rev data-spot><span class="ganho-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/pizza-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Lazer sem culpa</h3><p>Com o orçamento definido, o cinema, o jantar fora e a viagem cabem no plano.</p></article>
-      <article class="ganho" data-rev data-spot><span class="ganho-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/pessoa-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>A cabeça mais leve</h3><p>Dinheiro organizado é uma preocupação a menos no fim do dia e na hora de dormir.</p></article>
+      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/sino-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Contas pagas no prazo</h3><p>O aviso chega antes do vencimento. Menos juros, menos multa, menos correria.</p></article>
+      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/alvo-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>O mês fechando no azul</h3><p>Você vê para onde vai cada real e ajusta antes de faltar, não depois.</p></article>
+      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/pizza-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Lazer sem culpa</h3><p>Com o orçamento definido, o cinema, o jantar fora e a viagem cabem no plano.</p></article>
+      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/pessoa-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>A cabeça mais leve</h3><p>Dinheiro organizado é uma preocupação a menos no fim do dia e na hora de dormir.</p></article>
     </div>
   </div>
 </section>
@@ -303,7 +304,7 @@
 <section class="sec sec-nora" id="nora" data-luz>
   <div class="aurora aurora-nora" aria-hidden="true"><i class="a1"></i><i class="a2"></i></div>
   <div class="wrap nora-in">
-    <div class="nora-fig" aria-hidden="true"><span class="nora-halo"></span><span data-nora="hero"></span></div>
+    <div class="nora-fig" aria-hidden="true" data-par="-.08"><span class="nora-halo"></span><span data-nora="hero"></span></div>
     <div class="nora-txt" data-rev>
       <h2>Quando der preguiça de abrir o app, escreva para a Nora.</h2>
       <p>Escreva como falaria com alguém. Ela prepara o lançamento e só grava com o seu ok.</p>
@@ -331,17 +332,17 @@
       <h2>Seu dinheiro continua no banco.</h2>
     </header>
     <div class="confia">
-      <div data-rev data-spot>
+      <div data-rev data-spot data-tilt>
         <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/olho-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
         <h3>Só leitura.</h3>
         <p>Conexão pelo Open Finance (Pluggy). A Finora não movimenta dinheiro nem vê a sua senha.</p>
       </div>
-      <div data-rev data-spot>
+      <div data-rev data-spot data-tilt>
         <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/upload-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
         <h3>Sem conectar o banco, também.</h3>
         <p>Lance à mão, peça para a Nora ou importe o extrato em CSV.</p>
       </div>
-      <div data-rev data-spot>
+      <div data-rev data-spot data-tilt>
         <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/cadeado-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
         <h3>Os dados são seus.</h3>
         <p>Verificação em duas etapas. Exporte ou apague tudo quando quiser (LGPD). <a href="/privacidade.html">Política de Privacidade</a></p>
@@ -358,13 +359,13 @@
       <p>10 dias com tudo liberado, sem cartão de crédito. Você só escolhe o plano depois do teste.</p>
     </header>
     <div class="planos">
-      <article class="plano" data-rev data-spot>
+      <article class="plano" data-rev data-spot data-tilt>
         <h3>Por mês</h3>
         <p class="preco">R$&nbsp;<span data-conta="14.90">14,90</span></p>
         <p class="p-desc">Sem fidelidade.</p>
         <a class="btn btn-sec" href="/app/?plano=mensal" data-entrar data-plano="mensal">Testar grátis por 10 dias</a>
       </article>
-      <article class="plano plano-anual" data-rev data-spot>
+      <article class="plano plano-anual" data-rev data-spot data-tilt>
         <p class="p-selo">Sai mais em conta</p>
         <h3>Por ano</h3>
         <p class="preco">R$&nbsp;<span data-conta="149.90">149,90</span></p>
@@ -422,7 +423,7 @@
 <footer class="rodape">
   <div class="wrap rd-in">
     <div class="rd-marca">
-      <a class="marca" href="#topo" aria-label="Finora, voltar ao topo"><span class="logo" aria-hidden="true">F</span><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+      <a class="marca" href="#topo" aria-label="Finora, voltar ao topo"><svg class="logo logo-viva" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><defs><linearGradient id="lgrod" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="lg-a" offset="0" stop-color="#5b2a86"/><stop offset=".55" stop-color="#a8488f"/><stop class="lg-c" offset="1" stop-color="#ff7a59"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lgrod)"/><path class="lg-brilho" d="M7 12 q4-5 11-5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4" stroke-linecap="round"/><path class="lg-f" pathLength="1" d="M15 30 V11 H26 M15 20 H23" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-ponto" cx="28.5" cy="27.5" r="3" fill="#ffd6c9"/></svg><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
       <p>Controle financeiro para a casa e para quem trabalha por conta própria.</p>
     </div>
     <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
