@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-5"
     # chat de pré-venda da landing (público): modelo próprio, independente do consultor
-    vendas_model: str = "claude-opus-5"
+    vendas_model: str = "claude-opus-5-5"
+    vendas_effort: str = "high"          # low | medium | high | xhigh | max (Opus 5.5 usa medium se omitido)
 
     # Login com Google (Google Cloud Console -> OAuth Client ID, tipo "Web application")
     google_client_id: str = ""

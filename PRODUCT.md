@@ -29,7 +29,7 @@ Constraint: no framework/build pipeline in the frontend today — any new UI shi
 Constraint: single-process container, no CDN/edge; keep payload and dependencies light for a personal deployment.
 
 ## Brand Commitments
-Name "Finora" stays. Palette changed on 2026-09-29 at the owner's request ("revolucionar as cores"): **ameixa + coral** replaces indigo→cyan across landing, login and app, including the logo tile and Nora (gradient ameixa `#5b2a86` → `#a8488f` → coral `#ff7a59`). Portuguese (pt-BR) is the product's only language.
+Name "Finora" stays. Palette changed on 2026-09-29 at the owner's request ("revolucionar as cores"): **ameixa + coral** replaces indigo→cyan across landing, login and app, including the logo tile and Nora (gradient ameixa `#5b2a86` → `#a8488f` → coral `#ff7a59`). Portuguese (pt-BR) is the product's only language. **Standing preference (2026-10-05):** the public site stays in the personal-finance fintech register ("o Finora não muda seu nicho") — the owner rejected metaphor worlds (metrô, carnê, zine, cockpit) and wants the category standard executed at the level of Nubank and Mobills/Organizze.
 
 ## Evidence on Hand
 No real customers yet, so no testimonials, user counts or ratings — the landing must not imply any. The landing tells short everyday stories about fictional people (Rafael, Júlia, Diego, Carla, Bia, Paulo), declared as invented on the page; they are situations, never testimonials. Only real features may be claimed (no WhatsApp, audio, receipt OCR or push notifications until built).

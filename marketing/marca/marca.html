@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Geist Mono";src:url("../../.claude/skills/canvas-design/canvas-fonts/GeistMono-Regular.ttf")}
+*{box-sizing:border-box;margin:0}
+html,body{width:1600px;height:1000px;background:#fbf8f6;overflow:hidden}
+body{display:grid;grid-template-columns:600px 1fr;font-family:"Rethink Sans",sans-serif;color:#2a1633}
+.mono{font-family:"Geist Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.esq{background:#2a1633;position:relative;display:grid;place-items:center}
+.esq .rot{position:absolute;left:56px;bottom:52px;color:#a897b0}
+.esq .rot2{position:absolute;right:56px;bottom:52px;color:#a897b0}
+.esq .rot3{position:absolute;left:56px;top:52px;color:#a897b0}
+.dir{position:relative;padding:76px 88px 64px;display:grid;grid-template-rows:auto 1fr auto;row-gap:40px}
+.lock{display:flex;align-items:center;gap:26px}
+.lock .wm{font-weight:700;font-size:96px;letter-spacing:-.045em;line-height:1;transform:translateY(-4px)}
+.meio{display:grid;grid-template-columns:420px 1fr;align-items:center;column-gap:56px;border-top:1px solid #e3d8e6;border-bottom:1px solid #e3d8e6}
+.notas{display:grid;gap:18px;color:#6e6078}
+.notas b{display:block;color:#2a1633;font-family:"Rethink Sans";font-weight:700;font-size:15px;letter-spacing:0;text-transform:none;margin-bottom:4px}
+.base{display:flex;justify-content:space-between;align-items:flex-end}
+.tam{display:flex;align-items:flex-end;gap:28px}
+.tam figure{display:grid;justify-items:center;gap:10px;color:#6e6078}
+.chips{display:flex;gap:14px}
+.chip{display:grid;gap:8px;color:#6e6078}
+.chip i{display:block;width:72px;height:72px;border-radius:14px}
+</style></head><body>
+<section class="esq">
+  <span class="mono rot3">fig. 1 — a medida</span>
+  <svg id="grande" width="340" height="340" viewBox="0 0 64 64"></svg>
+  <span class="mono rot">finora / marca</span><span class="mono rot2">2026</span>
+</section>
+<section class="dir">
+  <div class="lock"><svg id="lock" width="104" height="104" viewBox="0 0 64 64"></svg><span class="wm">finora</span></div>
+  <div class="meio">
+    <svg id="constr" width="420" height="420" viewBox="-8 -8 80 80"></svg>
+    <div class="notas mono">
+      <div><b>Cinco partes, uma em atenção</b>38 · 24 · 16 · 12 · 10</div>
+      <div><b>Folga entre partes</b>7° constantes</div>
+      <div><b>Traço</b>9 de 64 · pontas retas</div>
+      <div><b>Ponteiro</b>do centro ao arco coral</div>
+    </div>
+  </div>
+  <div class="base">
+    <div class="tam">
+      <figure><svg id="ic96" width="96" height="96" viewBox="0 0 64 64"></svg><span class="mono">ícone</span></figure>
+      <figure><svg id="s48" width="48" height="48" viewBox="0 0 64 64"></svg><span class="mono">48</span></figure>
+      <figure><svg id="s32" width="32" height="32" viewBox="0 0 64 64"></svg><span class="mono">32</span></figure>
+      <figure><svg id="s16" width="16" height="16" viewBox="0 0 64 64"></svg><span class="mono">16</span></figure>
+    </div>
+    <div class="chips">
+      <div class="chip"><i style="background:#2a1633"></i><span class="mono">2a1633</span></div>
+      <div class="chip"><i style="background:#5b2a86"></i><span class="mono">5b2a86</span></div>
+      <div class="chip"><i style="background:#bf98da"></i><span class="mono">bf98da</span></div>
+      <div class="chip"><i style="background:#ff7a59"></i><span class="mono">ff7a59</span></div>
+    </div>
+  </div>
+</section>
+<script>
+// geometria da marca (viewBox 64): círculo dividido em 5 arcos + ponteiro
+const C = 32, R = 22, T = 9, GAP = 7, PART = [.38, .24, .16, .12, .10];
+const CLARO = ["#5b2a86", "#7a3ea6", "#9a62c0", "#bf98da", "#ff7a59"];
+const ESCURO = ["#e9d9f6", "#cdb0e8", "#b08ad6", "#8f63bd", "#ff7a59"];
+const pt = (a, r) => [C + r * Math.cos(a * Math.PI / 180), C + r * Math.sin(a * Math.PI / 180)];
+function arcos() {
+  const livre = 360 - GAP * PART.length; let a = -90 + GAP / 2; const out = [];
+  PART.forEach((p) => { const a1 = a + livre * p; out.push([a, a1]); a = a1 + GAP; });
+  return out;
+}
+function marca(cores, tinta, extra = "") {
+  const as = arcos();
+  let s = as.map(([a0, a1], i) => { const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
+    return `<path d="M${x0.toFixed(3)} ${y0.toFixed(3)}A${R} ${R} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(3)} ${y1.toFixed(3)}" fill="none" stroke="${cores[i]}" stroke-width="${T}"/>`; }).join("");
+  const [c0, c1] = as[as.length - 1], am = (c0 + c1) / 2, [nx, ny] = pt(am, R - T / 2 - 3.4);
+  s += `<path d="M${C} ${C}L${nx.toFixed(3)} ${ny.toFixed(3)}" stroke="${tinta}" stroke-width="3" stroke-linecap="round"/><circle cx="${C}" cy="${C}" r="3.6" fill="${tinta}"/>`;
+  return extra + s;
+}
+document.getElementById("grande").innerHTML = marca(ESCURO, "#fbf8f6");
+document.getElementById("lock").innerHTML = marca(CLARO, "#2a1633");
+document.getElementById("s48").innerHTML = marca(CLARO, "#2a1633");
+document.getElementById("s32").innerHTML = marca(CLARO, "#2a1633");
+document.getElementById("s16").innerHTML = marca(CLARO, "#2a1633");
+document.getElementById("ic96").innerHTML = `<rect width="64" height="64" rx="15" fill="#2a1633"/><g transform="translate(9.6 9.6) scale(.7)">${marca(ESCURO, "#fbf8f6")}</g>`;
+// construção: guias finas + marcações de ângulo
+(() => {
+  const as = arcos(); let g = "";
+  [R - T / 2, R, R + T / 2].forEach((r, i) => g += `<circle cx="${C}" cy="${C}" r="${r}" fill="none" stroke="#b9a8c2" stroke-width=".14" ${i === 1 ? 'stroke-dasharray=".5 .8"' : ""}/>`);
+  g += `<path d="M${C} -6V70M-6 ${C}H70" stroke="#d9cddf" stroke-width=".12"/>`;
+  as.forEach(([a0, a1]) => [a0, a1].forEach((a) => { const [x0, y0] = pt(a, R + T / 2 + 1.4), [x1, y1] = pt(a, R + T / 2 + 3.6); g += `<path d="M${x0} ${y0}L${x1} ${y1}" stroke="#9c8aa6" stroke-width=".2"/>`; }));
+  as.forEach(([a0, a1], i) => { const [x, y] = pt((a0 + a1) / 2, R + T / 2 + 7.6); g += `<text x="${x}" y="${y}" font-family="Geist Mono" font-size="2.3" fill="#6e6078" text-anchor="middle" dominant-baseline="middle">${Math.round(PART[i] * 100)}</text>`; });
+  document.getElementById("constr").innerHTML = g + marca(CLARO, "#2a1633");
+})();
+</script>
+</body></html>

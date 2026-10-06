@@ -1,0 +1,10 @@
+/* FINORA — logo viva (js/logo.js) */
+.flogo { overflow: visible; }
+.flogo .fl-arco { transition: filter .3s ease; }
+.flogo .fl-arco.lido { filter: brightness(1.12) saturate(1.12); }
+.flogo.fl-intro .fl-arco path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .5s cubic-bezier(.2, 0, 0, 1) var(--d, 0ms); }
+.flogo.fl-intro .fl-arco.vis path { stroke-dashoffset: 0; }
+.flogo.fl-intro .fl-aro { opacity: 0; transform-origin: 32px 32px; animation: fl-aro .6s cubic-bezier(.2, 0, 0, 1) forwards; }
+.flogo .fl-seg { transition: opacity .6s ease; }
+.flogo .fl-seg.fl-aparece { opacity: 1 !important; }
+@keyframes fl-aro { from { opacity: 0; transform: rotate(-12deg); } to { opacity: 1; transform: rotate(0); } }

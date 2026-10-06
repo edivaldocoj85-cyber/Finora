@@ -3,459 +3,373 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#fbf8f6">
+<meta name="theme-color" content="#2a1633">
 <meta name="description" content="A Finora junta suas contas, cartões e parcelas num lugar só e avisa antes de cada vencimento. Para a casa e para quem trabalha por conta própria. Teste grátis por 10 dias, sem cartão de crédito.">
 <title>Finora — controle financeiro para a vida real</title>
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="icon" href="/img/marca/finora-icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/img/marca/finora-icone.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/finora.css">
+<link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="/img/app-celular/f-painel.webp">
+<link rel="stylesheet" href="/css/logo.css">
+<link rel="stylesheet" href="/css/site.css">
+<script>try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!sessionStorage.getItem("finora-abertura")){document.documentElement.classList.add("abrindo");setTimeout(function(){document.documentElement.classList.remove("abrindo")},4500)}}catch(e){}</script>
 </head>
 <body>
 <div id="finora-landing" data-login="/app/">
-<div class="luz-cursor" aria-hidden="true"></div>
+
+<div class="abertura" aria-hidden="true">
+  <svg class="ab-logo"></svg>
+  <p class="ab-nome">finora</p>
+  <p class="ab-sub">controle financeiro</p>
+</div>
 
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-<header class="cab" id="topo">
-  <div class="cab-in">
-    <a class="marca" href="#topo" aria-label="Finora, início"><svg class="logo logo-viva" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><defs><linearGradient id="lgcab" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="lg-a" offset="0" stop-color="#5b2a86"/><stop offset=".55" stop-color="#a8488f"/><stop class="lg-c" offset="1" stop-color="#ff7a59"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lgcab)"/><path class="lg-brilho" d="M7 12 q4-5 11-5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4" stroke-linecap="round"/><path class="lg-f" pathLength="1" d="M15 30 V11 H26 M15 20 H23" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-ponto" cx="28.5" cy="27.5" r="3" fill="#ffd6c9"/></svg><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+<!-- ícones de traço, desenhados uma vez e usados por <use> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-gratis" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5"/></symbol>
+  <symbol id="i-olho" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-cel" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3m-5 5 5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+  <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-banco" viewBox="0 0 24 24"><path d="M3 21h18M5 18v-8M9.5 18v-8M14.5 18v-8M19 18v-8"/><path d="M12 3 3 8h18z"/></symbol>
+  <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M17 6l3 3M14 9l2 2"/></symbol>
+  <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+  <symbol id="i-escudo-x" viewBox="0 0 24 24"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/></symbol>
+  <symbol id="i-pessoa" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-seta" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-esq" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-dir" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-sino" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-cartao" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2"/></symbol>
+  <symbol id="i-parc" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M14.5 21.5 21 3 2.5 9.5l8 3.5z"/><path d="m10.5 13 4-4"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-sb" viewBox="0 0 40 12"><g fill="currentColor" stroke="none"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11" rx="1"/><rect x="23" y="1.5" width="14" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="25" y="3.5" width="9" height="5" rx="1.2"/><rect x="38" y="4.5" width="1.6" height="3" rx=".8"/></g></symbol>
+</svg>
+
+<header class="topo">
+  <div class="faixa topo-in">
+    <a class="marca" href="#conteudo" aria-label="Finora, início"><svg class="logo" data-flogo aria-hidden="true"></svg><span>finora</span></a>
     <nav class="menu" id="menu" aria-label="Principal">
+      <a href="#pratica">Na prática</a>
       <a href="#historias">Um mês comum</a>
-      <a href="#nora">A Nora</a>
-      <a href="#planos">Quanto custa</a>
-      <a href="#duvidas">Dúvidas</a>
-      <a class="menu-entrar" href="/app/" data-entrar>Entrar</a>
-      <a class="menu-testar btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#planos">Preço</a>
+      <a class="menu-so-cel" href="/app/" data-entrar>Entrar</a>
+      <a class="menu-so-cel bt bt-coral" href="/app/" data-entrar>Testar grátis por 10 dias</a>
     </nav>
-    <div class="cab-acoes">
+    <div class="topo-acoes">
       <a class="lnk-entrar" href="/app/" data-entrar>Entrar</a>
-      <a class="btn btn-pri" href="/app/" data-entrar>Testar grátis</a>
-      <button class="menu-btn" type="button" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+      <a class="bt bt-coral bt-p" href="/app/" data-entrar>Testar grátis</a>
+      <button class="menu-bt" type="button" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu"><span></span><span></span></button>
     </div>
   </div>
 </header>
 
 <main id="conteudo">
 
-<!-- ============ ABERTURA: o app passando sozinho ============ -->
-<section class="abre" data-luz>
-  <div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
-  <div class="wrap abre-in">
+<!-- ============ ABERTURA ============ -->
+<section class="abre">
+  <div class="faixa abre-in">
     <div class="abre-txt">
-      <p class="selo-topo"><span class="pulso" aria-hidden="true"></span>10 dias grátis, sem cartão de crédito</p>
-      <h1>Dinheiro dá menos medo quando você sabe <mark>o que vem pela frente.</mark></h1>
+      <h1>Dinheiro dá menos medo quando você sabe o que vem pela frente.</h1>
       <p class="lead">Contas, cartões e parcelas num lugar só, com aviso antes de cada vencimento. Sem planilha.</p>
       <div class="abre-cta">
-        <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
-        <p class="nota">Você entra com a sua conta Google.</p>
+        <a class="bt bt-coral bt-g" href="/app/" data-entrar>Testar grátis por 10 dias<svg aria-hidden="true"><use href="#i-seta"/></svg></a>
+        <p class="nota">Sem cartão de crédito · Open Finance só de leitura · Seus dados protegidos (LGPD)</p>
       </div>
-      <ul class="abre-selos" aria-label="Destaques">
-        <li><img class="ic3d" src="/img/icones/olho-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async">Open Finance só de leitura</li>
-        <li><img class="ic3d" src="/img/icones/sino-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async">Aviso antes de vencer</li>
-        <li><img class="ic3d" src="/img/icones/cartao-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async">Parcelas mês a mês</li>
-      </ul>
     </div>
 
-    <!-- o "filme" do app: as 12 funções passam sozinhas, com zoom no que importa em cada tela -->
-    <section class="filme" aria-roledescription="carrossel" aria-label="Tour pelas telas da Finora">
-      <div class="fm-aura" aria-hidden="true"></div>
-      <div class="fm-flutua">
-      <div class="fm-janela">
-        <div class="fm-barra" aria-hidden="true"><i></i><i></i><i></i><span>finora · <em class="fm-nome">Painel</em></span></div>
-        <div class="fm-prog"><button type="button" class="fm-seg" aria-label="Ver Painel"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Lançamentos"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Cartões e parcelas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Contas fixas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver A receber"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Orçamentos e regras"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Metas"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Reserva de emergência"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Patrimônio"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Mercado e simulador"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Consultor"><i></i></button><button type="button" class="fm-seg" aria-label="Ver Nora"><i></i></button></div>
-        <div class="fm-tela">
-          <img class="fm-img on" src="/img/telas/painel.webp" width="1300" height="1918" alt="Tela Painel do app Finora" style="--p0:-0%;--p1:-30%" loading="eager" decoding="async" fetchpriority="high" data-tom="#7b3fa8" data-c1="Patrimônio líquido|R$ 419 mil" data-c2="Resultado do mês|+ R$ 2.554" data-i1="pizza" data-i2="alvo" data-t="Painel" data-l="Saldo, receitas, despesas e o que vence, na primeira tela.">
-          <img class="fm-img" src="/img/telas/lancamentos.webp" width="1300" height="1918" alt="Tela Lançamentos do app Finora" style="--p0:-0%;--p1:-28%" loading="eager" decoding="async" data-tom="#0e7490" data-c1="Categoria automática|iFood → Restaurantes" data-c2="Extrato importado|19 lançamentos" data-i1="extrato" data-i2="upload" data-t="Lançamentos" data-l="Extrato do banco ou CSV, já separado por categoria.">
-          <img class="fm-img" src="/img/telas/cartoes.webp" width="1300" height="1918" alt="Tela Cartões e parcelas do app Finora" style="--p0:-0%;--p1:-30%" loading="lazy" decoding="async" data-tom="#a8488f" data-c1="Fatura aberta|R$ 1.068 · vence 25/10" data-c2="Notebook|parcela 5 de 10" data-i1="cartao" data-i2="cartao" data-t="Cartões e parcelas" data-l="Fatura, limite e cada parcela com quanto falta.">
-          <img class="fm-img" src="/img/telas/fixas.webp" width="1300" height="1918" alt="Tela Contas fixas do app Finora" style="--p0:-0%;--p1:-8%" loading="lazy" decoding="async" data-tom="#b45309" data-c1="Aviso da Finora|Luz vence em 3 dias" data-c2="Custos fixos|R$ 2.223,90/mês" data-i1="sino" data-i2="extrato" data-t="Contas fixas" data-l="Aluguel, luz, DAS do MEI: aviso antes de vencer.">
-          <img class="fm-img" src="/img/telas/receber.webp" width="1300" height="1918" alt="Tela A receber do app Finora" style="--p0:-0%;--p1:-6%" loading="lazy" decoding="async" data-tom="#047857" data-c1="Marina Costa|R$ 1.200 a receber" data-c2="Pendente no mês|R$ 2.030" data-i1="pessoa" data-i2="pessoa" data-t="A receber" data-l="Quem te deve, quanto e quando.">
-          <img class="fm-img" src="/img/telas/orcamento.webp" width="1300" height="1918" alt="Tela Orçamentos e regras do app Finora" style="--p0:-0%;--p1:-22%" loading="lazy" decoding="async" data-tom="#b45309" data-c1="Alimentação|79% do limite" data-c2="Regra criada|iFood → Restaurantes" data-i1="pizza" data-i2="extrato" data-t="Orçamentos e regras" data-l="Limite por categoria e regras automáticas.">
-          <img class="fm-img" src="/img/telas/metas.webp" width="1300" height="1918" alt="Tela Metas do app Finora" style="--p0:-0%;--p1:-4%" loading="lazy" decoding="async" data-tom="#7b3fa8" data-c1="Viagem de dezembro|62% guardado" data-c2="Faltam|R$ 1.900" data-i1="alvo" data-i2="alvo" data-t="Metas" data-l="Quanto falta e quanto guardar por mês.">
-          <img class="fm-img" src="/img/telas/reserva.webp" width="1300" height="1918" alt="Tela Reserva de emergência do app Finora" style="--p0:-0%;--p1:-8%" loading="lazy" decoding="async" data-tom="#0e7490" data-c1="Reserva de emergência|3,2 de 6 meses" data-c2="Custo mensal|R$ 3.500" data-i1="cadeado" data-i2="alvo" data-t="Reserva de emergência" data-l="Quantos meses do seu custo estão guardados.">
-          <img class="fm-img" src="/img/telas/patrimonio.webp" width="1300" height="1918" alt="Tela Patrimônio do app Finora" style="--p0:-0%;--p1:-4%" loading="lazy" decoding="async" data-tom="#047857" data-c1="Apartamento|R$ 320 mil" data-c2="Onix 2019 · FIPE|R$ 58 mil" data-i1="pizza" data-i2="olho" data-t="Patrimônio" data-l="Imóvel, carro e investimentos somados.">
-          <img class="fm-img" src="/img/telas/mercado.webp" width="1300" height="1918" alt="Tela Mercado e simulador do app Finora" style="--p0:-0%;--p1:-34%" loading="lazy" decoding="async" data-tom="#4338ca" data-c1="Selic (meta)|13,75% a.a." data-c2="CDI|13,65% a.a." data-i1="pizza" data-i2="olho" data-t="Mercado e simulador" data-l="Selic, CDI, IPCA e quanto seu dinheiro rende.">
-          <img class="fm-img" src="/img/telas/consultor.webp" width="1300" height="1918" alt="Tela Consultor do app Finora" style="--p0:-0%;--p1:-34%" loading="lazy" decoding="async" data-tom="#a8488f" data-c1="Consultor|Onde economizar" data-c2="Conteúdo|educativo" data-i1="olho" data-i2="extrato" data-t="Consultor" data-l="Um relatório do seu mês, com onde economizar.">
-          <img class="fm-img" src="/img/telas/nora.webp" width="1300" height="1918" alt="Tela Nora do app Finora" style="--p0:-38%;--p1:-48%" loading="lazy" decoding="async" data-tom="#ff7a59" data-c1="Você|“gastei 80 na farmácia”" data-c2="Nora|Lançar R$ 80 em Saúde?" data-i1="pessoa" data-i2="sino" data-t="Nora" data-l="“gastei 80 na farmácia” vira lançamento.">
-          <span class="fm-varre" aria-hidden="true"></span>
+    <div class="vitrine" aria-roledescription="carrossel" aria-label="A Finora no celular">
+      <div class="aviso" aria-live="polite">
+        <span class="aviso-ic" aria-hidden="true"><svg><use href="#i-sino"/></svg></span>
+        <span class="aviso-txt"><small>Aviso da Finora</small><b>Conta de luz vence em 3 dias</b><span>07/10 · R$&nbsp;187,40</span></span>
+      </div>
+      <div class="cel cel-app">
+        <div class="cel-tela"><span class="cel-sb" aria-hidden="true"><b>9:41</b><svg viewBox="0 0 40 12"><use href="#i-sb"/></svg></span>
+          <div class="app-telas">
+            <div class="app-tela on"><img src="/img/app-celular/f-painel.webp" width="780" height="5694" alt="Tela Painel da Finora no celular: saldo, receitas, despesas, gráficos e o que vence" decoding="async" fetchpriority="high"></div>
+            <div class="app-tela"><img src="/img/app-celular/f-lancamentos.webp" width="780" height="2784" alt="Tela Lançamentos da Finora no celular: gastos do mês com parcelas e Open Finance" decoding="async" loading="lazy"></div>
+            <div class="app-tela"><img src="/img/app-celular/f-cartoes.webp" width="780" height="2472" alt="Tela Cartões da Finora no celular: fatura de R$ 1.068,00 e parcelamentos em aberto" decoding="async" loading="lazy"></div>
+          </div>
+          <div class="app-nav" aria-hidden="true">
+            <img class="on" src="/img/app-celular/n-painel.webp" width="780" height="126" alt="" decoding="async">
+            <img src="/img/app-celular/n-lancamentos.webp" width="780" height="126" alt="" decoding="async" loading="lazy">
+            <img src="/img/app-celular/n-cartoes.webp" width="780" height="126" alt="" decoding="async" loading="lazy">
+            <span class="toque"></span>
+          </div>
         </div>
       </div>
-        <div class="fm-chip fm-chip-a" aria-hidden="true"><i><img class="ic3d" src="/img/icones/pizza-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></i><span><small>Patrimônio líquido</small><b>R$ 419 mil</b></span></div>
-        <div class="fm-chip fm-chip-b" aria-hidden="true"><i><img class="ic3d" src="/img/icones/alvo-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></i><span><small>Resultado do mês</small><b>+ R$ 2.554</b></span></div>
+      <div class="vit-pe">
+        <div class="vit-pontos" role="group" aria-label="Escolher a tela">
+          <button type="button" aria-pressed="true" aria-label="Painel"><i></i></button>
+          <button type="button" aria-pressed="false" aria-label="Lançamentos"><i></i></button>
+          <button type="button" aria-pressed="false" aria-label="Cartões"><i></i></button>
+        </div>
+        <p class="vit-nota">Telas reais do app · valores ilustrativos</p>
       </div>
-      <div class="fm-legenda" aria-live="polite"><b>Painel</b><span>Saldo, receitas, despesas e o que vence, na primeira tela.</span></div>
-      <div class="fm-controles">
-        <button type="button" class="fm-bt fm-ant" aria-label="Tela anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-        <button type="button" class="fm-bt fm-play" aria-label="Pausar o tour"><svg class="ic-pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"/><path d="M15 5v14"/></svg><svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
-        <button type="button" class="fm-bt fm-prox" aria-label="Próxima tela"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
-        <span class="fm-conta" aria-hidden="true"><b>1</b> / 12</span>
-        <span class="fm-nota">Prints reais do app · valores ilustrativos</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ NA PRÁTICA ============ -->
+<section class="sec" id="pratica">
+  <div class="faixa">
+    <header class="sec-cab">
+      <h2>Mexa nos números do mês da Ana</h2>
+    </header>
+
+    <div class="pratica">
+      <div class="pr-abas" role="tablist" aria-label="Exemplos">
+        <button role="tab" id="pa-parc" aria-controls="pp-parc" aria-selected="true">Parcelas</button>
+        <button role="tab" id="pa-orc" aria-controls="pp-orc" aria-selected="false" tabindex="-1">Orçamento</button>
+        <button role="tab" id="pa-meta" aria-controls="pp-meta" aria-selected="false" tabindex="-1">Reserva</button>
+        <button role="tab" id="pa-nora" aria-controls="pp-nora" aria-selected="false" tabindex="-1">Nora</button>
+        <span class="pr-cursor" aria-hidden="true"></span>
       </div>
-    </section>
+
+      <div class="pr-painel" role="tabpanel" id="pp-parc" aria-labelledby="pa-parc">
+        <div class="pr-txt"><h3>Antes de parcelar, veja o que já está comprometido.</h3><p>Cada compra com a parcela do mês e quanto falta, mês a mês.</p></div>
+        <div class="demo demo-parc">
+          <p class="dm-tit">Parcelas no Cartão Roxo, por mês</p>
+          <div class="dp-barras">
+            <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>nov</small></div>
+            <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>dez</small></div>
+            <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>jan</small></div>
+            <div class="dp-col" data-v="420"><b>420</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>fev</small></div>
+            <div class="dp-col" data-v="420"><b>420</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>mar</small></div>
+            <div class="dp-col" data-v="0"><b>0</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>abr</small></div>
+          </div>
+          <button class="demo-bt dp-sim" type="button" aria-pressed="false">E se parcelar um celular de R$&nbsp;1.800 em 6×?</button>
+          <p class="demo-diz" aria-live="polite">Notebook, geladeira e passagem já ocupam R$&nbsp;990 em novembro e dezembro.</p>
+        </div>
+      </div>
+
+      <div class="pr-painel" role="tabpanel" id="pp-orc" aria-labelledby="pa-orc" hidden>
+        <div class="pr-txt"><h3>Você decide o limite. A Finora segura a mão.</h3><p>Aviso aos 80% do que você separou e outro se passar.</p></div>
+        <div class="demo demo-orc" data-estado="alerta">
+          <div class="do-top"><span>Restaurantes e delivery</span><span>limite <b>R$&nbsp;400</b></span></div>
+          <div class="do-medidor"><i></i><span class="do-80" aria-hidden="true">80%</span></div>
+          <label class="do-lab" for="do-gasto">Arraste: quanto já foi gasto <output id="do-out" for="do-gasto">R$ 320</output></label>
+          <input class="do-range" id="do-gasto" type="range" min="0" max="520" step="10" value="320">
+          <p class="demo-diz do-msg" aria-live="polite">Aviso: você já usou 80% do que separou para Restaurantes.</p>
+        </div>
+      </div>
+
+      <div class="pr-painel" role="tabpanel" id="pp-meta" aria-labelledby="pa-meta" hidden>
+        <div class="pr-txt"><h3>Saiba quando a sua reserva fica pronta.</h3><p>Escolha quanto guardar por mês e veja a data.</p></div>
+        <div class="demo demo-meta">
+          <div class="do-top"><span>Reserva de emergência</span><span>faltam <b>R$&nbsp;9.800</b></span></div>
+          <div class="dm-meses" aria-hidden="true"></div>
+          <label class="do-lab" for="dm-mes">Arraste: guardar por mês <output id="dm-out" for="dm-mes">R$ 950</output></label>
+          <input class="do-range" id="dm-mes" type="range" min="300" max="2500" step="50" value="950">
+          <p class="demo-diz dm-msg" aria-live="polite">Em <b>11 meses</b> a reserva está pronta: <b>agosto de 2027</b>.</p>
+        </div>
+      </div>
+
+      <div class="pr-painel" role="tabpanel" id="pp-nora" aria-labelledby="pa-nora" hidden>
+        <div class="pr-txt"><h3>Sem tempo de abrir o app? Escreva para a Nora.</h3><p>Ela entende do jeito que você fala e só grava com o seu ok.</p>
+          <button class="lnk pr-nora-chat" type="button" data-abre-chat>Tirar uma dúvida com a Nora agora</button></div>
+        <div class="demo demo-nora">
+          <div class="dn-cab"><img src="/img/nora/nora-3d-160.webp" width="160" height="160" alt="" aria-hidden="true" loading="lazy" decoding="async"><span><b>Nora</b><small>assistente da Finora</small></span></div>
+          <div class="dn-sug" role="group" aria-label="Exemplos de pedido">
+            <button type="button" data-ex="0" aria-pressed="true">Anotar um gasto</button>
+            <button type="button" data-ex="1" aria-pressed="false">Quanto gastei</button>
+            <button type="button" data-ex="2" aria-pressed="false">O que vence</button>
+          </div>
+          <ol class="dn-conversa" aria-live="polite"></ol>
+        </div>
+      </div>
+      <p class="pr-nota">Exemplos com valores ilustrativos.</p>
+    </div>
+
   </div>
 </section>
 
-<!-- ============ HISTÓRIAS: seis dias do mês ============ -->
-<section class="sec" id="historias">
-  <div class="wrap">
-    <header class="sec-cab" data-rev>
-      <h2>Um mês como qualquer outro</h2>
-      <p>Pessoas e fotos ilustrativas, situações reais. Mexa nos exemplos: os valores também são ilustrativos.</p>
+<!-- ============ HISTÓRIAS ============ -->
+<section class="sec sec-papel" id="historias">
+  <div class="faixa">
+    <header class="sec-cab sec-cab-linha">
+      <div>
+        <h2>Um mês como qualquer outro</h2>
+        <p>Pessoas e fotos ilustrativas. As situações, nem tanto.</p>
+      </div>
+      <div class="mais-setas">
+        <button type="button" class="seta" data-rola="-1" aria-label="História anterior" aria-controls="hist-lista"><svg aria-hidden="true"><use href="#i-esq"/></svg></button>
+        <button type="button" class="seta" data-rola="1" aria-label="Próxima história" aria-controls="hist-lista"><svg aria-hidden="true"><use href="#i-dir"/></svg></button>
+      </div>
     </header>
-
-    <ol class="dias">
-      <li class="dia" id="dia-5" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">5</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 5</p>
-          <h3>O salário caiu. Três dias depois, parecia que não.</h3>
-          <p>O Rafael não lembra metade do que saiu.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/rafael.webp" width="720" height="900" alt="Rafael confere o celular na mesa da cozinha, à noite" loading="lazy" decoding="async"><div class="foto-app t-roxo" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/extrato-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Extrato do mês</small><b>4 gastos já separados por categoria</b><span class="fa-tags"><i>Moradia</i><i>Educação</i><i>Mercado</i><i>Saúde</i></span></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Os gastos chegam do banco já separados por categoria.</p>
-          <div class="demo demo-extrato" data-demo="extrato">
-            <ul class="dx-lista">
-              <li data-cat="moradia" style="--i:0"><span class="dx-nome">Aluguel</span><span class="tag c-moradia">Moradia</span><b>R$&nbsp;1.450,00</b></li>
-              <li data-cat="educacao" style="--i:1"><span class="dx-nome">Escola Pequeno Mundo</span><span class="tag c-educacao">Educação</span><b>R$&nbsp;780,00</b></li>
-              <li data-cat="mercado" style="--i:2"><span class="dx-nome">Mercado Bom Preço</span><span class="tag c-mercado">Mercado</span><b>R$&nbsp;612,35</b></li>
-              <li data-cat="saude" style="--i:3"><span class="dx-nome">Farmácia</span><span class="tag c-saude">Saúde</span><b>R$&nbsp;86,90</b></li>
-            </ul>
-            <div class="dx-barra" aria-hidden="true"><i class="c-moradia" style="--w:49.5%"></i><i class="c-educacao" style="--w:26.6%"></i><i class="c-mercado" style="--w:20.9%"></i><i class="c-saude" style="--w:3%"></i></div>
-            <div class="dx-leg" role="group" aria-label="Destacar uma categoria">
-              <button type="button" data-cat="moradia" aria-pressed="false"><i class="c-moradia"></i>Moradia 49%</button>
-              <button type="button" data-cat="educacao" aria-pressed="false"><i class="c-educacao"></i>Educação 27%</button>
-              <button type="button" data-cat="mercado" aria-pressed="false"><i class="c-mercado"></i>Mercado 21%</button>
-              <button type="button" data-cat="saude" aria-pressed="false"><i class="c-saude"></i>Saúde 3%</button>
-            </div>
-            <button class="demo-btn" type="button" data-replay><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Importar de novo</button>
-          </div>
-        </div>
+    <ol class="hist" id="hist-lista" tabindex="0" aria-label="Seis dias do mês">
+      <li class="h-card">
+        <img src="/img/pessoas/rafael.webp" width="720" height="900" alt="Rafael confere o celular na mesa da cozinha, à noite" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 5</p><h3>O salário caiu. Três dias depois, parecia que não.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-sync"/></svg></span><span><small>Extrato do mês</small>4 gastos já separados por categoria</span></p></div>
       </li>
-
-      <li class="dia" id="dia-10" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">10</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 10</p>
-          <h3>A conta de luz venceu ontem.</h3>
-          <p>Não faltou dinheiro, faltou lembrar. A Júlia pagou juros e multa.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/julia.webp" width="720" height="900" alt="Júlia segura a conta de luz e o celular perto da janela" loading="lazy" decoding="async"><div class="foto-app t-ambar" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/sino-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Aviso da Finora</small><b>Conta de luz vence em 3 dias · R$&nbsp;187,40</b></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Aviso três dias antes de cada conta. Pagou? Um toque.</p>
-          <div class="demo demo-conta" data-demo="conta">
-            <ol class="dc-semana" aria-hidden="true">
-              <li class="av">7<small>aviso</small></li><li>8</li><li>9</li><li class="vc">10<small>vence</small></li>
-            </ol>
-            <div class="dc-aviso">
-              <span class="dc-sino"><img class="ic3d" src="/img/icones/sino-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
-              <span><b>Conta de luz vence em 3 dias</b><small>Dia 10 · R$&nbsp;187,40</small></span>
-            </div>
-            <button class="dc-pagar" type="button" aria-pressed="false"><span class="dc-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="dc-txt">Marcar como paga</span></button>
-            <p class="dc-ok" aria-live="polite"></p>
-          </div>
-        </div>
+      <li class="h-card">
+        <img src="/img/pessoas/julia.webp" width="720" height="900" alt="Júlia segura a conta de luz e o celular perto da janela" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 10</p><h3>A conta de luz venceu ontem. Não faltou dinheiro, faltou lembrar.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-sino"/></svg></span><span><small>Aviso da Finora</small>Conta de luz vence em 3 dias · R$&nbsp;187,40</span></p></div>
       </li>
-
-      <li class="dia" id="dia-18" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">18</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 18</p>
-          <h3>O cartão fechou. Parcela 4 de 10 do notebook.</h3>
-          <p>O Diego não sabe quanto do ano que vem já é da fatura.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/diego.webp" width="720" height="900" alt="Diego confere a fatura no notebook com o cartão na mão" loading="lazy" decoding="async"><div class="foto-app t-rosa" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/cartao-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Fatura fechou</small><b>Notebook · parcela 4 de 10 · faltam R$&nbsp;2.520</b></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Cada parcela com quanto falta, e quanto dos próximos meses já está comprometido.</p>
-          <div class="demo demo-parc" data-demo="parc">
-            <div class="dp-item">
-              <div class="dp-top"><span>Notebook</span><span>parcela 4 de 10</span></div>
-              <div class="dp-trilho"><i style="--p:.4"></i></div>
-              <small>Faltam 6 × R$&nbsp;420,00 = R$&nbsp;2.520,00</small>
-            </div>
-            <p class="dp-leg">Já comprometido no cartão, por mês</p>
-            <div class="dp-barras" aria-hidden="true">
-              <div class="dp-col" data-v="680"><b>680</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>nov</small></div>
-              <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>dez</small></div>
-              <div class="dp-col" data-v="990"><b>990</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>jan</small></div>
-              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>fev</small></div>
-              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>mar</small></div>
-              <div class="dp-col" data-v="730"><b>730</b><span class="dp-pilha"><i class="dp-novo"></i><i class="dp-base"></i></span><small>abr</small></div>
-            </div>
-            <button class="demo-btn dp-sim" type="button" aria-pressed="false">E se parcelar um celular de R$&nbsp;1.800 em 6×?</button>
-            <p class="dp-diz" aria-live="polite">Notebook, geladeira e passagem já ocupam de R$&nbsp;680 a R$&nbsp;990 por mês até abril.</p>
-          </div>
-        </div>
+      <li class="h-card">
+        <img src="/img/pessoas/diego.webp" width="720" height="900" alt="Diego confere a fatura no notebook com o cartão na mão" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 18</p><h3>O cartão fechou. Parcela 4 de 10 do notebook.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-cartao"/></svg></span><span><small>Fatura fechou</small>Notebook, parcela 4 de 10 · faltam R$&nbsp;2.520</span></p></div>
       </li>
-
-      <li class="dia" id="dia-22" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">22</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 22</p>
-          <h3>Dinheiro do salão e de casa na mesma conta.</h3>
-          <p>A Carla é manicure. Uma cliente pagou no Pix, outra ficou devendo.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/carla.webp" width="720" height="900" alt="Carla, manicure, confere o celular na mesa do salão" loading="lazy" decoding="async"><div class="foto-app t-verde" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/pessoa-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Caixa do salão</small><b>Marina te deve R$&nbsp;60,00</b></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Casa e negócio separados, com quem te deve e o caixa do mês.</p>
-          <div class="demo demo-caixa" data-demo="caixa">
-            <div class="dk-abas" role="group" aria-label="Ver o dinheiro de">
-              <button type="button" data-lado="salao" aria-pressed="true">Salão</button>
-              <button type="button" data-lado="casa" aria-pressed="false">Casa</button>
-              <span class="dk-cursor" aria-hidden="true"></span>
-            </div>
-            <div class="dk-painel" data-painel="salao">
-              <p class="dk-total"><small>Caixa do salão em outubro</small><b data-caixa>R$&nbsp;1.165,10</b></p>
-              <ul class="dk-lista">
-                <li><span>Pix · Lúcia</span><b class="pos">+ R$&nbsp;45,00</b></li>
-                <li><span>Esmaltes e algodão</span><b class="neg">− R$&nbsp;38,90</b></li>
-              </ul>
-              <div class="dk-deve">
-                <span><b>Marina te deve</b><small>R$&nbsp;60,00 · combinou semana que vem</small></span>
-                <button type="button" class="dk-recebi" aria-pressed="false">Recebi</button>
-              </div>
-            </div>
-            <div class="dk-painel" data-painel="casa" hidden>
-              <p class="dk-total"><small>Gastos da casa em outubro</small><b>R$&nbsp;2.184,65</b></p>
-              <ul class="dk-lista">
-                <li><span>Mercado do mês</span><b class="neg">− R$&nbsp;612,35</b></li>
-                <li><span>Conta de luz</span><b class="neg">− R$&nbsp;187,40</b></li>
-              </ul>
-              <p class="dk-sep">Nada do salão aparece aqui.</p>
-            </div>
-          </div>
-        </div>
+      <li class="h-card">
+        <img src="/img/pessoas/carla.webp" width="720" height="900" alt="Carla, manicure, confere o celular na mesa do salão" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 22</p><h3>Dinheiro do salão e de casa na mesma conta.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-pessoa"/></svg></span><span><small>Caixa do salão</small>Marina te deve R$&nbsp;60,00</span></p></div>
       </li>
-
-      <li class="dia" id="dia-25" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">25</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 25</p>
-          <h3>A fatura chegou do tamanho que ela esperava.</h3>
-          <p>A Bia foi avisada aos 80% do orçamento de restaurantes e segurou o delivery.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/bia.webp" width="720" height="900" alt="Bia prepara a marmita e confere o celular" loading="lazy" decoding="async"><div class="foto-app t-coral" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/pizza-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Restaurantes</small><b>80% do que você separou</b><span class="fa-barra"><i style="--p:.8"></i></span></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Você define quanto gastar por categoria. A Finora avisa aos 80% e quando passa do limite.</p>
-          <div class="demo demo-orc" data-demo="orc">
-            <div class="do-top"><span>Restaurantes</span><span>separou <b>R$&nbsp;400</b></span></div>
-            <div class="do-medidor"><i class="do-cheio"></i><span class="do-80" aria-hidden="true">80%</span></div>
-            <label class="do-lab" for="do-gasto">Arraste: quanto a Bia já gastou <output id="do-out" for="do-gasto">R$&nbsp;320</output></label>
-            <input class="do-range" id="do-gasto" type="range" min="0" max="520" step="10" value="320">
-            <p class="do-msg" aria-live="polite"><span class="do-ic" aria-hidden="true"></span><span class="do-txt">Aviso: você já usou 80% do que separou para Restaurantes.</span></p>
-          </div>
-        </div>
+      <li class="h-card">
+        <img src="/img/pessoas/bia.webp" width="720" height="900" alt="Bia prepara a marmita e confere o celular" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 25</p><h3>A fatura chegou do tamanho que ela esperava.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-parc"/></svg></span><span><small>Restaurantes</small>80% do que você separou</span></p></div>
       </li>
-
-      <li class="dia" id="dia-30" data-rev>
-        <p class="dia-n" aria-hidden="true" data-par=".06">30</p>
-        <div class="dia-hist">
-          <p class="dia-data">Dia 30</p>
-          <h3>Sobraram R$&nbsp;300. E agora?</h3>
-          <p>O Paulo nunca tinha chegado ao fim do mês com sobra.</p>
-          <figure class="dia-foto"><img src="/img/pessoas/paulo.webp" width="720" height="900" alt="Paulo sorri olhando o celular na varanda, com um pote de moedas na mesa" loading="lazy" decoding="async"><div class="foto-app t-azul" aria-hidden="true"><span class="fa-ic"><img class="ic3d" src="/img/icones/alvo-96.webp" width="96" height="96" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><span class="fa-txt"><small>Reserva para imprevistos</small><b>Pronta em agosto de 2027</b></span></div></figure>
-        </div>
-        <div class="dia-ajuda" data-spot>
-          <p class="ajuda-t">Com a Finora</p>
-          <p>Crie uma meta e veja quando chega lá. O consultor explica as opções com Selic, CDI e IPCA.</p>
-          <div class="demo demo-meta" data-demo="meta">
-            <div class="dm-top"><span>Reserva para imprevistos</span><span>meta <b>R$&nbsp;3.000</b></span></div>
-            <div class="dm-meses" aria-hidden="true"></div>
-            <label class="do-lab" for="dm-mes">Arraste: guardar por mês <output id="dm-out" for="dm-mes">R$&nbsp;300</output></label>
-            <input class="do-range" id="dm-mes" type="range" min="100" max="1000" step="50" value="300">
-            <p class="dm-msg" aria-live="polite">Em <b>10 meses</b> a reserva está pronta: <b>agosto de 2027</b>.</p>
-            <p class="dm-obs">Conta simples, sem rendimento. O consultor é conteúdo educativo, não recomendação de investimento.</p>
-          </div>
-        </div>
+      <li class="h-card">
+        <img src="/img/pessoas/paulo.webp" width="720" height="900" alt="Paulo sorri olhando o celular na varanda, com um pote de moedas na mesa" loading="lazy" decoding="async">
+        <div class="h-txt"><p class="h-dia">Dia 30</p><h3>Sobraram R$&nbsp;300. Pela primeira vez.</h3>
+          <p class="h-aviso"><span class="h-ic" aria-hidden="true"><svg><use href="#i-check"/></svg></span><span><small>Reserva para imprevistos</small>Pronta em agosto de 2027</span></p></div>
       </li>
     </ol>
-
-    <div class="tl-cta" data-rev>
-      <p><b>No computador e no celular.</b> Instala na tela inicial, sem loja de aplicativos.</p>
-      <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
-    </div>
   </div>
 </section>
 
-<!-- ============ GANHOS: o que muda quando o dinheiro está sob controle ============ -->
-<section class="sec sec-ganhos" id="ganhos">
-  <div class="wrap">
-    <header class="sec-cab" data-rev>
-      <h2>Conta em dia, sobra no fim do mês e <mark>a cabeça mais leve.</mark></h2>
-      <p>Quando você enxerga o mês inteiro, o dinheiro deixa de ser susto e volta a ser escolha. É para isso que a Finora existe.</p>
+<!-- ============ SEGURANÇA ============ -->
+<section class="sec sec-tinta seg" id="seguranca">
+  <div class="faixa">
+    <header class="sec-cab">
+      <h2>Seu dinheiro continua no banco</h2>
+      <p>A Finora só lê o que você autoriza. Nada sai da sua conta por aqui.</p>
     </header>
-    <div class="ganhos">
-      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/sino-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Contas pagas no prazo</h3><p>O aviso chega antes do vencimento. Menos juros, menos multa, menos correria.</p></article>
-      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/alvo-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>O mês fechando no azul</h3><p>Você vê para onde vai cada real e ajusta antes de faltar, não depois.</p></article>
-      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/pizza-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>Lazer sem culpa</h3><p>Com o orçamento definido, o cinema, o jantar fora e a viagem cabem no plano.</p></article>
-      <article class="ganho" data-rev data-spot data-tilt><span class="ganho-ic" aria-hidden="true" data-par="-.05"><img class="ic3d" src="/img/icones/pessoa-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><h3>A cabeça mais leve</h3><p>Dinheiro organizado é uma preocupação a menos no fim do dia e na hora de dormir.</p></article>
-    </div>
-  </div>
-</section>
 
-<!-- ============ NORA ============ -->
-<section class="sec sec-nora" id="nora" data-luz>
-  <div class="aurora aurora-nora" aria-hidden="true"><i class="a1"></i><i class="a2"></i></div>
-  <div class="wrap nora-in">
-    <div class="nora-fig" aria-hidden="true" data-par="-.08"><span class="nora-halo"></span><span data-nora="hero"></span></div>
-    <div class="nora-txt" data-rev>
-      <h2>Quando der preguiça de abrir o app, escreva para a Nora.</h2>
-      <p>Escreva como falaria com alguém. Ela prepara o lançamento e só grava com o seu ok.</p>
-      <div class="cv-abas" role="group" aria-label="Exemplos de conversa">
-        <button type="button" data-ex="0" aria-pressed="true">Anotar um gasto</button>
-        <button type="button" data-ex="1" aria-pressed="false">Ver o saldo</button>
-        <button type="button" data-ex="2" aria-pressed="false">Gastos do mês</button>
-        <button type="button" data-ex="3" aria-pressed="false">Contas do dia</button>
-      </div>
-      <dl class="conversa" aria-live="polite">
-        <div class="cv eu"><dt>Você</dt><dd>gastei 80 na farmácia</dd></div>
-        <div class="cv ela"><dt>Nora</dt><dd>Anoto R$&nbsp;80,00 em Saúde, na sua conta corrente. Posso lançar?</dd></div>
-        <div class="cv eu"><dt>Você</dt><dd>pode</dd></div>
-      </dl>
-      <p class="nota">Exemplos com valores ilustrativos.</p>
-      <button class="btn btn-luz" type="button" data-abre-chat><span data-nora="mini" class="btn-nora"></span>Tirar uma dúvida com a Nora</button>
-    </div>
-  </div>
-</section>
+    <ol class="fluxo" aria-label="O caminho dos seus dados">
+      <li class="fx-no"><span class="fx-ic"><svg aria-hidden="true"><use href="#i-banco"/></svg></span><b>Seu banco</b><small>o dinheiro fica lá</small></li>
+      <li class="fx-liga" aria-hidden="true"><span class="fx-trilho"><i></i><i></i><i></i></span><small>Open Finance · só leitura</small></li>
+      <li class="fx-no"><span class="fx-ic fx-ic-marca"><svg class="fx-logo" data-flogo aria-hidden="true"></svg></span><b>Finora</b><small>organiza e avisa</small></li>
+      <li class="fx-liga" aria-hidden="true"><span class="fx-trilho"><i></i><i></i><i></i></span><small>conexão criptografada</small></li>
+      <li class="fx-no"><span class="fx-ic"><svg aria-hidden="true"><use href="#i-pessoa"/></svg></span><b>Você</b><small>entra em duas etapas</small></li>
+    </ol>
 
-<!-- ============ CONFIANÇA ============ -->
-<section class="sec" id="seguranca">
-  <div class="wrap">
-    <header class="sec-cab" data-rev>
-      <h2>Seu dinheiro continua no banco.</h2>
-    </header>
-    <div class="confia">
-      <div data-rev data-spot data-tilt>
-        <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/olho-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
-        <h3>Só leitura.</h3>
-        <p>Conexão pelo Open Finance (Pluggy). A Finora não movimenta dinheiro nem vê a sua senha.</p>
-      </div>
-      <div data-rev data-spot data-tilt>
-        <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/upload-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
-        <h3>Sem conectar o banco, também.</h3>
-        <p>Lance à mão, peça para a Nora ou importe o extrato em CSV.</p>
-      </div>
-      <div data-rev data-spot data-tilt>
-        <span class="cf-ic" aria-hidden="true"><img class="ic3d" src="/img/icones/cadeado-192.webp" width="192" height="192" alt="" aria-hidden="true" loading="lazy" decoding="async"></span>
-        <h3>Os dados são seus.</h3>
-        <p>Verificação em duas etapas. Exporte ou apague tudo quando quiser (LGPD). <a href="/privacidade.html">Política de Privacidade</a></p>
-      </div>
-    </div>
+    <ul class="garantias">
+      <li><b>Só leitura.</b> Open Finance pela Pluggy. A Finora não movimenta dinheiro.</li>
+      <li><b>Duas etapas, sempre.</b> Entrada com o Google e confirmação por código.</li>
+      <li><b>Sua senha não passa por aqui.</b> O login é feito pelo Google.</li>
+      <li><b>Criptografia.</b> Conexão em HTTPS e dados guardados com criptografia.</li>
+      <li><b>Contra invasão.</b> Limite de tentativas bloqueia quem tenta adivinhar.</li>
+      <li><b>Os dados são seus.</b> Exporte ou apague tudo, como manda a LGPD. <a href="/privacidade.html">Privacidade</a></li>
+    </ul>
+    <p class="seg-nota"><svg aria-hidden="true"><use href="#i-upload"/></svg>Prefere não conectar o banco? Lance à mão, peça para a Nora ou importe o extrato em CSV.</p>
   </div>
 </section>
 
 <!-- ============ PREÇO ============ -->
-<section class="sec sec-preco" id="planos">
-  <div class="wrap">
-    <header class="sec-cab" data-rev>
-      <h2>Comece grátis. Continue se gostar.</h2>
-      <p>10 dias com tudo liberado, sem cartão de crédito. Você só escolhe o plano depois do teste.</p>
+<section class="sec sec-papel" id="planos">
+  <div class="faixa preco-in">
+    <header class="sec-cab">
+      <h2>Quanto custa</h2>
+      <p>Os primeiros 10 dias são por nossa conta, com tudo liberado e sem cartão. Depois, você escolhe se continua.</p>
     </header>
-    <div class="planos">
-      <article class="plano" data-rev data-spot data-tilt>
-        <h3>Por mês</h3>
-        <p class="preco">R$&nbsp;<span data-conta="14.90">14,90</span></p>
-        <p class="p-desc">Sem fidelidade.</p>
-        <a class="btn btn-sec" href="/app/?plano=mensal" data-entrar data-plano="mensal">Testar grátis por 10 dias</a>
-      </article>
-      <article class="plano plano-anual" data-rev data-spot data-tilt>
-        <p class="p-selo">Sai mais em conta</p>
-        <h3>Por ano</h3>
-        <p class="preco">R$&nbsp;<span data-conta="149.90">149,90</span></p>
-        <p class="p-desc">Sai por R$&nbsp;12,49 ao mês, R$&nbsp;28,90 a menos no ano.</p>
-        <a class="btn btn-pri" href="/app/?plano=anual" data-entrar data-plano="anual">Testar grátis por 10 dias</a>
-      </article>
+    <div class="preco-bloco">
+      <div class="pb-escolha" role="radiogroup" aria-label="Como pagar depois do teste">
+        <button type="button" role="radio" aria-checked="false" data-plano="mensal">Por mês</button>
+        <button type="button" role="radio" aria-checked="true" data-plano="anual">Por ano</button>
+      </div>
+      <p class="preco"><span class="rs">R$</span><span class="pb-valor">149,90</span><span class="per pb-per">/ano</span></p>
+      <p class="pb-desc">R$&nbsp;12,49 por mês. R$&nbsp;28,90 a menos que pagar mês a mês.</p>
+      <a class="bt bt-coral bt-g pb-cta" href="/app/?plano=anual" data-entrar data-plano="anual">Começar meus 10 dias grátis<svg aria-hidden="true"><use href="#i-seta"/></svg></a>
+      <p class="pb-nota">Acabou o teste? O acesso pausa e nada é apagado. Sem fidelidade. <a href="/termos.html">Termos de Uso</a></p>
     </div>
-    <ul class="inclui" data-rev aria-label="Os dois planos incluem">
-      <li>Contas e cartões num lugar só</li><li>Parcelas e faturas mês a mês</li><li>Avisos de vencimento e orçamento</li>
-      <li>Nora, metas e consultor</li><li>Open Finance ou extrato em CSV</li><li>Acesso compartilhado</li>
-    </ul>
-    <p class="termos-planos">Acabou o teste? O acesso pausa e nada é apagado. Cancele quando quiser, sem multa. <a href="/termos.html">Termos de Uso</a></p>
   </div>
 </section>
 
 <!-- ============ DÚVIDAS ============ -->
 <section class="sec" id="duvidas">
-  <div class="wrap estreito">
-    <header class="sec-cab">
+  <div class="faixa duv-in">
+    <header class="duv-cab">
       <h2>Dúvidas</h2>
+      <p>Não achou a sua? <button class="lnk" type="button" data-abre-chat>Pergunte para a Nora</button> ou escreva para <a href="mailto:finora@gmail.com">finora@gmail.com</a>.</p>
     </header>
-    <div class="faq" data-rev>
-      <details><summary>Preciso de cartão de crédito para testar?</summary>
+    <div class="faq">
+      <details><summary>Preciso de cartão de crédito para testar?<svg aria-hidden="true"><use href="#i-mais"/></svg></summary>
         <p>Não. Você entra com a sua conta Google e usa tudo por 10 dias.</p></details>
-      <details><summary>Meus dados estão seguros?</summary>
-        <p>Sim. O banco só é lido, todo acesso tem verificação em duas etapas e você apaga seus dados quando quiser.</p></details>
-      <details><summary>Não quero conectar o banco. Dá para usar?</summary>
+      <details><summary>Não quero conectar o banco. Dá para usar?<svg aria-hidden="true"><use href="#i-mais"/></svg></summary>
         <p>Dá. Lance à mão, peça para a Nora anotar ou importe o extrato em CSV.</p></details>
-      <details><summary>Serve para quem trabalha por conta própria?</summary>
-        <p>Serve: contas a pagar e a receber e fluxo de caixa. A Finora não emite nota fiscal nem boleto.</p></details>
-      <details><summary>Como é feito o pagamento?</summary>
+      <details><summary>Serve para quem trabalha por conta própria?<svg aria-hidden="true"><use href="#i-mais"/></svg></summary>
+        <p>Serve: contas a pagar e a receber, casa e negócio separados e fluxo de caixa. A Finora não emite nota fiscal nem boleto.</p></details>
+      <details><summary>Como é feito o pagamento?<svg aria-hidden="true"><use href="#i-mais"/></svg></summary>
         <p>As formas de pagamento aparecem na hora de assinar, depois do teste. Quer saber antes? Escreva para <a href="mailto:finora@gmail.com">finora@gmail.com</a>.</p></details>
       <!-- PREENCHER antes do lançamento: formas de pagamento aceitas (ex.: Pix e cartão de crédito) -->
-      <details><summary>Posso cancelar quando quiser?</summary>
+      <details><summary>Posso cancelar quando quiser?<svg aria-hidden="true"><use href="#i-mais"/></svg></summary>
         <p>Pode, sem multa. O acesso continua até o fim do período pago. Veja os <a href="/termos.html">Termos de Uso</a>.</p></details>
     </div>
-    <p class="faq-mais">Não achou o que procurava? <button class="lnk-nora" type="button" data-abre-chat>Pergunte para a Nora</button> ou escreva para <a href="mailto:finora@gmail.com">finora@gmail.com</a>.</p>
   </div>
 </section>
 
 <!-- ============ FECHO ============ -->
-<section class="fecho" data-luz>
-  <div class="aurora aurora-fecho" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
-  <div class="sobra" aria-hidden="true"></div>
-  <div class="wrap fecho-in" data-rev>
-    <img class="fecho-nora" src="/img/nora/nora-3d-640.webp" width="640" height="640" alt="" aria-hidden="true" loading="lazy" decoding="async">
-    <h2>O seu próximo dia 25 pode ser <span class="brilha">mais tranquilo.</span></h2>
-    <a class="btn btn-pri btn-lg" href="/app/" data-entrar>Testar grátis por 10 dias</a>
-    <p class="nota">10 dias grátis · sem cartão · cancele quando quiser</p>
+<section class="fecho">
+  <div class="faixa fecho-in">
+    <div class="fecho-txt">
+      <h2>O seu próximo dia 25 pode ser mais tranquilo.</h2>
+      <a class="bt bt-coral bt-g" href="/app/" data-entrar>Testar grátis por 10 dias<svg aria-hidden="true"><use href="#i-seta"/></svg></a>
+      <p class="nota">10 dias grátis · sem cartão · cancele quando quiser</p>
+    </div>
+    <div class="fecho-relogio" aria-hidden="true"><svg class="fecho-logo"></svg></div>
   </div>
 </section>
 
 </main>
 
 <footer class="rodape">
-  <div class="wrap rd-in">
+  <div class="faixa rd-in">
     <div class="rd-marca">
-      <a class="marca" href="#topo" aria-label="Finora, voltar ao topo"><svg class="logo logo-viva" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><defs><linearGradient id="lgrod" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="lg-a" offset="0" stop-color="#5b2a86"/><stop offset=".55" stop-color="#a8488f"/><stop class="lg-c" offset="1" stop-color="#ff7a59"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lgrod)"/><path class="lg-brilho" d="M7 12 q4-5 11-5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4" stroke-linecap="round"/><path class="lg-f" pathLength="1" d="M15 30 V11 H26 M15 20 H23" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-ponto" cx="28.5" cy="27.5" r="3" fill="#ffd6c9"/></svg><span class="marca-txt"><b>Finora</b><small>controle financeiro</small></span></a>
+      <a class="marca" href="#conteudo" aria-label="Finora, voltar ao início"><svg class="logo" data-flogo aria-hidden="true"></svg><span>finora</span></a>
       <p>Controle financeiro para a casa e para quem trabalha por conta própria.</p>
     </div>
-    <nav class="rd-col" aria-label="Página"><h3>Nesta página</h3><a href="#historias">Um mês comum</a><a href="#nora">A Nora</a><a href="#seguranca">Segurança</a><a href="#planos">Quanto custa</a><a href="#duvidas">Dúvidas</a></nav>
     <nav class="rd-col" aria-label="Conta"><h3>Conta</h3><a href="/app/" data-entrar>Entrar</a><a href="/app/" data-entrar>Testar grátis</a></nav>
     <nav class="rd-col" aria-label="Legal e contato"><h3>Legal e contato</h3><a href="/privacidade.html">Política de Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="mailto:finora@gmail.com">finora@gmail.com</a></nav>
   </div>
-  <div class="wrap rd-base">
+  <div class="faixa rd-base">
     <span>© 2026 Finora · Brasília, DF<!-- PREENCHER antes do lançamento: razão social e CNPJ --></span>
-    <a href="#topo">Voltar ao topo ↑</a>
+    <span>Telas reais do app com valores ilustrativos. Pessoas e fotos ilustrativas.</span>
   </div>
 </footer>
 
-<!-- CTA fixo no celular: aparece depois do topo, some nos preços e no fecho -->
-<div class="cta-fixo"><a class="btn btn-pri" href="/app/" data-entrar>Testar grátis por 10 dias</a></div>
+<!-- CTA fixo no celular: aparece depois da abertura, some nos planos e no fecho -->
+<div class="cta-fixo"><button class="cf-nora" type="button" data-abre-chat aria-label="Tirar dúvidas com a Nora"><img src="/img/nora/nora-3d-160.webp" width="160" height="160" alt="" loading="lazy" decoding="async"></button><a class="bt bt-coral" href="/app/" data-entrar>Testar grátis por 10 dias</a></div>
+
+<!-- A Nora, mascote da Finora: abre o chat de dúvidas -->
+<button class="nora-fab" type="button" data-abre-chat aria-label="Tirar dúvidas com a Nora, assistente da Finora">
+  <span class="nf-balao" aria-hidden="true">Dúvidas? <b>Fale comigo.</b></span>
+  <img src="/img/nora/nora-3d-160.webp" width="160" height="160" alt="" decoding="async">
+</button>
 
 <!-- Chat de dúvidas com a Nora (pré-venda). Abre pelos botões [data-abre-chat]. -->
 <section class="atende" id="atende" role="dialog" aria-modal="false" aria-labelledby="at-titulo" hidden>
   <header class="at-cab">
-    <span class="at-av" data-nora="mini"></span>
+    <img class="at-av" src="/img/nora/nora-3d-160.webp" width="160" height="160" alt="" aria-hidden="true" loading="lazy" decoding="async">
     <div><h2 id="at-titulo">Nora</h2><span class="at-status" aria-live="polite">Assistente da Finora</span></div>
-    <button class="at-fecha" type="button" data-fecha-chat aria-label="Fechar o chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="at-fecha" type="button" data-fecha-chat aria-label="Fechar o chat"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
   </header>
   <ol class="at-msgs" aria-live="polite" aria-relevant="additions"></ol>
   <div class="at-sug" aria-label="Sugestões de perguntas"></div>
   <form class="at-form" autocomplete="off">
     <label class="sr" for="at-in">Escreva sua pergunta</label>
     <input id="at-in" name="q" maxlength="500" placeholder="Escreva sua dúvida…" required>
-    <button type="submit" aria-label="Enviar pergunta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 21.5 21 3 2.5 9.5l8 3.5z"/><path d="m10.5 13 4-4"/></svg></button>
+    <button type="submit" aria-label="Enviar pergunta"><svg aria-hidden="true"><use href="#i-enviar"/></svg></button>
   </form>
   <p class="at-rod">Prefere e-mail? <a href="mailto:finora@gmail.com">finora@gmail.com</a></p>
 </section>
 </div>
-<script src="/js/finora.js"></script>
+<script src="/js/logo.js"></script>
+<script src="/js/site.js"></script>
 </body>
 </html>
