@@ -7,3 +7,6 @@ docker-compose.override.yml
 *.pyc
 .vercel/
 .env.vercel
+
+# rascunhos de design (impeccable)
+.impeccable/
