@@ -198,9 +198,12 @@ if not ON_VERCEL:
         if path == "app" or path.startswith("app/"):
             sub = path[len("app/"):] if path.startswith("app/") else ""
             f = APP_DIR / sub if sub else None
+            # no-cache: o navegador sempre revalida, então um deploy novo aparece na hora
+            # (sem isso, HTML/JS antigos podiam ficar presos no cache e quebrar o painel)
+            nc = {"Cache-Control": "no-cache"}
             if sub and f.is_file() and APP_DIR in f.resolve().parents:
-                return FileResponse(f)
-            return FileResponse(APP_DIR / "index.html")
+                return FileResponse(f, headers=nc)
+            return FileResponse(APP_DIR / "index.html", headers=nc)
         f = FRONTEND / path
         if path and f.is_file() and FRONTEND in f.resolve().parents:
             return FileResponse(f)

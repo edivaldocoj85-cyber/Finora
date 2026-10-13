@@ -188,7 +188,7 @@ async function completeLogin() {
   const { data } = await sb.auth.getSession();
   state.token = data.session?.access_token || null;
   localSet("finora_token", state.token);
-  boot();
+  await boot();
 }
 
 /* depois do login Google, confere se a sessão já chegou em aal2 (2º fator confirmado);
@@ -401,13 +401,21 @@ function buildNav() {
     + `<a href="#more" data-r="more">${navIcon("more")}<span class="nav-label">Mais</span></a>`;
 }
 async function boot() {
-  try { state.user = await api("/me"); } catch { return showAuth(); }
+  try { state.user = await api("/me"); } catch (e) {
+    showAuth();
+    $("#authError").textContent = `Não foi possível abrir sua conta (${e.message}). Tente de novo em instantes.`;
+    return;
+  }
   if (state.user.trial_expired) return showTrialExpired();
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#userName").textContent = state.user.name;
   renderWorkspaceBanner();
   if (!$("#monthRef").value) $("#monthRef").value = today().slice(0, 7);
-  buildNav(); await refreshRefs(); route();
+  // sem isso, uma falha aqui deixava o painel aberto e vazio (tela branca, sem aviso)
+  try { buildNav(); await refreshRefs(); route(); } catch (e) {
+    $("#view").innerHTML = `<div class="card"><h3>Não foi possível carregar seus dados</h3><p class="muted">${esc(e.message || "Erro desconhecido")}</p><button class="btn" onclick="location.reload()">Tentar de novo</button></div>`;
+    return;
+  }
   if (!state.user.onboarded) startOnboarding();
   apCheckNudges();
 }
@@ -1620,5 +1628,6 @@ function initAssistant() {
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); window._installPrompt = e; });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-initAuth();
+// qualquer erro inesperado no início mostra a tela de login com o aviso, nunca a página em branco
+initAuth().catch((e) => { showAuth(); $("#authError").textContent = "Erro ao iniciar: " + (e?.message || e); });
 initAssistant();
