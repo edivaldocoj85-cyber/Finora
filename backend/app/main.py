@@ -1,13 +1,16 @@
 import asyncio
+import hashlib
 import hmac
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 
@@ -192,6 +195,19 @@ if not ON_VERCEL:
     app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
     APP_DIR = FRONTEND / "app"
 
+    @lru_cache
+    def _app_index() -> str:
+        """index.html do painel com ?v=<hash dos arquivos> em cada .js/.css local. O Cloudflare
+        guarda JS/CSS por horas e ignora o no-cache da origem; como o HTML não é cacheado,
+        cada deploy passa a pedir URLs novas e nunca mistura HTML novo com JS velho."""
+        h = hashlib.sha1()
+        for p in sorted(APP_DIR.rglob("*")):
+            if p.is_file() and p.suffix in (".js", ".css"):
+                h.update(p.read_bytes())
+        ver = h.hexdigest()[:10]
+        html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+        return re.sub(r'((?:src|href)="(?!https?:|/)[^"?]+\.(?:js|css))"', rf'\1?v={ver}"', html)
+
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
         # /app/* é o painel autenticado (SPA); qualquer outro caminho é a landing pública.
@@ -203,7 +219,7 @@ if not ON_VERCEL:
             nc = {"Cache-Control": "no-cache"}
             if sub and f.is_file() and APP_DIR in f.resolve().parents:
                 return FileResponse(f, headers=nc)
-            return FileResponse(APP_DIR / "index.html", headers=nc)
+            return HTMLResponse(_app_index(), headers=nc)
         f = FRONTEND / path
         if path and f.is_file() and FRONTEND in f.resolve().parents:
             return FileResponse(f)
