@@ -138,13 +138,13 @@ function toast(msg, type = "info") {
 /* confirmação no visual do Finora (substitui confirm()/prompt() do navegador). Abre por cima
    de outro <dialog> se preciso — showModal empilha na top layer. `requireText` exige digitar
    a palavra antes de liberar ações irreversíveis. Resolve true/false. */
-function askConfirm({ title, message = "", confirmLabel = "Confirmar", danger = false, requireText = "" }) {
+function askConfirm({ title, message = "", confirmLabel = "Confirmar", cancelLabel = "Cancelar", danger = false, requireText = "" }) {
   const dlg = $("#confirmDlg");
   dlg.innerHTML = `<form method="dialog" class="cf-form">
     <div class="cf-head"><span class="cf-ic ${danger ? "danger" : ""}">${navIcon(danger ? "trash" : "info")}</span><h2 id="cfTitle">${esc(title)}</h2></div>
     ${message ? `<p class="cf-msg">${esc(message)}</p>` : ""}
     ${requireText ? `<label>Digite <b>${esc(requireText)}</b> para confirmar<input id="cfTxt" autocomplete="off" spellcheck="false"></label>` : ""}
-    <div class="modal-actions"><button class="btn" value="no" type="submit">Cancelar</button>
+    <div class="modal-actions"><button class="btn" value="no" type="submit">${esc(cancelLabel)}</button>
     <button class="btn ${danger ? "danger-solid" : "primary"}" value="yes" type="submit" id="cfOk" ${requireText ? "disabled" : ""}>${esc(confirmLabel)}</button></div></form>`;
   if (requireText) $("#cfTxt").oninput = (e) => ($("#cfOk").disabled = e.target.value.trim().toUpperCase() !== requireText);
   return new Promise((resolve) => {
@@ -416,8 +416,30 @@ async function boot() {
     $("#view").innerHTML = `<div class="card"><h3>Não foi possível carregar seus dados</h3><p class="muted">${esc(e.message || "Erro desconhecido")}</p><button class="btn" onclick="location.reload()">Tentar de novo</button></div>`;
     return;
   }
-  if (!state.user.onboarded) startOnboarding();
+  if (!state.user.onboarded) startOnboarding(); else dailyPrompt();
   apCheckNudges();
+}
+/* 1º acesso do dia: sugere lançar os gastos de hoje. Marca o dia antes de perguntar, então
+   aparece uma vez só por dia (por usuário e navegador), mesmo se a pessoa disser "agora não". */
+async function dailyPrompt() {
+  if (!canEdit() || !state.accounts.length) return;
+  const key = `finora_daily_${state.user.id}`, t = today();
+  if (localGet(key) === t) return;
+  localSet(key, t);
+  let count = 0;
+  try { count = (await api(`/transactions?start=${t}&end=${t}&limit=50`)).length; } catch { /* pergunta mesmo assim */ }
+  if (document.querySelector("dialog[open]")) return;
+  const h = new Date().getHours();
+  const hello = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  const first = String(state.user.name || "").split(" ")[0];
+  const ok = await askConfirm({
+    title: `${hello}${first ? ", " + first : ""}! Vamos lançar os gastos de hoje?`,
+    message: count
+      ? `Você já tem ${count} ${count === 1 ? "lançamento" : "lançamentos"} hoje. Quer adicionar mais algum?`
+      : "Anotar na hora evita esquecer aquele café, o Pix do almoço ou a corrida de aplicativo.",
+    confirmLabel: "Lançar agora", cancelLabel: "Agora não",
+  });
+  if (ok) txForm();
 }
 function renderWorkspaceBanner() {
   const el = $("#workspaceBanner"), owner = state.user.workspace_owner;
