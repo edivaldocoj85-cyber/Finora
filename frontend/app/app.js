@@ -1031,7 +1031,8 @@ VIEWS.cards = async (v) => {
     ${c.missing_days ? `<p class="small imp-warn">Cadastre o dia de fechamento e o de vencimento deste cartão (em Editar). Sem eles, os períodos das faturas não batem com os do banco.</p>` : ""}
     ${c.closed ? `<div class="inv-next small muted">Fatura aberta (fecha ${fdate(c.open.period_end)}): <b>${brl(c.open.total)}</b></div>` : ""}
     <div id="inv-${c.account_id}" class="inv-box"></div>
-    ${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div><div class="small muted" style="margin-top:6px">${c.usage_pct}% de ${brl(c.limit)} em uso · disponível ${brl(c.limit - c.open.total - (c.closed ? c.closed.total : 0))}</div>` : ""}
+    ${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div><div class="small muted" style="margin-top:6px"><b class="${c.available < 0 ? "neg" : ""}">Disponível ${brl(c.available)}</b> de ${brl(c.limit)} · ${c.usage_pct}% comprometido</div>
+    <div class="inv-break" style="margin-top:2px">${c.closed ? `<span>Fatura a pagar <b>${brl(c.closed.total)}</b></span>` : ""}<span>Fatura aberta <b>${brl(c.open.total)}</b></span>${c.future_installments ? `<span>Parcelas futuras <b>${brl(c.future_installments)}</b></span>` : ""}</div>` : ""}
     </div>`).join("") || '<div class="card empty">Nenhum cartão cadastrado.</div>'}</div>
   <div class="card" style="margin-top:16px"><h2>Parcelamentos em aberto</h2>
     ${plans.length ? `<p class="muted small">Este mês entram <b>${dueThisMonth.length}</b> parcela(s) somando <b>${brl(dueTotal)}</b> nas faturas.</p>` : ""}

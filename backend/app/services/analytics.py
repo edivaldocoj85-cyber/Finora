@@ -134,8 +134,19 @@ def card_invoices(db: Session, user_id: int, ref: date):
         # Saldo devedor real: cartões conectados via Open Finance reportam o total que o
         # banco cobra (inclui faturas anteriores não pagas / rotativo); a fatura do ciclo
         # aberto sozinha subestimaria a dívida nesse caso. Cartão manual não tem outra fonte.
+        # limite comprometido, como o banco calcula: fatura a pagar + aberta + todas as parcelas
+        # que ainda vão entrar nas próximas faturas (prevista ou lançada com data futura)
+        first_ym = payable["ym"]
+        committed = 0.0
+        for t in db.query(Transaction).filter(Transaction.account_id == acc.id,
+                                              Transaction.type.in_(("expense", "income")),
+                                              or_(Transaction.invoice_month >= first_ym,
+                                                  Transaction.date >= date.fromisoformat(payable["period_start"]))):
+            if (t.invoice_month or invoice_of_date(acc, t.date)) >= first_ym:
+                committed += t.amount if t.type == "expense" else -t.amount
+        future = committed - cur["total"] - (closed["total"] if closed else 0)
         outstanding = abs(acc.balance) if acc.pluggy_account_id else cur["total"] + (closed["total"] if closed else 0)
-        used = cur["total"] + (closed["total"] if closed else 0)
+        used = max(committed, 0)
         out.append({"account_id": acc.id, "name": acc.name, "limit": acc.credit_limit,
                     # campos de antes = fatura a pagar (fechada, se houver; senão a aberta)
                     "total": payable["total"], "period_start": payable["period_start"],
@@ -143,6 +154,8 @@ def card_invoices(db: Session, user_id: int, ref: date):
                     "open": cur, "closed": closed,
                     "missing_days": not (acc.closing_day and acc.due_day),
                     "outstanding_balance": round(max(outstanding, 0), 2),
+                    "committed": round(used, 2), "future_installments": round(max(future, 0), 2),
+                    "available": round(acc.credit_limit - used, 2) if acc.credit_limit else None,
                     "usage_pct": round(used / acc.credit_limit * 100, 1) if acc.credit_limit else None})
     return out
 
