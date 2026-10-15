@@ -922,19 +922,23 @@ function importForm() {
       last = r;
       const isCard = accs.find((a) => String(a.id) === accId())?.kind === "credit_card";
       const looksInverted = isCard && r.new && !r.expenses && r.incomes;
-      const chip = { new: '<span class="chip c-green">novo</span>', dup: '<span class="chip">já importado</span>', skip: '<span class="chip c-amber">pagamento da fatura</span>' };
+      const chip = { new: '<span class="chip c-green">novo</span>', dup: '<span class="chip">já importado</span>', skip: '<span class="chip c-amber">pagamento da fatura</span>', match: '<span class="chip c-violet">parcela prevista</span>' };
+      const todo = r.new + r.matched + r.future;
       box.innerHTML = `<div class="imp-sum">
           <span class="chip c-cyan">${r.format.toUpperCase()}</span>
-          <b>${r.new}</b> ${r.new === 1 ? "novo" : "novos"}${r.duplicates ? ` · ${r.duplicates} já importado(s)` : ""}${r.skipped ? ` · ${r.skipped} pagamento(s) de fatura ignorado(s)` : ""}
+          <b>${r.new}</b> ${r.new === 1 ? "novo" : "novos"}${r.duplicates ? ` · ${r.duplicates} já importado(s)` : ""}${r.matched ? ` · ${r.matched} confirma(m) parcela(s) prevista(s)` : ""}${r.skipped ? ` · ${r.skipped} pagamento(s) de fatura ignorado(s)` : ""}
           <span class="imp-tot">Gastos <b class="neg">${brl(r.expenses)}</b>${r.incomes ? ` · Créditos <b class="pos">${brl(r.incomes)}</b>` : ""}</span>
         </div>
+        ${r.future ? `<p class="small imp-fut">${navIcon("cards")} Também ${r.future === 1 ? "vai ser lançada 1 parcela futura" : `vão ser lançadas ${r.future} parcelas futuras`} (${brl(r.future_amount)}) nas faturas dos próximos meses.</p>` : ""}
         ${looksInverted ? `<p class="small imp-warn">As compras estão entrando como crédito. Se isso é uma fatura, marque a opção "compras com valor positivo" acima.</p>` : ""}
         <div class="table-wrap imp-table"><table><thead><tr><th>Data</th><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead><tbody>
         ${r.rows.map((x) => `<tr${x.status !== "new" ? ' class="muted"' : ""}><td>${fdate(x.date)}</td><td>${esc(x.description)}${x.installment ? ` <span class="chip">${esc(x.installment)}</span>` : ""}</td>
           <td class="num ${x.amount < 0 ? "neg" : "pos"}">${x.amount < 0 ? "-" : ""}${brl(Math.abs(x.amount))}</td><td>${chip[x.status]}</td></tr>`).join("")}
         </tbody></table></div>${r.total > r.rows.length ? `<p class="small muted">Mostrando ${r.rows.length} de ${r.total} linhas.</p>` : ""}`;
-      $("#fSave").disabled = !r.new;
-      $("#fSave").textContent = r.new ? `Importar ${r.new} ${r.new === 1 ? "lançamento" : "lançamentos"}` : "Nada novo pra importar";
+      $("#fSave").disabled = !todo;
+      $("#fSave").textContent = !todo ? "Nada novo pra importar"
+        : r.new ? `Importar ${r.new} ${r.new === 1 ? "lançamento" : "lançamentos"}${r.future ? ` + ${r.future} ${r.future === 1 ? "parcela" : "parcelas"}` : ""}`
+        : r.future ? `Lançar ${r.future} ${r.future === 1 ? "parcela futura" : "parcelas futuras"}` : "Confirmar parcelas";
     } catch (e) {
       if (my !== seq) return;
       box.innerHTML = ""; $("#formError").textContent = e.message;
@@ -946,12 +950,12 @@ function importForm() {
   $("#fCancel").onclick = () => dlg.close();
   form.onsubmit = async (e) => {
     e.preventDefault();
-    if (!last?.new) return;
+    if (!last || !(last.new + last.matched + last.future)) return;
     $("#fSave").disabled = true; $("#fSave").classList.add("loading");
     try {
       const r = await send(false);
       dlg.close(); route();
-      toast(r.imported === 1 ? "1 lançamento importado" : `${r.imported} lançamentos importados`, "success");
+      toast(`${r.imported === 1 ? "1 lançamento importado" : `${r.imported} lançamentos importados`}${r.future ? ` · ${r.future} ${r.future === 1 ? "parcela futura lançada" : "parcelas futuras lançadas"}` : ""}`, "success");
     } catch (err) { $("#formError").textContent = err.message; shakeEl(dlg); $("#fSave").disabled = false; }
     finally { $("#fSave").classList.remove("loading"); }
   };

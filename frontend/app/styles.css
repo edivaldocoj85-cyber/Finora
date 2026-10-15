@@ -416,3 +416,4 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .imp-table th { position: sticky; top: 0; background: var(--surface); }
 .imp-table td, .imp-table th { padding: 8px; font-size: 13px; }
 .imp-table td:nth-child(2) { white-space: normal; min-width: 140px; }
+.imp-fut { display: flex; align-items: center; gap: 6px; margin: 4px 0; color: var(--violet); } .imp-fut .nav-icon { width: 16px; height: 16px; flex: none; }

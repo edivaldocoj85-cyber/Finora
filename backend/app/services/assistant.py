@@ -33,7 +33,7 @@ HELP_TOPICS = [
     {"kw": ["import", "csv", "ofx", "xml", "fatura", "extrato manual", "planilha"],
      "a": "Vá em **Lançamentos → Importar extrato**, escolha a conta ou o cartão e envie o arquivo que o "
           "banco exporta, em **CSV** ou **OFX/XML** (extrato ou fatura do cartão). As colunas são reconhecidas "
-          "sozinhas e você vê uma prévia antes de confirmar; parcelas (\"Parcela 3/10\") viram parcelamento e o "
+          "sozinhas e você vê uma prévia antes de confirmar; parcelas (\"Parcela 3/10\") viram parcelamento, as parcelas seguintes já entram nas faturas dos próximos meses e o "
           "pagamento da fatura é ignorado. Reimportar o mesmo arquivo não duplica. Você pode configurar um lembrete "
           "diário, semanal ou mensal pra não esquecer de importar — isso fica na edição da conta."},
     {"kw": ["conect", "open finance", "pluggy", "sincroniz", "banco automatic"],
