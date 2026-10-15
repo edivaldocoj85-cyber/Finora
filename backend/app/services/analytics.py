@@ -274,7 +274,11 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
 
     goals = db.query(Goal).filter_by(user_id=user_id).all()
     emergency_fund = next((g for g in goals if g.kind == "emergency_fund"), None)
+    health = financial_health(db, user_id, ref, cash=cash, pots_total=pots_total, invest=invest,
+                              assets_total=assets_total, cards=cards, months=months,
+                              expected_income=expected_income, contracts=contracts)
     return {
+        "health": health,
         "ref": ref.isoformat(),
         "net_worth": round(cash + invest + assets_total - card_debt, 2),
         "cash": round(cash, 2), "investments": round(invest, 2), "pots_total": round(pots_total, 2), "card_debt": round(card_debt, 2),
@@ -300,6 +304,80 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         },
         "unread_alerts": db.query(Alert).filter_by(user_id=user_id, read=False).count(),
     }
+
+
+def _kpi(key, label, value, fmt, status, target, hint):
+    return {"key": key, "label": label, "value": None if value is None else round(value, 2), "format": fmt,
+            "status": status, "target": target, "hint": hint}
+
+
+def financial_health(db: Session, user_id: int, ref: date, *, cash, pots_total, invest, assets_total,
+                     cards, months, expected_income, contracts) -> dict:
+    """Indicadores de saúde financeira, cada um com faixa de referência e explicação.
+    Base de gasto e renda: média dos 3 últimos meses fechados (o mês atual está incompleto)."""
+    closed = [m for m in months[:-1] if m["income"] or m["expense"]][-3:]
+    avg_exp = sum(m["expense"] for m in closed) / len(closed) if closed else months[-1]["expense"]
+    avg_inc = sum(m["income"] for m in closed) / len(closed) if closed else months[-1]["income"]
+    income = expected_income or avg_inc
+    liquid = cash + pots_total  # caixinhas têm liquidez diária
+    in30 = ref + timedelta(days=30)
+
+    # dívidas: o que está comprometido nos cartões + o que falta pagar de financiamentos
+    card_committed = sum(c.get("committed", c["total"]) for c in cards)
+    financing_left, monthly_debt = 0.0, 0.0
+    for c in contracts:
+        if c.kind == "financing" or c.total_installments:
+            left = c.total_installments or 0
+            if c.start_date and c.total_installments:
+                done = (ref.year - c.start_date.year) * 12 + ref.month - c.start_date.month
+                left = max(c.total_installments - max(done, 0), 0)
+            if left or c.kind == "financing":
+                financing_left += c.amount * (left or 12)
+                monthly_debt += c.amount
+    # parcelas de cartão que caem por mês (média das próximas faturas)
+    inst_month = sum(c.get("future_installments", 0) for c in cards) / 6 if cards else 0
+    monthly_debt += inst_month
+    debt = card_committed + financing_left
+    assets_all = liquid + (invest - pots_total) + assets_total
+
+    # liquidez corrente: o que entra/está disponível em 30 dias ÷ o que vence em 30 dias
+    due30 = sum(c["total"] for c in cards if date.fromisoformat(c["due_date"]) <= in30)
+    card_ids = {c["account_id"] for c in cards}  # contrato cobrado no cartão já está na fatura
+    due30 += sum(c.amount for c in contracts if c.account_id not in card_ids)
+    recv30 = sum(r.amount for r in db.query(Receivable).filter(Receivable.user_id == user_id,
+                 Receivable.received_at.is_(None), Receivable.due_date <= in30))
+    current_ratio = (liquid + recv30 + income) / due30 if due30 else None
+
+    months_cov = liquid / avg_exp if avg_exp else None
+    savings = (income - avg_exp) / income * 100 if income else None
+    debt_ratio = debt / assets_all * 100 if assets_all > 0 else (100.0 if debt else 0.0)
+    burden = monthly_debt / income * 100 if income else None
+
+    def st(v, good, warn, higher_is_better=True):
+        if v is None:
+            return "unknown"
+        if higher_is_better:
+            return "good" if v >= good else "warn" if v >= warn else "bad"
+        return "good" if v <= good else "warn" if v <= warn else "bad"
+
+    kpis = [
+        _kpi("reserve_months", "Reserva", months_cov, "months", st(months_cov, 6, 3),
+             "6 meses ou mais", "Quantos meses o dinheiro das contas e caixinhas cobre o seu gasto médio."),
+        _kpi("savings_rate", "Taxa de poupança", savings, "pct", st(savings, 20, 10),
+             "20% da renda ou mais", "Quanto da renda sobra, em média, nos últimos 3 meses."),
+        _kpi("current_ratio", "Liquidez de 30 dias", current_ratio, "ratio", st(current_ratio, 1.5, 1.0),
+             "acima de 1,5", "O que você tem e vai receber em 30 dias ÷ o que vence em 30 dias (faturas e contas fixas)."),
+        _kpi("debt_burden", "Renda comprometida com dívidas", burden, "pct", st(burden, 15, 30, False),
+             "até 30% da renda", "Financiamentos e parcelas de cartão por mês ÷ renda."),
+        _kpi("debt_ratio", "Endividamento", debt_ratio, "pct", st(debt_ratio, 20, 50, False),
+             "até 50% do patrimônio", "Tudo o que você deve (cartões + saldo dos financiamentos) ÷ tudo o que você tem."),
+    ]
+    order = {"bad": 0, "warn": 1, "good": 2, "unknown": 3}
+    known = [k for k in kpis if k["status"] != "unknown"]
+    score = round(sum({"good": 100, "warn": 55, "bad": 15}[k["status"]] for k in known) / len(known)) if known else None
+    return {"score": score, "kpis": kpis, "worst": min(kpis, key=lambda k: order[k["status"]])["key"] if known else None,
+            "base": {"avg_expense": round(avg_exp, 2), "income": round(income, 2), "liquid": round(liquid, 2),
+                     "debt": round(debt, 2), "monthly_debt": round(monthly_debt, 2)}}
 
 
 def _alert(db, user_id, key, level, title, message):
