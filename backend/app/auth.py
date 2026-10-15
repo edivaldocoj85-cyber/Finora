@@ -137,7 +137,21 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     return u
 
 
-def current_user_active(u: User = Depends(current_user)) -> User:
+# quem tem acesso restrito a centros de custo só usa lançamentos e o relatório por centro
+_CC_ALLOWED = (("GET", "/api/me"), ("PATCH", "/api/me"), ("GET", "/api/workspaces"), ("*", "/api/transactions"),
+               ("GET", "/api/categories"), ("GET", "/api/accounts"), ("GET", "/api/cost-centers"),
+               ("GET", "/api/reports/cost-centers"), ("GET", "/api/tags"), ("*", "/api/shared-access"))
+_CC_BLOCKED = ("/api/transactions/import", "/api/transactions/export")
+
+
+def _cc_path_ok(method: str, path: str) -> bool:
+    if any(path.startswith(b) for b in _CC_BLOCKED):
+        return False
+    return any((m == "*" or m == method) and (path == p or path.startswith(p + "/") or path.startswith(p + "?"))
+               for m, p in _CC_ALLOWED)
+
+
+def current_user_active(request: Request, u: User = Depends(current_user)) -> User:
     """current_user + teste grátis ainda válido (ou plano pago, ou admin). Usado nos
     endpoints que de fato dão acesso ao produto — /me continua em current_user puro, pra
     o front sempre conseguir saber o status da conta mesmo com o teste vencido. Quem está
@@ -146,6 +160,8 @@ def current_user_active(u: User = Depends(current_user)) -> User:
     if (u.workspace_role == "owner" and not u.is_admin and u.plan == "trial"
             and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at):
         raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "Seu período de teste acabou.")
+    if getattr(u, "workspace_cc", None) and not _cc_path_ok(request.method, request.url.path):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Seu acesso é só aos lançamentos dos seus centros de custo.")
     return u
 
 

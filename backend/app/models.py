@@ -123,6 +123,7 @@ class Transaction(Owned, Base):
     cost_center_id: Mapped[int | None] = mapped_column(ForeignKey("cost_centers.id", ondelete="SET NULL"), index=True)
     # tags livres em texto: ",viagem,casamento," (vírgulas nas pontas pra filtrar com LIKE '%,viagem,%')
     tags: Mapped[str] = mapped_column(String(300), default="")
+    reconciled_at: Mapped[datetime | None] = mapped_column(DateTime)  # conferido com o extrato do banco
 
     account = relationship("Account", foreign_keys=[account_id])
     to_account = relationship("Account", foreign_keys=[to_account_id])
@@ -186,6 +187,7 @@ class SharedAccess(Base):
     member_email: Mapped[str] = mapped_column(String(180), index=True)
     member_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     role: Mapped[str] = mapped_column(String(10), default="editor")  # editor | viewer
+    cost_center_ids: Mapped[str | None] = mapped_column(String(200))  # "3,7": só vê e lança nesses centros de custo
     invited_at: Mapped[datetime] = mapped_column(DateTime, default=now)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime)

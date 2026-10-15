@@ -113,6 +113,7 @@ const ROUTES = [
   { id: "report", label: "Relatório do mês", icon: "contracts", hidden: true },
 ];
 function visibleRoutes() {
+  if (state.user?.workspace_cc?.length) return ROUTES.filter((r) => ["transactions", "costcenters", "settings"].includes(r.id));
   return state.user?.is_admin ? [...ROUTES, { id: "admin", label: "Administração", icon: "admin" }] : ROUTES;
 }
 
@@ -421,13 +422,15 @@ async function boot() {
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#userName").textContent = state.user.name;
   renderWorkspaceBanner(); renderWorkspaceSelect();
+  const restricted = !!state.user.workspace_cc?.length;
+  ["#alertsBtn", "#assistantBtn"].forEach((s) => $(s)?.classList.toggle("hidden", restricted));
   if (!$("#monthRef").value) $("#monthRef").value = today().slice(0, 7);
   // sem isso, uma falha aqui deixava o painel aberto e vazio (tela branca, sem aviso)
   try { buildNav(); await refreshRefs(); route(); } catch (e) {
     $("#view").innerHTML = `<div class="card"><h3>Não foi possível carregar seus dados</h3><p class="muted">${esc(e.message || "Erro desconhecido")}</p><button class="btn" onclick="location.reload()">Tentar de novo</button></div>`;
     return;
   }
-  if (!state.user.onboarded) startOnboarding(); else dailyPrompt();
+  if (!state.user.onboarded && !restricted) startOnboarding(); else dailyPrompt();
   apCheckNudges();
 }
 /* 1º acesso do dia: sugere lançar os gastos de hoje. Marca o dia antes de perguntar, então
@@ -539,7 +542,7 @@ function animateCounters(container) {
 function route() {
   if (!state.user) return;
   const id = location.hash.slice(1) || "dashboard";
-  const r = visibleRoutes().find((x) => x.id === id) || (id === "more" ? { id: "more", label: "Menu" } : ROUTES[0]);
+  const r = visibleRoutes().find((x) => x.id === id) || (id === "more" ? { id: "more", label: "Menu" } : visibleRoutes()[0]);
   document.querySelectorAll("[data-r]").forEach((a) => a.classList.toggle("active", a.dataset.r === r.id));
   $("#pageTitle").textContent = r.label;
   state.charts.forEach((c) => c.destroy()); state.charts = [];
@@ -598,7 +601,7 @@ function openForm({ title, fields, values = {}, onSubmit, onDelete, extra = "" }
   dlg.showModal();
 }
 const catOptions = (kind) => [["", "Automática"], ...state.cats.filter((c) => !kind || c.kind === kind).map((c) => [c.id, c.name])];
-const ccOptions = () => [["0", "Nenhum"], ...state.costCenters.filter((c) => !c.archived).map((c) => [c.id, c.name])];
+const ccOptions = () => [...(state.user?.workspace_cc?.length ? [] : [["0", "Nenhum"]]), ...state.costCenters.filter((c) => !c.archived).map((c) => [c.id, c.name])];
 const tagsChips = (tags) => (tags || []).map((t) => `<span class="chip c-tag">#${esc(t)}</span>`).join(" ");
 const accOptions = () => state.accounts.filter((a) => !a.archived).map((a) => [a.id, `${a.name}${a.kind === "credit_card" ? " (cartão)" : ""}`]);
 
@@ -911,7 +914,7 @@ VIEWS.transactions = async (v) => {
       <select id="fcc" title="Centro de custo"><option value="">Todo centro de custo</option><option value="0">Sem centro de custo</option>${state.costCenters.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
       <input id="ftag" placeholder="#tag" title="Filtrar por tag" style="max-width:120px">
       <select id="fsrc" title="Origem"><option value="">Toda origem</option><option value="manual">Lançado manual/CSV</option><option value="pluggy">Open Finance</option></select>
-      <button class="btn" id="imp">Importar extrato</button><button class="btn" id="exp">Exportar</button>
+      <button class="btn" id="imp">Importar extrato</button><button class="btn" id="rec" title="Conferir o extrato do banco com o que já foi lançado">Conciliar</button><button class="btn" id="exp">Exportar</button>
     </div>
     <div class="toolbar">
       <input id="fstart" type="date" title="De" value="${s}">
@@ -950,7 +953,7 @@ VIEWS.transactions = async (v) => {
     $("#sum").innerHTML = `${rows.length} lançamento(s) · Receitas <b class="pos">${brl(inc)}</b> · Despesas <b class="neg">${brl(exp)}</b>`;
     sel.clear(); syncBulk();
     $("#tb").innerHTML = rows.map((t) => `<tr class="clickable" data-id="${t.id}" tabindex="0" role="button">${canEdit() ? `<td class="sel"><input type="checkbox" data-sel="${t.id}" aria-label="Selecionar ${esc(t.description)}"></td>` : ""}<td>${fdate(t.date)}</td>
-      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip c-violet">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip c-cyan">Open Finance</span>' : ""}${t.cost_center_name ? ` <span class="chip c-cc">${esc(t.cost_center_name)}</span>` : ""} ${tagsChips(t.tags)}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
+      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip c-violet">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip c-cyan">Open Finance</span>' : ""}${t.reconciled ? ' <span class="chip c-green" title="Conferido com o extrato do banco">✓ conciliado</span>' : ""}${t.cost_center_name ? ` <span class="chip c-cc">${esc(t.cost_center_name)}</span>` : ""} ${tagsChips(t.tags)}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
       <td class="hide-sm"><span class="dot" style="display:inline-block;background:${esc(t.category_color)}"></span> ${esc(t.category_name || "—")}</td>
       <td class="hide-sm">${esc(t.account_name)}</td>
       <td class="num ${t.type === "income" ? "pos" : t.type === "expense" ? "neg" : "muted"}">${t.type === "expense" ? "-" : ""}${brl(t.amount)}</td></tr>`).join("")
@@ -1024,11 +1027,63 @@ VIEWS.transactions = async (v) => {
     const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = "finora-lancamentos.csv"; a.click();
   };
   $("#imp").onclick = importForm;
+  $("#rec").onclick = reconcileForm;
   await load();
 };
 
 /* importar extrato/fatura (CSV ou OFX/XML): escolhe conta e arquivo, vê a prévia do que
    entra (novos, já importados, pagamento de fatura ignorado) e só então grava */
+/* conciliação bancária: extrato do banco × lançamentos (services/reconcile.py) */
+function reconcileForm() {
+  if (!canEdit()) { toast("Você tem acesso somente leitura a esses dados.", "error"); return; }
+  const accs = state.accounts.filter((a) => !a.archived && a.kind !== "credit_card");
+  if (!accs.length) { toast("Cadastre uma conta corrente ou poupança primeiro."); return; }
+  const form = $("#modalForm"), dlg = $("#modal");
+  form.innerHTML = `<h2>Conciliar extrato</h2>
+    <p class="muted small">Envie o extrato da conta (OFX ou CSV). O Finora confere linha a linha com o que você já lançou: o que bate fica <b>conciliado</b>, o que está só no banco entra como <b>novo</b> e o que está só no Finora aparece pra você decidir. Cartão de crédito se confere importando a fatura.</p>
+    <label>Conta<select id="rcAcc">${accs.map((a) => `<option value="${a.id}">${esc(a.name)}</option>`).join("")}</select></label>
+    <label>Extrato<input type="file" id="rcFile" accept=".ofx,.xml,.csv,.txt"></label>
+    <div id="rcOut"></div><p class="error" id="formError"></p>
+    <div class="modal-actions"><button type="button" class="btn" id="fCancel">Fechar</button><button class="btn primary" id="fSave" disabled>Conciliar</button></div>`;
+  const send = (apply) => { const fd = new FormData(); fd.append("file", $("#rcFile").files[0]); return api(`/reconcile?account_id=${$("#rcAcc").value}&apply=${apply}`, { body: fd }); };
+  const show = (r) => {
+    const st = { matched: '<span class="chip c-green">conciliado</span>', new: '<span class="chip c-cyan">novo</span>' };
+    $("#rcOut").innerHTML = `<div class="imp-inv"><div class="imp-totals">
+        <div><span>Conciliados</span><b>${r.matched}</b></div><div><span>Novos no banco (vão ser lançados)</span><b>${r.new}</b></div>
+        <div><span>Só no Finora</span><b class="${r.only_finora.length ? "neg" : ""}">${r.only_finora.length}</b></div>
+        ${r.bank_balance != null ? `<div><span>Saldo no banco</span><b>${brl(r.bank_balance)}</b></div><div><span>Saldo no Finora${r.applied ? "" : " (antes)"}</span><b>${brl(r.finora_balance)}</b></div>
+          <div><span>Diferença</span><b class="${Math.abs(r.difference) > 0.009 ? "neg" : "pos"}">${brl(r.difference)}</b></div>` : ""}</div></div>
+      ${r.only_finora.length ? `<p class="small imp-warn">Estão no Finora no período do extrato (${fdate(r.period[0])} a ${fdate(r.period[1])}), mas o banco não mostra. Pode ser duplicado, um agendamento que não aconteceu ou valor errado:</p>
+        <div class="list imp-extra">${r.only_finora.map((t) => `<div class="li"><div class="grow"><div class="title">${esc(t.description)}</div><div class="small muted">${fdate(t.date)}</div></div><div class="amount">${brl(t.amount)}</div><button type="button" class="btn small danger" data-rmtx="${t.id}" style="margin-left:6px">Excluir</button></div>`).join("")}</div>` : ""}
+      <div class="table-wrap imp-table"><table><thead><tr><th>Data</th><th>No banco</th><th class="num">Valor</th><th></th></tr></thead><tbody>
+        ${r.items.map((i) => `<tr><td>${fdate(i.date)}</td><td>${esc(i.description)}${i.tx_description && i.tx_description !== i.description ? `<div class="small muted">no Finora: ${esc(i.tx_description)}</div>` : ""}</td><td class="num ${i.amount < 0 ? "neg" : "pos"}">${brl(i.amount)}</td><td>${st[i.status]}</td></tr>`).join("")}
+      </tbody></table></div>`;
+    $("#rcOut").querySelectorAll("[data-rmtx]").forEach((b) => (b.onclick = async () => {
+      if (!await askConfirm({ title: "Excluir esse lançamento?", message: "O saldo da conta é recalculado.", confirmLabel: "Excluir", danger: true })) return;
+      await api(`/transactions/${b.dataset.rmtx}`, { method: "DELETE" }); b.closest(".li").remove(); toast("Lançamento excluído", "success");
+    }));
+    $("#fSave").disabled = r.applied || !(r.matched + r.new);
+    $("#fSave").textContent = r.applied ? "Conciliado" : r.new ? `Conciliar e lançar ${r.new} novo(s)` : "Marcar como conciliado";
+  };
+  const preview = async () => {
+    $("#formError").textContent = ""; $("#fSave").disabled = true;
+    if (!$("#rcFile").files[0]) { $("#rcOut").innerHTML = ""; return; }
+    $("#rcOut").innerHTML = '<div class="empty">Conferindo…</div>';
+    try { show(await send(false)); } catch (e) { $("#rcOut").innerHTML = ""; $("#formError").textContent = e.message; }
+  };
+  $("#rcFile").onchange = preview; $("#rcAcc").onchange = preview;
+  $("#fCancel").onclick = () => dlg.close();
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    $("#fSave").disabled = true; $("#fSave").classList.add("loading");
+    try { const r = await send(true); show(r); toast("Extrato conciliado", "success"); }
+    catch (err) { $("#formError").textContent = err.message; $("#fSave").disabled = false; }
+    finally { $("#fSave").classList.remove("loading"); }
+  };
+  dlg.onclose = () => { dlg.onclose = null; route(); };
+  dlg.showModal();
+}
+
 function importForm() {
   if (!canEdit()) { toast("Você tem acesso somente leitura a esses dados.", "error"); return; }
   if (!state.accounts.length) { toast("Cadastre uma conta ou cartão primeiro."); location.hash = "accounts"; return; }
@@ -2260,7 +2315,11 @@ async function renderSharedAccessCard() {
     </div>`;
   }
   if (isOwner) {
+    const ccs = state.costCenters.filter((c) => !c.archived);
     html += `<p class="muted small">Convide alguém (sócio(a), cônjuge, contador) pra ver e editar os mesmos dados financeiros que você.</p>
+      ${ccs.length ? `<details class="small" style="margin-bottom:8px"><summary>Limitar a centros de custo (ex.: funcionário que só lança despesas da obra)</summary>
+        <div class="row" style="flex-wrap:wrap;gap:4px 14px;margin-top:6px">${ccs.map((c) => `<label class="check" style="margin:0"><input type="checkbox" class="shCc" value="${c.id}"> ${esc(c.name)}</label>`).join("")}</div>
+        <p class="muted" style="margin:4px 0 0">Com algum marcado, a pessoa só vê e lança nesses centros; painel, relatórios e as outras telas ficam fechados pra ela.</p></details>` : ""}
       <div class="row"><input id="shEmail" type="email" placeholder="E-mail da pessoa"><select id="shRole"><option value="editor">Pode editar</option><option value="viewer">Só visualizar</option></select><button class="btn" id="shInvite">Convidar</button></div>
       <div class="list" style="margin-top:12px">${members.map((m) => `<div class="li"><div class="grow"><div class="title">${esc(m.email)} ${m.accepted_at ? "" : '<span class="chip c-amber">convite pendente</span>'}</div><div class="small muted">${roleLabel[m.role]}</div></div><button class="btn small danger" data-revoke="${m.id}">Remover</button></div>`).join("") || '<div class="empty">Ninguém tem acesso à sua conta ainda.</div>'}</div>`;
   } else if (!state.user.workspace_owner) {
@@ -2284,7 +2343,8 @@ function wireSharedAccessCard(v) {
   if (inviteBtn) inviteBtn.onclick = async () => {
     const email = $("#shEmail").value.trim();
     if (!email) return;
-    try { await api("/shared-access", { body: { email, role: $("#shRole").value } }); toast("Convite enviado", "success"); route(); }
+    const cost_center_ids = [...v.querySelectorAll(".shCc:checked")].map((c) => +c.value);
+    try { await api("/shared-access", { body: { email, role: $("#shRole").value, cost_center_ids } }); toast("Convite enviado", "success"); route(); }
     catch (e) { toast(e.message, "error"); }
   };
 }

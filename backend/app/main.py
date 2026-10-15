@@ -85,6 +85,8 @@ def _migrate(engine):
             if "cost_center_id" not in cols:
                 conn.execute(text("ALTER TABLE transactions ADD COLUMN cost_center_id INTEGER"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_cost_center_id ON transactions (cost_center_id)"))
+            if "reconciled_at" not in cols:
+                conn.execute(text("ALTER TABLE transactions ADD COLUMN reconciled_at TIMESTAMP"))
             if "tags" not in cols:
                 conn.execute(text("ALTER TABLE transactions ADD COLUMN tags VARCHAR(300) DEFAULT ''"))
             if "invoice_month" not in cols:
@@ -92,6 +94,10 @@ def _migrate(engine):
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_invoice_month ON transactions (invoice_month)"))
             if "receipt_path" not in cols:
                 conn.execute(text("ALTER TABLE transactions ADD COLUMN receipt_path VARCHAR(255)"))
+        if "shared_access" in tables:
+            cols = {c["name"] for c in insp.get_columns("shared_access")}
+            if "cost_center_ids" not in cols:
+                conn.execute(text("ALTER TABLE shared_access ADD COLUMN cost_center_ids VARCHAR(200)"))
         if "categories" in tables:
             cols = {c["name"] for c in insp.get_columns("categories")}
             for col, ddl in (("code", "VARCHAR(20)"), ("dre_group", "VARCHAR(25)")):

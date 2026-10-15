@@ -27,6 +27,7 @@ from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRu
                       Goal, Income, Investment, InvestmentEvent, InvestmentTrade, PluggyItem,
                       PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
+from ..services import reconcile as reconcile_service
 from ..services import (advisor, allocation, analytics, assistant, cashflow, market, montecarlo, notifications, pluggy,
                         portfolio, pots, recurring, report, rewards, chart_of_accounts,
                         statement_import, storage, vendas)
@@ -359,11 +360,13 @@ def delete_me(u: User = Depends(current_user), db: Session = Depends(get_db)):
 class ShareIn(BaseModel):
     email: str = Field(min_length=5, max_length=180)
     role: str = Field("editor", pattern="^(editor|viewer)$")
+    cost_center_ids: list[int] = []  # vazio = acesso a tudo; preenchido = só esses centros de custo
 
 
 def share_out(s: SharedAccess, db: Session) -> dict:
     member = db.get(User, s.member_id) if s.member_id else None
     return {"id": s.id, "email": s.member_email, "role": s.role,
+            "cost_center_ids": [int(x) for x in (s.cost_center_ids or "").split(",") if x.strip().isdigit()],
             "invited_at": s.invited_at.isoformat(),
             "accepted_at": s.accepted_at.isoformat() if s.accepted_at else None,
             "member_name": member.name if member else None}
@@ -390,7 +393,10 @@ def invite_shared_access(data: ShareIn, u: User = Depends(current_user_active), 
         raise HTTPException(400, "Limite de 5 pessoas com acesso compartilhado por conta.")
     if db.query(SharedAccess).filter_by(owner_id=u.workspace_id, member_email=email, revoked_at=None).first():
         raise HTTPException(400, "Esse e-mail já tem um convite ativo.")
-    s = SharedAccess(owner_id=u.workspace_id, member_email=email, role=data.role)
+    for cid in data.cost_center_ids:
+        _check_fk(db, u.workspace_id, CostCenter, cid)
+    s = SharedAccess(owner_id=u.workspace_id, member_email=email, role=data.role,
+                     cost_center_ids=",".join(str(i) for i in sorted(set(data.cost_center_ids))) or None)
     db.add(s)
     db.commit()
     return share_out(s, db)
@@ -812,7 +818,7 @@ def confirm_receivable(rid: int, data: ConfirmReceiptIn, u: User = Depends(curre
 async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_editor),
                          db: Session = Depends(get_db)):
     """Anexa o comprovante de pagamento a um lançamento — "dar baixa" com prova em mãos."""
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    t = _get_tx(db, u, tid)
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
     ext = storage.ext_for(file.content_type)
@@ -831,7 +837,7 @@ async def upload_receipt(tid: int, file: UploadFile, u: User = Depends(current_e
 
 @router.get("/transactions/{tid}/receipt")
 def get_receipt(tid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    t = _get_tx(db, u, tid)
     resolved = storage.resolve(t.receipt_path) if t and t.receipt_path else None
     if not resolved:
         raise HTTPException(404, "Sem comprovante para este lançamento.")
@@ -841,7 +847,7 @@ def get_receipt(tid: int, u: User = Depends(current_user_active), db: Session = 
 
 @router.delete("/transactions/{tid}/receipt")
 def delete_receipt(tid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    t = _get_tx(db, u, tid)
     if not t:
         raise HTTPException(404, "Lançamento não encontrado")
     if t.receipt_path:
@@ -883,6 +889,17 @@ def delete_rule(rid: int, u: User = Depends(current_editor), db: Session = Depen
 
 
 # ---------------------------------------------------------------- transações
+def _cc_scope(u) -> list[int]:
+    return getattr(u, "workspace_cc", None) or []
+
+
+def _get_tx(db, u, tid):
+    """Lançamento do espaço de dados; com acesso restrito, só dos centros de custo liberados."""
+    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    cc = _cc_scope(u)
+    return t if t and (not cc or t.cost_center_id in cc) else None
+
+
 def tx_out(t: Transaction):
     d = to_dict(t)
     d["account_name"] = t.account.name if t.account else ""
@@ -890,6 +907,7 @@ def tx_out(t: Transaction):
     d["category_name"] = t.category.name if t.category else ""
     d["category_color"] = t.category.color if t.category else "#94a3b8"
     d["has_receipt"] = bool(t.receipt_path)
+    d["reconciled"] = bool(t.reconciled_at)
     d["tags"] = _tags_out(t.tags)
     d["cost_center_name"] = t.cost_center.name if t.cost_center else ""
     del d["receipt_path"]  # caminho no servidor não vai pro cliente; use GET .../receipt
@@ -905,6 +923,8 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
                       cost_center_id: Optional[int] = None, tag: Optional[str] = None,
                       limit: int = 500, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     qry = db.query(Transaction).filter(Transaction.user_id == u.workspace_id)
+    if _cc_scope(u):
+        qry = qry.filter(Transaction.cost_center_id.in_(_cc_scope(u)))
     if start: qry = qry.filter(Transaction.date >= start)
     if end: qry = qry.filter(Transaction.date <= end)
     if account_id: qry = qry.filter(Transaction.account_id == account_id)
@@ -936,6 +956,10 @@ def create_transaction(data: TransactionIn, u: User = Depends(current_editor), d
         _check_fk(db, u.workspace_id, Account, data.to_account_id)
     cat = data.category_id or categorize(db, u.workspace_id, data.description, data.type)
     cc = data.cost_center_id or None
+    if _cc_scope(u):
+        cc = cc or (_cc_scope(u)[0] if len(_cc_scope(u)) == 1 else None)
+        if cc not in _cc_scope(u):
+            raise HTTPException(403, "Escolha um dos seus centros de custo.")
     _check_fk(db, u.workspace_id, CostCenter, cc)
     tags = _tags_in(data.tags)
     created = []
@@ -966,18 +990,23 @@ class TxPatch(BaseModel):
     cost_center_id: Optional[int] = None  # 0 = tirar do centro de custo
     tags: Optional[list[str]] = None      # [] = tirar todas as tags
     create_rule: bool = False
+    reconciled: Optional[bool] = None  # marcar/desmarcar como conferido com o extrato
 
 
 @router.patch("/transactions/{tid}")
 def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_editor), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    t = _get_tx(db, u, tid)
     if not t:
         raise HTTPException(404, "Não encontrado")
     _apply_tx_effect(db, t, -1)  # desfaz o efeito de caixa atual antes de editar
 
-    vals = data.model_dump(exclude_none=True, exclude={"create_rule"})
+    vals = data.model_dump(exclude_none=True, exclude={"create_rule", "reconciled"})
+    if data.reconciled is not None:
+        t.reconciled_at = datetime.utcnow() if data.reconciled else None
     if "cost_center_id" in vals:
         vals["cost_center_id"] = vals["cost_center_id"] or None
+        if _cc_scope(u) and vals["cost_center_id"] not in _cc_scope(u):
+            raise HTTPException(403, "Você só pode usar os seus centros de custo.")
         _check_fk(db, u.workspace_id, CostCenter, vals["cost_center_id"])
     if "tags" in vals:
         vals["tags"] = _tags_in(vals["tags"])
@@ -1006,7 +1035,7 @@ def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_editor)
 
 @router.delete("/transactions/{tid}")
 def delete_transaction(tid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter_by(id=tid, user_id=u.workspace_id).first()
+    t = _get_tx(db, u, tid)
     if not t:
         raise HTTPException(404, "Não encontrado")
     _apply_tx_effect(db, t, -1)
@@ -1030,6 +1059,10 @@ def bulk_transactions(data: TxBulk, u: User = Depends(current_editor), db: Sessi
     desfaz o efeito de caixa de cada um, igual ao DELETE individual."""
     txs = db.query(Transaction).filter(Transaction.user_id == u.workspace_id,
                                        Transaction.id.in_(data.ids)).all()
+    if _cc_scope(u):
+        txs = [t for t in txs if t.cost_center_id in _cc_scope(u)]
+        if data.action == "cost_center" and (data.cost_center_id or None) not in _cc_scope(u):
+            raise HTTPException(403, "Você só pode usar os seus centros de custo.")
     if data.action == "categorize":
         if not data.category_id:
             raise HTTPException(400, "Escolha a categoria.")
@@ -1329,7 +1362,10 @@ class CostCenterIn(BaseModel):
 
 @router.get("/cost-centers")
 def list_cost_centers(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    return [to_dict(c) for c in db.query(CostCenter).filter_by(user_id=u.workspace_id).order_by(CostCenter.archived, CostCenter.name)]
+    q = db.query(CostCenter).filter_by(user_id=u.workspace_id)
+    if _cc_scope(u):
+        q = q.filter(CostCenter.id.in_(_cc_scope(u)))
+    return [to_dict(c) for c in q.order_by(CostCenter.archived, CostCenter.name)]
 
 
 @router.post("/cost-centers")
@@ -1378,6 +1414,9 @@ def report_cost_centers(start: date, end: date, u: User = Depends(current_user_a
     txs = db.query(Transaction).filter(Transaction.user_id == u.workspace_id, Transaction.date >= start,
                                        Transaction.date <= end, Transaction.type.in_(("expense", "income"))).all()
     centers = {c.id: c for c in db.query(CostCenter).filter_by(user_id=u.workspace_id)}
+    if _cc_scope(u):
+        txs = [t for t in txs if t.cost_center_id in _cc_scope(u)]
+        centers = {k: v for k, v in centers.items() if k in _cc_scope(u)}
     by_cc: dict = {}
     by_tag: dict = {}
     for t in txs:
@@ -1576,6 +1615,49 @@ def simulate_montecarlo(data: MonteCarloIn, u: User = Depends(current_user_activ
                         _rl=Depends(rate_limit("montecarlo", 30, 300))):
     r = montecarlo.simulate(data.target, data.initial, data.monthly, data.months, data.profile)
     r["required_monthly_80"] = montecarlo.required_monthly(data.target, data.initial, data.months, data.profile, 0.8)
+    return r
+
+
+# ------------------------------------------------------------------ conciliação bancária
+@router.post("/reconcile")
+async def reconcile_statement(account_id: int, file: UploadFile, apply: bool = False,
+                              u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    """Confere o extrato com os lançamentos da conta. apply=True marca os conciliados e
+    lança as linhas novas do banco; o que está só no Finora fica pra pessoa decidir."""
+    acc = db.query(Account).filter_by(id=account_id, user_id=u.workspace_id).first()
+    if not acc or acc.kind == "credit_card":
+        raise HTTPException(400, "Escolha uma conta corrente, poupança ou dinheiro (cartão se confere pela fatura).")
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(400, "Arquivo grande demais (máx. 5 MB).")
+    try:
+        r = reconcile_service.run(db, u.workspace_id, acc, file.filename or "", raw)
+    except statement_import.StatementError as e:
+        raise HTTPException(400, str(e))
+    if apply:
+        now = datetime.utcnow()
+        for i in r["items"]:
+            if i["status"] == "matched":
+                t = i["_tx"]
+                t.reconciled_at = t.reconciled_at or now
+                if not t.external_id and not db.query(Transaction.id).filter_by(user_id=u.workspace_id, external_id=i["_ext"]).first():
+                    t.external_id = i["_ext"]
+            else:
+                d, v = date.fromisoformat(i["date"]), i["amount"]
+                typ = "expense" if v < 0 else "income"
+                t = Transaction(user_id=u.workspace_id, account_id=acc.id, date=d, description=i["description"],
+                                amount=abs(v), type=typ, external_id=i["_ext"], source="manual", reconciled_at=now,
+                                category_id=categorize(db, u.workspace_id, i["description"], typ))
+                db.add(t)
+                _adjust_balance(db, acc.id, d, v, +1)
+        db.commit()
+        r["applied"] = True
+        r["finora_balance"] = round(acc.balance, 2)
+        if r["bank_balance"] is not None:
+            r["difference"] = round(r["bank_balance"] - acc.balance, 2)
+    for i in r["items"]:
+        i.pop("_tx", None)
+        i.pop("_ext", None)
     return r
 
 
