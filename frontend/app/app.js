@@ -52,6 +52,7 @@ const ICONS = {
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  flow: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
   layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
   piggy: '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>',
   tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
@@ -89,6 +90,7 @@ const ASSET_KINDS = { imovel: "Imóvel", veiculo: "Veículo", outro: "Outro bem"
 const ROUTES = [
   { id: "dashboard", label: "Painel", icon: "dashboard", mobile: true, primary: true },
   { id: "transactions", label: "Lançamentos", icon: "transactions", mobile: true, primary: true },
+  { id: "cashflow", label: "Fluxo de caixa", icon: "flow", primary: true },
   { id: "cards", label: "Cartões", icon: "cards", mobile: true, primary: true },
   { id: "accounts", label: "Contas", icon: "accounts", primary: true },
   { id: "patrimonio", label: "Patrimônio", icon: "patrimonio", primary: true },
@@ -1409,6 +1411,62 @@ async function potMovesDialog(p) {
   dlg.onclose = () => { dlg.onclose = null; route(); };
   dlg.showModal();
 }
+
+/* ------------------------------------------------------------------ fluxo de caixa */
+const CF_GRAN = [["day", "Dia"], ["week", "Semana"], ["month", "Mês"], ["year", "Ano"]];
+const CF_EVENT = { scheduled: "Agendado", contract: "Conta fixa", income: "Renda", receivable: "A receber", invoice: "Fatura" };
+function cfLabel(b, gran) {
+  const d = new Date(b.start + "T12:00:00");
+  if (gran === "day") return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  if (gran === "week") return "sem. " + d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  if (gran === "month") return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(". de ", "/").replace(".", "");
+  return String(d.getFullYear());
+}
+
+VIEWS.cashflow = async (v) => {
+  let gran = localGet("finora_cf_gran") || "month";
+  const draw = async () => {
+    const r = await api(`/cashflow?granularity=${gran}`);
+    const neg = r.lowest && r.lowest.balance < 0;
+    v.innerHTML = `<p class="muted" style="margin:0 0 6px">O dinheiro das suas contas (corrente, poupança, dinheiro). Até hoje são os movimentos reais. Daqui pra frente é previsão: contas fixas, renda, contas a receber, faturas dos cartões no vencimento e o seu gasto médio do dia a dia (${brl(r.variable_daily)}/dia nos últimos 90 dias).</p>
+      <div class="tabs" role="tablist">${CF_GRAN.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === gran}" class="${k === gran ? "active" : ""}" data-g="${k}">${l}</button>`).join("")}</div>
+      <div class="grid g4" style="margin:12px 0 16px">
+        <div class="card stat"><h3>Saldo hoje</h3><div class="value">${brl(r.balance_today)}</div><div class="sub">nas contas</div></div>
+        <div class="card stat"><h3>Previsto no fim</h3><div class="value ${r.closing_balance < 0 ? "neg" : ""}">${brl(r.closing_balance)}</div><div class="sub">em ${fdate(r.end)}</div></div>
+        <div class="card stat"><h3>Menor saldo previsto</h3><div class="value ${neg ? "neg" : ""}">${r.lowest ? brl(r.lowest.balance) : "—"}</div><div class="sub">${r.lowest ? "em " + fdate(r.lowest.date) : "sem previsão no período"}</div></div>
+        <div class="card stat"><h3>Previsão no período</h3><div class="value" style="font-size:1.1rem"><span class="pos">+${brl(r.projected_inflow)}</span><br><span class="neg">−${brl(r.projected_outflow)}</span></div></div>
+      </div>
+      ${neg ? `<p class="small imp-warn">No ritmo atual o saldo fica negativo por volta de <b>${fdate(r.lowest.date)}</b>. Antecipe um recebimento, adie uma compra grande ou reduza o gasto do dia a dia.</p>` : ""}
+      ${r.uses_income_average ? `<p class="small muted">Você não tem renda cadastrada, então a entrada prevista é a média das receitas dos últimos 90 dias. Cadastre em Renda pra cair no dia certo.</p>` : ""}
+      <div class="card"><div class="chart-box" style="height:300px"><canvas id="cCf"></canvas></div></div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Por período</h2><div class="table-wrap"><table><thead><tr><th>Período</th><th class="num">Entradas</th><th class="num">Saídas</th><th class="num">Saldo</th></tr></thead><tbody>
+          ${r.buckets.map((b) => `<tr class="${b.status === "future" ? "cf-future" : ""}${b.status === "current" ? " cf-current" : ""}"><td>${cfLabel(b, gran)}${b.status === "current" ? ' <span class="chip c-cyan">agora</span>' : b.status === "future" ? ' <span class="chip">previsto</span>' : ""}</td>
+            <td class="num pos">${brl(b.inflow + b.projected_inflow)}</td><td class="num neg">${brl(b.outflow + b.projected_outflow)}</td><td class="num ${b.balance < 0 ? "neg" : ""}">${brl(b.balance)}</td></tr>`).join("")}
+        </tbody></table></div></div>
+        <div class="card"><h2>Próximas entradas e saídas</h2><div class="list">${r.events.slice(0, 40).map((e) => `<div class="li"><div class="grow"><div class="title">${esc(e.description)}</div><div class="small muted">${fdate(e.date)} · ${CF_EVENT[e.kind] || ""}</div></div><div class="amount ${e.amount < 0 ? "neg" : "pos"}">${e.amount < 0 ? "−" : "+"}${brl(Math.abs(e.amount))}</div></div>`).join("") || '<div class="empty">Nada previsto. Cadastre contas fixas, renda e contas a receber.</div>'}</div>
+          <p class="small muted" style="margin-top:8px">O gasto do dia a dia (${brl(r.variable_daily)}/dia) entra todo dia na previsão e não aparece nesta lista.</p></div>
+      </div>`;
+    v.querySelectorAll("[data-g]").forEach((b) => (b.onclick = () => { gran = b.dataset.g; localSet("finora_cf_gran", gran); state.charts.forEach((c) => c.destroy()); state.charts = []; draw(); }));
+    const labels = r.buckets.map((b) => cfLabel(b, gran));
+    // barras previstas mais claras (hex → rgba; canvas não entende color-mix em todo navegador)
+    const fade = (c) => { const h = c.replace("#", ""); if (h.length !== 6) return c; const n = parseInt(h, 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},.38)`; };
+    chart($("#cCf"), {
+      data: { labels, datasets: [
+        { type: "bar", label: "Entradas", data: r.buckets.map((b) => b.inflow + b.projected_inflow), borderRadius: 4,
+          backgroundColor: r.buckets.map((b) => b.status === "future" ? fade(cssVar("--green")) : cssVar("--green")) },
+        { type: "bar", label: "Saídas", data: r.buckets.map((b) => -(b.outflow + b.projected_outflow)), borderRadius: 4,
+          backgroundColor: r.buckets.map((b) => b.status === "future" ? fade(cssVar("--red")) : cssVar("--red")) },
+        { type: "line", label: "Saldo", data: r.buckets.map((b) => b.balance), borderColor: cssVar("--primary-2"), backgroundColor: cssVar("--primary-2"),
+          pointRadius: gran === "day" ? 0 : 3, tension: .25, segment: { borderDash: (c) => r.buckets[c.p1DataIndex]?.status === "future" ? [6, 4] : undefined } },
+      ] },
+      options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom" }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${brl(Math.abs(c.raw))}` } } },
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: false, ticks: { callback: (x) => brl(x).replace(",00", "") } } } },
+    });
+  };
+  await draw();
+};
 
 function costCenterForm(c = {}) {
   openForm({

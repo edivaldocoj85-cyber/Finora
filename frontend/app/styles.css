@@ -446,3 +446,8 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .chip.c-tag { background: color-mix(in srgb, var(--primary-2) 12%, var(--surface-2)); color: var(--primary-2); }
 .chip.c-cc { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
 .bulk-bar input { margin: 0; }
+
+/* fluxo de caixa */
+tr.cf-future td { color: var(--muted); }
+tr.cf-future td.pos, tr.cf-future td.neg { opacity: .75; }
+tr.cf-current td { background: color-mix(in srgb, var(--primary-2) 6%, transparent); }

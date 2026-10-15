@@ -26,7 +26,7 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
                       Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, market, pluggy, pots, statement_import, storage, vendas
+from ..services import advisor, analytics, assistant, cashflow, market, pluggy, pots, statement_import, storage, vendas
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -1180,6 +1180,16 @@ def read_alerts(u: User = Depends(current_editor), db: Session = Depends(get_db)
     db.query(Alert).filter_by(user_id=u.workspace_id, read=False).update({"read": True})
     db.commit()
     return {"ok": True}
+
+
+# ------------------------------------------------------------------ fluxo de caixa
+@router.get("/cashflow")
+def get_cashflow(granularity: str = Query("month", pattern="^(day|week|month|year)$"),
+                 start: Optional[date] = None, end: Optional[date] = None,
+                 u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    if start and end and (end - start).days > 366 * 5:
+        raise HTTPException(400, "Período grande demais (máx. 5 anos).")
+    return cashflow.build(db, u.workspace_id, granularity, start, end)
 
 
 # ------------------------------------------------------------------ centros de custo e tags
