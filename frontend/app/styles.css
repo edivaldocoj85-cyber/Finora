@@ -485,3 +485,10 @@ tr.cf-current td { background: color-mix(in srgb, var(--primary-2) 6%, transpare
   .report .grid.g4 { grid-template-columns: repeat(4, 1fr) !important; }
   .report .grid.g2 { grid-template-columns: 1fr 1fr !important; }
 }
+
+/* pessoal × empresas */
+.ws-sel { max-width: 190px; margin: 0; font-weight: 600; }
+@media (max-width: 640px) { .ws-sel { max-width: 120px; } }
+/* DRE */
+table.dre td { padding: 7px 8px; }
+table.dre tr.dre-total td { font-weight: 700; border-top: 1px solid var(--border); background: var(--surface-2); }

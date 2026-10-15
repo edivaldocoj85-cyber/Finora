@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from ..auth import current_admin, current_editor, current_user, current_user_active, rate_limit
+from ..auth import current_admin, current_editor, current_user, current_user_active, rate_limit, workspaces_of
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
@@ -28,7 +28,7 @@ from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRu
                       PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
 from ..services import (advisor, allocation, analytics, assistant, cashflow, market, montecarlo, notifications, pluggy,
-                        portfolio, pots, recurring, report, rewards,
+                        portfolio, pots, recurring, report, rewards, chart_of_accounts,
                         statement_import, storage, vendas)
 from ..services import email as email_service
 from ..services.categorizer import categorize, seed_categories
@@ -41,10 +41,10 @@ router = APIRouter(prefix="/api")
 # ver ../auth.py. O backend só lê o token de sessão já emitido; não existe mais endpoint
 # de login/registro/MFA aqui.
 def user_out(u: User, db: Session):
-    trial_expired = bool(u.workspace_id == u.id and not u.is_admin and u.plan == "trial"
+    trial_expired = bool(getattr(u, "workspace_role", "owner") == "owner" and not u.is_admin and u.plan == "trial"
                          and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at)
     workspace_owner = None
-    if u.workspace_id != u.id:
+    if u.workspace_role != "owner":
         owner = db.get(User, u.workspace_id)
         workspace_owner = {"name": owner.name, "email": owner.email} if owner else None
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
@@ -55,7 +55,10 @@ def user_out(u: User, db: Session):
             "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin,
             "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
             "trial_expired": trial_expired,
-            "workspace_role": u.workspace_role, "workspace_owner": workspace_owner}
+            "workspace_role": u.workspace_role, "workspace_owner": workspace_owner,
+            "workspace_id": u.workspace_id, "workspace_name": getattr(u, "workspace_name", "Pessoal"),
+            "workspace_entity": getattr(u, "workspace_entity", False),
+            "workspace_cc": getattr(u, "workspace_cc", []), "workspaces": workspaces_of(db, u)}
 
 
 # ---------------------------------------------------------------- acesso antecipado (landing pública)
@@ -167,7 +170,7 @@ def admin_list_users(q: Optional[str] = None, admin: User = Depends(current_admi
     if q:
         like = f"%{q.strip()}%"
         query = query.filter(or_(User.name.ilike(like), User.email.ilike(like)))
-    users = query.order_by(User.created_at.desc()).all()
+    users = query.filter(User.owner_user_id.is_(None)).order_by(User.created_at.desc()).all()  # empresas não são contas
     return [admin_user_out(u, db) for u in users]
 
 
@@ -260,6 +263,59 @@ def send_test_digest(u: User = Depends(current_user_active), db: Session = Depen
     return {"ok": True, "to": u.email}
 
 
+class CompanyIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    document: str = Field("", max_length=20)
+    kind: str = Field("pj", pattern="^(pf|pj)$")
+    chart: bool = True  # já criar com o plano de contas padrão de empresa
+
+
+@router.get("/workspaces")
+def list_workspaces(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    return workspaces_of(db, u)
+
+
+@router.post("/companies")
+def create_company(data: CompanyIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Cria uma empresa (ou outra pessoa/família) com dados separados dos seus. Ela não tem
+    login: só você (e quem você convidar pra ela) acessa, trocando no seletor do topo."""
+    if db.query(User).filter_by(owner_user_id=u.id).count() >= 10:
+        raise HTTPException(400, "Limite de 10 empresas por conta.")
+    import uuid
+    e = User(name=data.name.strip(), email=f"empresa-{uuid.uuid4().hex}@entidade.invalid", owner_user_id=u.id,
+             entity_kind=data.kind, document=re.sub(r"\D", "", data.document or ""), plan=u.plan,
+             email_digest="none", lgpd_consent_at=datetime.utcnow(), onboarded_at=datetime.utcnow())
+    db.add(e)
+    db.flush()
+    if data.kind == "pj" and data.chart:
+        chart_of_accounts.apply_default(db, e.id)
+    else:
+        seed_categories(db, e.id)
+    db.commit()
+    return {"id": e.id, "name": e.name}
+
+
+@router.put("/companies/{cid}")
+def update_company(cid: int, data: CompanyIn, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    e = db.query(User).filter_by(id=cid, owner_user_id=u.id).first()
+    if not e:
+        raise HTTPException(404, "Empresa não encontrada")
+    e.name, e.document, e.entity_kind = data.name.strip(), re.sub(r"\D", "", data.document or ""), data.kind
+    db.commit()
+    return {"id": e.id, "name": e.name}
+
+
+@router.delete("/companies/{cid}")
+def delete_company(cid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Apaga a empresa e TODOS os dados dela (contas, lançamentos, contratos…)."""
+    e = db.query(User).filter_by(id=cid, owner_user_id=u.id).first()
+    if not e:
+        raise HTTPException(404, "Empresa não encontrada")
+    _delete_user_data(db, e)
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/me/onboarded")
 def mark_onboarded(u: User = Depends(current_user), db: Session = Depends(get_db)):
     """Marca o assistente de primeiro acesso como concluído (ou pulado)."""
@@ -269,18 +325,28 @@ def mark_onboarded(u: User = Depends(current_user), db: Session = Depends(get_db
     return user_out(u, db)
 
 
-@router.delete("/me")
-def delete_me(u: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Direito de exclusão (LGPD): remove o usuário, seus dados e os itens na Pluggy."""
+def _delete_user_data(db: Session, u: User) -> None:
+    """Apaga um usuário (ou empresa) com todos os dados, as empresas dele e os itens na Pluggy.
+    Ordem: filhos antes dos pais (SQLite não aplica ON DELETE CASCADE)."""
+    for e in db.query(User).filter_by(owner_user_id=u.id).all():
+        _delete_user_data(db, e)
     for it in db.query(PluggyItem).filter_by(user_id=u.id):
         pluggy.delete_item(it.item_id)
     for (path,) in db.query(Transaction.receipt_path).filter(Transaction.user_id == u.id,
                                                             Transaction.receipt_path.isnot(None)):
         storage.delete(path)  # arquivos no disco/Supabase Storage não saem com o DELETE do banco
-    for M in (Transaction, CategoryRule, Contract, Income, Goal, Alert, AdvisorReport, PluggyItem,
-              Account, Category):
+    for M in (PotMove, Pot, InvestmentEvent, InvestmentTrade, PortfolioSnapshot, Investment, Transaction,
+              CategoryRule, Contract, Receivable, Income, Goal, Asset, Alert, AdvisorReport, PluggyItem,
+              Account, CostCenter, Category):
         db.query(M).filter_by(user_id=u.id).delete()
+    db.query(SharedAccess).filter(or_(SharedAccess.owner_id == u.id, SharedAccess.member_id == u.id)).delete()
     db.query(User).filter_by(id=u.id).delete()
+
+
+@router.delete("/me")
+def delete_me(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Direito de exclusão (LGPD): remove o usuário, seus dados, suas empresas e os itens na Pluggy."""
+    _delete_user_data(db, u)
     db.commit()
     return {"ok": True}
 
@@ -305,7 +371,7 @@ def share_out(s: SharedAccess, db: Session) -> dict:
 
 @router.get("/shared-access")
 def list_shared_access(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
-    rows = (db.query(SharedAccess).filter_by(owner_id=u.id, revoked_at=None)
+    rows = (db.query(SharedAccess).filter_by(owner_id=u.workspace_id, revoked_at=None)
             .order_by(SharedAccess.invited_at.desc()).all())
     return [share_out(s, db) for s in rows]
 
@@ -315,16 +381,16 @@ def invite_shared_access(data: ShareIn, u: User = Depends(current_user_active), 
     """Convida alguém, por e-mail, a acessar os mesmos dados financeiros. A pessoa precisa
     ter (ou criar) uma conta no Finora com esse e-mail e aceitar o convite pra passar a ver
     os dados — nada muda pra ela antes disso."""
-    if u.workspace_id != u.id:
+    if u.workspace_role != "owner":
         raise HTTPException(400, "Você está vendo os dados de outra pessoa — só quem é dono da conta pode convidar.")
     email = data.email.strip().lower()
     if email == u.email.lower():
         raise HTTPException(400, "Você não pode convidar a si mesmo.")
-    if db.query(SharedAccess).filter_by(owner_id=u.id, revoked_at=None).count() >= 5:
+    if db.query(SharedAccess).filter_by(owner_id=u.workspace_id, revoked_at=None).count() >= 5:
         raise HTTPException(400, "Limite de 5 pessoas com acesso compartilhado por conta.")
-    if db.query(SharedAccess).filter_by(owner_id=u.id, member_email=email, revoked_at=None).first():
+    if db.query(SharedAccess).filter_by(owner_id=u.workspace_id, member_email=email, revoked_at=None).first():
         raise HTTPException(400, "Esse e-mail já tem um convite ativo.")
-    s = SharedAccess(owner_id=u.id, member_email=email, role=data.role)
+    s = SharedAccess(owner_id=u.workspace_id, member_email=email, role=data.role)
     db.add(s)
     db.commit()
     return share_out(s, db)
@@ -334,7 +400,7 @@ def invite_shared_access(data: ShareIn, u: User = Depends(current_user_active), 
 def revoke_shared_access(sid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     """Revoga um convite pendente ou tira o acesso de quem já tinha aceitado — some no
     próximo pedido da pessoa, sem precisar dela deslogar."""
-    s = db.query(SharedAccess).filter_by(id=sid, owner_id=u.id, revoked_at=None).first()
+    s = db.query(SharedAccess).filter_by(id=sid, owner_id=u.workspace_id, revoked_at=None).first()
     if not s:
         raise HTTPException(404, "Convite não encontrado.")
     s.revoked_at = datetime.utcnow()
@@ -429,6 +495,8 @@ class CategoryIn(BaseModel):
     icon: str = "tag"
     monthly_budget: float = 0
     essential: bool = False
+    code: Optional[str] = Field(None, max_length=20)
+    dre_group: Optional[str] = Field(None, max_length=25)
 
 
 class RuleIn(BaseModel):
@@ -1509,6 +1577,25 @@ def simulate_montecarlo(data: MonteCarloIn, u: User = Depends(current_user_activ
     r = montecarlo.simulate(data.target, data.initial, data.monthly, data.months, data.profile)
     r["required_monthly_80"] = montecarlo.required_monthly(data.target, data.initial, data.months, data.profile, 0.8)
     return r
+
+
+# ------------------------------------------------------------------ plano de contas e DRE
+@router.post("/chart-of-accounts/apply")
+def apply_chart(u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    n = chart_of_accounts.apply_default(db, u.workspace_id)
+    db.commit()
+    return {"created": n}
+
+
+@router.get("/chart-of-accounts/groups")
+def chart_groups(u: User = Depends(current_user_active)):
+    return [{"key": k, "label": v[0], "kind": v[1]} for k, v in chart_of_accounts.GROUPS.items()]
+
+
+@router.get("/reports/dre")
+def report_dre(year: int = Query(ge=2000, le=2100), month: Optional[int] = Query(None, ge=1, le=12),
+               u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    return chart_of_accounts.dre(db, u.workspace_id, year, month)
 
 
 # ------------------------------------------------------------------ milhas e pontos

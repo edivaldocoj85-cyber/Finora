@@ -102,6 +102,7 @@ const ROUTES = [
   { id: "receivables", label: "Contas a receber", icon: "receivables" },
   { id: "incomes", label: "Renda", icon: "incomes" },
   { id: "categories", label: "Categorias e regras", icon: "categories" },
+  { id: "dre", label: "DRE (empresa)", icon: "contracts" },
   { id: "costcenters", label: "Centros de custo e tags", icon: "layers" },
   { id: "goals", label: "Metas", icon: "goals" },
   { id: "reserve", label: "Reserva de emergência", icon: "reserve" },
@@ -119,6 +120,7 @@ function visibleRoutes() {
 async function api(path, opts = {}) {
   const headers = { ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}) };
   if (state.token) headers.Authorization = "Bearer " + state.token;
+  const ws = localGet("finora_ws"); if (ws) headers["X-Workspace"] = ws;
   Object.assign(headers, opts.headers || {});
   const res = await fetch("/api" + path, {
     method: opts.method || (opts.body ? "POST" : "GET"), headers,
@@ -170,7 +172,7 @@ let sb = null;
 
 function logout() {
   sb?.auth.signOut();
-  state.token = null; localSet("finora_token", null); location.hash = ""; showAuth();
+  state.token = null; localSet("finora_token", null); localSet("finora_ws", null); location.hash = ""; showAuth();
 }
 $("#logout").onclick = logout;
 
@@ -418,7 +420,7 @@ async function boot() {
   if (state.user.trial_expired) return showTrialExpired();
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#userName").textContent = state.user.name;
-  renderWorkspaceBanner();
+  renderWorkspaceBanner(); renderWorkspaceSelect();
   if (!$("#monthRef").value) $("#monthRef").value = today().slice(0, 7);
   // sem isso, uma falha aqui deixava o painel aberto e vazio (tela branca, sem aviso)
   try { buildNav(); await refreshRefs(); route(); } catch (e) {
@@ -451,7 +453,7 @@ async function dailyPrompt() {
   if (ok) txForm();
 }
 function renderWorkspaceBanner() {
-  const el = $("#workspaceBanner"), owner = state.user.workspace_owner;
+  const el = $("#workspaceBanner"), owner = state.user.workspace_role !== "owner" ? state.user.workspace_owner : null;
   if (!owner) { el.classList.add("hidden"); el.innerHTML = ""; return; }
   const roleLabel = state.user.workspace_role === "viewer" ? "somente leitura" : "pode editar";
   el.innerHTML = `${navIcon("users")} Você está vendo os dados de <strong>${esc(owner.name)}</strong> (${roleLabel}) <button class="btn small ghost" id="wbLeave" style="margin-left:auto">Sair desse acesso</button>`;
@@ -752,6 +754,46 @@ function dashCustomize() {
   dlg.showModal();
 }
 
+/* ------------------------------------------------------------------ pessoal × empresas (espaços de dados) */
+// o espaço escolhido vai em todo pedido (X-Workspace); o servidor confere a permissão a cada vez
+function renderWorkspaceSelect() {
+  const sel = $("#wsSel"), ws = state.user?.workspaces || [];
+  if (!sel) return;
+  sel.innerHTML = ws.map((w) => `<option value="${w.id}" ${w.id === state.user.workspace_id ? "selected" : ""}>${esc(w.name)}${w.role === "viewer" ? " (leitura)" : ""}</option>`).join("")
+    + (canEditOwn() ? `<option value="new">＋ Nova empresa…</option>` : "");
+  sel.classList.toggle("hidden", !ws.length);
+  sel.onchange = async () => {
+    if (sel.value === "new") { sel.value = String(state.user.workspace_id); companyForm(); return; }
+    await switchWorkspace(+sel.value);
+  };
+}
+const canEditOwn = () => !!state.user; // qualquer pessoa pode criar as próprias empresas
+async function switchWorkspace(id) {
+  localSet("finora_ws", String(id));
+  state.user = await api("/me");
+  renderWorkspaceBanner(); renderWorkspaceSelect();
+  await refreshRefs(); buildNav(); route();
+  toast(`Agora em: ${state.user.workspace_name}`, "success");
+}
+function companyForm(c = {}) {
+  openForm({
+    title: c.id ? `Editar ${c.name}` : "Nova empresa",
+    values: { kind: "pj", chart: true, ...c },
+    fields: [{ row: [{ name: "name", label: "Nome", required: true, placeholder: "Ex.: Padaria Ltda, MEI João" }, { name: "document", label: "CNPJ (opcional)" }] },
+      { name: "kind", label: "Tipo", type: "select", options: [["pj", "Empresa (PJ)"], ["pf", "Outra pessoa ou família (PF)"]] },
+      ...(c.id ? [] : [{ name: "chart", label: "Criar com o plano de contas de empresa (receitas, custos, despesas e DRE)", type: "checkbox" }])],
+    extra: `<p class="small muted">Os dados da empresa ficam separados dos seus. Troque entre Pessoal e empresas no seletor do topo. Pra dar acesso ao sócio ou ao contador, entre na empresa e use Configurações → Acesso compartilhado.</p>`,
+    onSubmit: async (d) => {
+      const r = await api(c.id ? `/companies/${c.id}` : "/companies", { method: c.id ? "PUT" : "POST", body: { chart: true, ...d } });
+      if (!c.id) { await switchWorkspace(r.id); } else { state.user = await api("/me"); renderWorkspaceSelect(); }
+    },
+  });
+}
+
+const DRE_GROUPS = [["", "Fora da DRE / sem grupo"], ["receita_bruta", "Receita bruta"], ["deducoes", "Deduções"], ["custos", "Custos (CMV/CSP)"],
+  ["despesas_pessoal", "Despesas com pessoal"], ["despesas_adm", "Despesas administrativas"], ["despesas_comerciais", "Despesas comerciais"],
+  ["receitas_financeiras", "Receitas financeiras"], ["despesas_financeiras", "Despesas financeiras"], ["outras_receitas", "Outras receitas"],
+  ["outras_despesas", "Outras despesas"], ["impostos_lucro", "IRPJ e CSLL"], ["capex", "Investimentos (fora da DRE)"], ["distribuicao", "Distribuição de lucros"]];
 let dashboardTrendMonths = 6;
 VIEWS.dashboard = async (v) => {
   const d = await api(`/dashboard?ref=${refDate()}&months=${dashboardTrendMonths}`);
@@ -1338,9 +1380,9 @@ VIEWS.categories = async (v) => {
   const rules = await api("/rules");
   const catName = (id) => state.cats.find((c) => c.id === id)?.name || "?";
   v.innerHTML = `<div class="grid g2">
-    <div class="card"><div class="between"><h2>Categorias</h2><button class="btn small" id="newCat">+ Categoria</button></div>
+    <div class="card"><div class="between"><h2>Categorias</h2><div class="row" style="gap:6px">${state.cats.some((c) => c.code) ? "" : '<button class="btn small ghost" id="applyChart2" title="Cria as contas padrão de empresa com o grupo da DRE">Plano de contas PJ</button>'}<button class="btn small" id="newCat">+ Categoria</button></div></div>
       <p class="small muted">Defina orçamentos mensais para receber alertas ao atingir 80% e 100%.</p>
-      <div class="list">${state.cats.map((c) => `<div class="li clickable" data-c="${c.id}" style="cursor:pointer"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="title">${esc(c.name)}</div><div class="small muted">${c.kind === "income" ? "Receita" : "Despesa"}${c.essential ? " · essencial" : ""}</div></div><div class="small">${c.monthly_budget ? brl(c.monthly_budget) : ""}</div></div>`).join("")}</div></div>
+      <div class="list">${[...state.cats].sort((x, y) => (x.code || "~").localeCompare(y.code || "~") || x.name.localeCompare(y.name)).map((c) => `<div class="li clickable" data-c="${c.id}" style="cursor:pointer"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="title">${c.code ? `<span class="small muted">${esc(c.code)}</span> ` : ""}${esc(c.name)}</div><div class="small muted">${c.kind === "income" ? "Receita" : "Despesa"}${c.essential ? " · essencial" : ""}</div></div><div class="small">${c.monthly_budget ? brl(c.monthly_budget) : ""}</div></div>`).join("")}</div></div>
     <div class="card"><div class="between"><h2>Regras automáticas</h2><button class="btn small" id="newRule">+ Regra</button></div>
       <p class="small muted">Se a descrição contém o texto, o lançamento vai para a categoria escolhida. As regras valem para a sincronização bancária e as importações.</p>
       <div class="list">${rules.map((r) => `<div class="li"><div class="grow"><div class="title">“${esc(r.pattern)}”</div><div class="small muted">→ ${esc(catName(r.category_id))}</div></div><button class="btn small danger" data-del="${r.id}">Remover</button></div>`).join("") || '<div class="empty">Nenhuma regra. Dica: ao editar um lançamento, marque “aplicar sempre”.</div>'}</div></div></div>`;
@@ -1351,12 +1393,18 @@ VIEWS.categories = async (v) => {
       { name: "name", label: "Nome", required: true },
       { row: [{ name: "kind", label: "Tipo", type: "select", options: [["expense", "Despesa"], ["income", "Receita"]] }, { name: "color", label: "Cor", type: "color" }] },
       { name: "monthly_budget", label: "Orçamento mensal (R$, 0 = sem limite)", type: "number" },
+      { row: [{ name: "code", label: "Código no plano de contas", placeholder: "4.3.01", nullable: true },
+        { name: "dre_group", label: "Grupo da DRE", type: "select", options: DRE_GROUPS, nullable: true }] },
       { name: "essential", label: "Gasto essencial", type: "checkbox" },
     ],
     onSubmit: async (d) => { await api(c.id ? `/categories/${c.id}` : "/categories", { method: c.id ? "PUT" : "POST", body: { icon: c.icon || "tag", ...d } }); await refreshRefs(); },
     onDelete: c.id ? async () => { await api(`/categories/${c.id}`, { method: "DELETE" }); await refreshRefs(); } : null,
   });
   $("#newCat").onclick = () => catForm();
+  if ($("#applyChart2")) $("#applyChart2").onclick = async () => {
+    if (!await askConfirm({ title: "Criar o plano de contas de empresa?", message: "Adiciona ~29 contas padrão (vendas, impostos, CMV, salários, aluguel, marketing…) com o grupo da DRE. Suas categorias atuais continuam.", confirmLabel: "Criar contas" })) return;
+    const r = await api("/chart-of-accounts/apply", { method: "POST" }); await refreshRefs(); toast(`${r.created} contas criadas`, "success"); route();
+  };
   v.querySelectorAll("[data-c]").forEach((el) => clickable(el, () => catForm(state.cats.find((c) => c.id == el.dataset.c))));
   $("#newRule").onclick = () => openForm({
     title: "Nova regra", values: { priority: 0, apply_existing: true },
@@ -1662,6 +1710,35 @@ VIEWS.report = async (v) => {
     if (!res.ok) { toast("Não foi possível gerar a planilha.", "error"); return; }
     const a = document.createElement("a"); a.href = URL.createObjectURL(await res.blob()); a.download = `finora-relatorio-${ym}.xlsx`; a.click();
   };
+};
+
+/* DRE: demonstração do resultado pelo plano de contas (services/chart_of_accounts.py) */
+VIEWS.dre = async (v) => {
+  const now = new Date();
+  let year = +(localGet("finora_dre_year") || now.getFullYear()), month = localGet("finora_dre_month") || "";
+  const draw = async () => {
+    const d = await api(`/reports/dre?year=${year}${month ? `&month=${month}` : ""}`);
+    const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    v.innerHTML = `<div class="between" style="margin-bottom:12px"><p class="muted" style="margin:0;max-width:680px">Demonstração do resultado pelo regime de caixa (data do lançamento), agrupada pelo plano de contas. Lançamento sem grupo entra como "não classificado".</p>
+        <div class="row" style="gap:8px"><select id="dreY">${[0, 1, 2, 3].map((k) => now.getFullYear() - k).map((y) => `<option ${y === year ? "selected" : ""}>${y}</option>`).join("")}</select>
+        <select id="dreM"><option value="">Ano inteiro</option>${MONTHS.map((m, i) => `<option value="${i + 1}" ${String(i + 1) === String(month) ? "selected" : ""}>${m}</option>`).join("")}</select></div></div>
+      ${d.has_chart ? "" : `<div class="card" style="margin-bottom:16px"><p>Este espaço ainda não tem plano de contas. ${canEdit() ? '<button class="btn small primary" id="applyChart">Criar plano de contas de empresa</button>' : ""}</p><p class="small muted">Cria as contas padrão (vendas, impostos, CMV, salários, aluguel, marketing, tarifas…) com o grupo da DRE. Suas categorias atuais continuam; dá pra definir o grupo delas em Categorias.</p></div>`}
+      <div class="grid g3" style="margin-bottom:16px">
+        <div class="card stat"><h3>Margem bruta</h3><div class="value">${d.margins.bruta != null ? pctBR(d.margins.bruta, 1) : "—"}</div></div>
+        <div class="card stat"><h3>Margem operacional</h3><div class="value">${d.margins.operacional != null ? pctBR(d.margins.operacional, 1) : "—"}</div></div>
+        <div class="card stat"><h3>Margem líquida</h3><div class="value ${(d.margins.liquida || 0) < 0 ? "neg" : ""}">${d.margins.liquida != null ? pctBR(d.margins.liquida, 1) : "—"}</div></div></div>
+      <div class="card"><h2>DRE · ${month ? `${MONTHS[month - 1]}/${year}` : year}</h2><table class="dre"><tbody>
+        ${d.lines.map((l) => `<tr class="${l.indent ? "" : "dre-total"}"><td style="padding-left:${8 + l.indent * 18}px">${esc(l.label)}</td><td class="num ${l.value < 0 ? "neg" : ""}">${brl(l.value)}</td></tr>`).join("")}
+      </tbody></table>
+      <p class="small muted" style="margin-top:8px">Fora da DRE: investimentos ${brl(d.off_statement.capex)} · distribuição de lucros ${brl(d.off_statement.distribuicao)}${d.unclassified ? ` · <b>${brl(d.unclassified)} em despesas sem grupo</b> (classifique em Categorias)` : ""}</p></div>
+      ${d.months.length ? `<div class="card" style="margin-top:16px"><h2>Mês a mês</h2><div class="table-wrap"><table><thead><tr><th></th>${MONTHS.map((m) => `<th class="num">${m}</th>`).join("")}</tr></thead><tbody>
+        ${[["receita_liquida", "Receita líquida"], ["lucro_bruto", "Lucro bruto"], ["resultado_operacional", "Resultado operacional"], ["lucro_liquido", "Lucro líquido"]].map(([k, l]) => `<tr><td><b>${l}</b></td>${d.months.map((m) => `<td class="num ${m[k] < 0 ? "neg" : ""}">${m[k] ? brl(m[k]).replace(",00", "") : "—"}</td>`).join("")}</tr>`).join("")}
+      </tbody></table></div></div>` : ""}`;
+    $("#dreY").onchange = (e) => { year = +e.target.value; localSet("finora_dre_year", year); draw(); };
+    $("#dreM").onchange = (e) => { month = e.target.value; localSet("finora_dre_month", month); draw(); };
+    if ($("#applyChart")) $("#applyChart").onclick = async () => { const r = await api("/chart-of-accounts/apply", { method: "POST" }); await refreshRefs(); toast(`${r.created} contas criadas`, "success"); draw(); };
+  };
+  await draw();
 };
 
 VIEWS.cashflow = async (v) => {
@@ -2222,6 +2299,10 @@ VIEWS.settings = async (v) => {
     <button class="btn primary full" id="saveMe">Salvar</button>
     <h2 style="margin-top:22px">Aparência</h2>
     <div class="tabs" id="themeTabs">${THEME_ORDER.map((m) => `<button type="button" data-mode="${m}" class="${m === theme ? "active" : ""}">${navIcon(THEME_ICON[m])} ${esc(THEME_LABEL[m].split(" (")[0])}</button>`).join("")}</div></div>
+    <div class="card"><div class="between"><h2>Empresas</h2><button type="button" class="btn small" id="newCompany">+ Empresa</button></div>
+      <p class="small muted">Cada empresa tem contas, lançamentos, cartões, contratos, investimentos e relatórios separados dos seus. Troque no seletor do topo.</p>
+      <div class="list">${(state.user.workspaces || []).filter((w) => w.entity && !w.shared).map((w) => `<div class="li"><div class="grow"><div class="title">${esc(w.name)}</div><div class="small muted">${w.kind === "pj" ? "Empresa" : "Pessoa/família"}${w.document ? " · " + esc(w.document) : ""}</div></div>
+        <button type="button" class="btn small ghost" data-co-open="${w.id}">Abrir</button><button type="button" class="btn small ghost" data-co-edit="${w.id}">Editar</button><button type="button" class="btn small danger" data-co-del="${w.id}">Excluir</button></div>`).join("") || '<div class="empty">Nenhuma empresa cadastrada.</div>'}</div></div>
     <div class="card"><h2>Notificações</h2>
       ${state.user.email_enabled ? "" : `<p class="small imp-warn">O envio de e-mail ainda não está ligado no servidor. As preferências ficam salvas e passam a valer quando ele for configurado.</p>`}
       <label class="check"><input type="checkbox" id="nAlerts" ${state.user.email_alerts ? "checked" : ""}> Avisos importantes por e-mail (orçamento perto do limite, conta vencendo, saldo negativo, prazo pra cancelar contrato)</label>
@@ -2238,6 +2319,18 @@ VIEWS.settings = async (v) => {
     $("#themeTabs").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
   }));
   $("#installBtn").onclick = () => window._installPrompt?.prompt();
+  $("#newCompany").onclick = () => companyForm();
+  const coOf = (id) => state.user.workspaces.find((w) => w.id == id);
+  v.querySelectorAll("[data-co-open]").forEach((b) => (b.onclick = () => switchWorkspace(+b.dataset.coOpen)));
+  v.querySelectorAll("[data-co-edit]").forEach((b) => (b.onclick = () => companyForm(coOf(b.dataset.coEdit))));
+  v.querySelectorAll("[data-co-del]").forEach((b) => (b.onclick = async () => {
+    const w = coOf(b.dataset.coDel);
+    if (!await askConfirm({ title: `Excluir ${w.name}?`, message: "Apaga a empresa e TODOS os dados dela: contas, lançamentos, cartões, contratos, investimentos e relatórios. Não dá pra desfazer.", confirmLabel: "Excluir empresa", danger: true, requireText: "EXCLUIR" })) return;
+    await api(`/companies/${w.id}`, { method: "DELETE" });
+    if (state.user.workspace_id === w.id) localSet("finora_ws", null);
+    state.user = await api("/me"); renderWorkspaceSelect(); await refreshRefs(); buildNav(); route();
+    toast("Empresa excluída", "success");
+  }));
   $("#saveNotif").onclick = async () => {
     state.user = await api("/me", { method: "PATCH", body: { email_alerts: $("#nAlerts").checked, email_digest: $("#nDigest").value } });
     toast("Notificações salvas", "success");

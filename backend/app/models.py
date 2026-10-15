@@ -28,6 +28,10 @@ class User(Base):
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime)
     monthly_goal_savings: Mapped[float] = mapped_column(Float, default=0)
     email_alerts: Mapped[bool] = mapped_column(Boolean, default=True)  # alertas importantes por e-mail
+    # empresa/entidade: um "usuário" sem login, dono dos próprios dados, controlado por owner_user_id
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    entity_kind: Mapped[str] = mapped_column(String(2), default="pf")  # pf | pj
+    document: Mapped[str] = mapped_column(String(20), default="")  # CNPJ da empresa
     investor_profile: Mapped[str | None] = mapped_column(String(12))  # declarado: conservador|moderado|arrojado (vazio = calculado)
     dashboard_layout: Mapped[str | None] = mapped_column(Text)  # JSON: ordem e seções escondidas do painel
     email_digest: Mapped[str] = mapped_column(String(10), default="weekly")  # weekly | none
@@ -60,6 +64,8 @@ class Category(Owned, Base):
     icon: Mapped[str] = mapped_column(String(40), default="tag")
     monthly_budget: Mapped[float] = mapped_column(Float, default=0)
     essential: Mapped[bool] = mapped_column(Boolean, default=False)
+    code: Mapped[str | None] = mapped_column(String(20))  # código no plano de contas (3.1.01…)
+    dre_group: Mapped[str | None] = mapped_column(String(25))  # grupo da DRE (services/chart_of_accounts.py)
 
 
 class CategoryRule(Owned, Base):

@@ -38,7 +38,9 @@ def _migrate(engine):
             cols = {c["name"] for c in insp.get_columns("users")}
             if "avatar_url" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
-            for col, ddl in (("investor_profile", "VARCHAR(12)"), ("dashboard_layout", "TEXT"),
+            for col, ddl in (("owner_user_id", "INTEGER"), ("entity_kind", "VARCHAR(2) DEFAULT 'pf'"),
+                             ("document", "VARCHAR(20) DEFAULT ''"),
+                             ("investor_profile", "VARCHAR(12)"), ("dashboard_layout", "TEXT"),
                              ("email_alerts", "BOOLEAN DEFAULT TRUE"), ("email_digest", "VARCHAR(10) DEFAULT 'weekly'"),
                              ("last_daily_run_at", "TIMESTAMP"), ("last_digest_at", "TIMESTAMP")):
                 if col not in cols:
@@ -90,6 +92,11 @@ def _migrate(engine):
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_invoice_month ON transactions (invoice_month)"))
             if "receipt_path" not in cols:
                 conn.execute(text("ALTER TABLE transactions ADD COLUMN receipt_path VARCHAR(255)"))
+        if "categories" in tables:
+            cols = {c["name"] for c in insp.get_columns("categories")}
+            for col, ddl in (("code", "VARCHAR(20)"), ("dre_group", "VARCHAR(25)")):
+                if col not in cols:
+                    conn.execute(text(f"ALTER TABLE categories ADD COLUMN {col} {ddl}"))
         if "contracts" in tables:
             cols = {c["name"] for c in insp.get_columns("contracts")}
             if "account_id" not in cols:

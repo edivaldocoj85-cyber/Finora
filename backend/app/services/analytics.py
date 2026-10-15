@@ -404,9 +404,13 @@ def _alert(db, user_id, key, level, title, message):
     # sininho, senão vira spam de aviso pouco importante
     if level in ("danger", "warning") and email_service.enabled():
         u = db.get(User, user_id)
+        prefix = ""
+        if u and u.owner_user_id:  # empresa: o aviso vai pro dono, com o nome da empresa
+            prefix = f"[{u.name}] "
+            u = db.get(User, u.owner_user_id)
         if u and u.email and u.email_alerts is not False:
             public_url = get_settings().public_url.rstrip("/")
-            email_service.send(u.email, f"Finora — {title}",
+            email_service.send(u.email, f"Finora — {prefix}{title}",
                               f"<p>{message}</p><p><a href='{public_url}/app/'>Abrir o Finora</a></p>")
 
 

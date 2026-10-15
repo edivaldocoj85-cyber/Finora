@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import PyJWKClient
 from sqlalchemy.orm import Session
@@ -76,20 +76,49 @@ def _get_or_create_profile(db: Session, claims: dict) -> User:
     return u
 
 
-def _resolve_workspace(db: Session, u: User) -> None:
+def workspaces_of(db: Session, u: User) -> list[dict]:
+    """Espaços de dados que a pessoa pode abrir: os próprios (pessoal + empresas que criou)
+    e os que aceitou por convite (com o papel de cada um)."""
+    out = [{"id": u.id, "name": "Pessoal", "kind": "pf", "role": "owner", "entity": False, "shared": False, "document": ""}]
+    for e in db.query(User).filter_by(owner_user_id=u.id).order_by(User.name):
+        out.append({"id": e.id, "name": e.name, "kind": e.entity_kind or "pj", "role": "owner", "entity": True,
+                    "shared": False, "document": e.document or ""})
+    shares = (db.query(SharedAccess).filter_by(member_id=u.id, revoked_at=None)
+              .filter(SharedAccess.accepted_at.isnot(None)).all())
+    for s in shares:
+        o = db.get(User, s.owner_id)
+        if o:
+            out.append({"id": o.id, "name": o.name if o.owner_user_id else f"{o.name} (compartilhado)",
+                        "kind": o.entity_kind or "pf", "role": s.role, "entity": bool(o.owner_user_id),
+                        "shared": True, "document": o.document or "", "share_id": s.id,
+                        "cost_center_ids": _cc_list(getattr(s, "cost_center_ids", None))})
+    return out
+
+
+def _cc_list(v) -> list[int]:
+    return [int(x) for x in str(v or "").split(",") if x.strip().isdigit()]
+
+
+def _resolve_workspace(db: Session, u: User, requested: int | None = None) -> None:
     """Anexa workspace_id/workspace_role ao objeto em memória (atributos transientes, não
     mapeados — nunca persistem): se o usuário aceitou um convite de acesso compartilhado
     ainda ativo, os dados a consultar são os do dono do convite (`owner_id`); senão são os
     próprios. Resolvido a cada request a partir do banco, então revogar um convite tira o
     acesso já no próximo pedido, sem precisar de logout."""
-    share = (db.query(SharedAccess).filter_by(member_id=u.id, revoked_at=None)
-             .filter(SharedAccess.accepted_at.isnot(None)).first())
-    u.workspace_id = share.owner_id if share else u.id
-    u.workspace_role = share.role if share else "owner"
+    spaces = workspaces_of(db, u)
+    pick = next((w for w in spaces if w["id"] == requested), None) if requested else None
+    if not pick:
+        # sem escolha (ou escolha sem permissão): como era antes — o convite aceito, senão o próprio
+        pick = next((w for w in spaces if w["shared"]), spaces[0])
+    u.workspace_id = pick["id"]
+    u.workspace_role = pick["role"]
+    u.workspace_name = pick["name"]
+    u.workspace_entity = pick["entity"]
+    u.workspace_cc = pick.get("cost_center_ids") or []  # acesso restrito a centros de custo (vazio = tudo)
 
 
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
-                 db: Session = Depends(get_db)) -> User:
+                 db: Session = Depends(get_db), x_workspace: str | None = Header(None)) -> User:
     """Sessão completa (Google + MFA confirmados no Supabase) — exigida por toda a API normal."""
     if not creds:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Não autenticado")
@@ -102,7 +131,9 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     u = _get_or_create_profile(db, claims)
     if u.suspended_at:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta suspensa. Fale com o administrador.")
-    _resolve_workspace(db, u)
+    if u.owner_user_id:  # empresa não tem login próprio
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta inválida.")
+    _resolve_workspace(db, u, int(x_workspace) if (x_workspace or "").isdigit() else None)
     return u
 
 
@@ -112,7 +143,7 @@ def current_user_active(u: User = Depends(current_user)) -> User:
     o front sempre conseguir saber o status da conta mesmo com o teste vencido. Quem está
     acessando os dados de outra pessoa via acesso compartilhado nunca é bloqueado pelo
     próprio teste/plano — quem paga é o dono do workspace, não cada convidado."""
-    if (u.workspace_id == u.id and not u.is_admin and u.plan == "trial"
+    if (u.workspace_role == "owner" and not u.is_admin and u.plan == "trial"
             and u.trial_ends_at and datetime.utcnow() > u.trial_ends_at):
         raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "Seu período de teste acabou.")
     return u
