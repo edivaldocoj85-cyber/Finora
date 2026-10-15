@@ -434,3 +434,10 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .imp-totals b { font-variant-numeric: tabular-nums; }
 .imp-extra { max-height: 160px; overflow: auto; }
 .imp-extra .li { padding: 6px 0; }
+
+/* caixinhas */
+.pot { border-top: 3px solid var(--pot, var(--primary-2)); }
+.pot-rows { display: grid; gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 14px; }
+.pot-rows > div { display: flex; justify-content: space-between; gap: 10px; }
+.pot-rows b { font-variant-numeric: tabular-nums; }
+.pot-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }

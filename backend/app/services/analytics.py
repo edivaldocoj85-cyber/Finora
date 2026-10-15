@@ -8,7 +8,7 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from ..models import Account, Asset, Transaction, Category, Contract, Income, Goal, Alert, Receivable, User
+from ..models import Account, Asset, Transaction, Category, Contract, Income, Goal, Alert, Pot, Receivable, User
 from . import email as email_service
 
 _INSTALLMENT_RE = re.compile(r"^(\d+)/(\d+)$")
@@ -228,6 +228,11 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
     accounts = db.query(Account).filter_by(user_id=user_id, archived=False).all()
     cash = sum(a.balance for a in accounts if a.kind in ("checking", "savings", "cash"))
     invest = sum(a.balance for a in accounts if a.kind == "investment")
+    # caixinhas: saldo calculado com o rendimento até hoje (ver services/pots.py)
+    from . import pots as pots_service  # import tardio: pots depende de market
+    pots_total = sum(pots_service.compute(p, p.moves, ref)["balance"]
+                     for p in db.query(Pot).filter_by(user_id=user_id, archived=False))
+    invest += pots_total
     cards = card_invoices(db, user_id, ref)
     card_debt = sum(c["outstanding_balance"] for c in cards)
     assets = db.query(Asset).filter_by(user_id=user_id).all()
@@ -259,7 +264,7 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
     return {
         "ref": ref.isoformat(),
         "net_worth": round(cash + invest + assets_total - card_debt, 2),
-        "cash": round(cash, 2), "investments": round(invest, 2), "card_debt": round(card_debt, 2),
+        "cash": round(cash, 2), "investments": round(invest, 2), "pots_total": round(pots_total, 2), "card_debt": round(card_debt, 2),
         "assets_total": round(assets_total, 2),
         "month": cur, "months": months,
         "expected_income": round(expected_income, 2), "fixed_costs": round(fixed_costs, 2),

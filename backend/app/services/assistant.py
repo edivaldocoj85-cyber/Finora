@@ -36,6 +36,12 @@ HELP_TOPICS = [
           "sozinhas e você vê uma prévia antes de confirmar; parcelas (\"Parcela 3/10\") viram parcelamento, as parcelas seguintes já entram nas faturas dos próximos meses e o "
           "pagamento da fatura é ignorado. Reimportar o mesmo arquivo não duplica. Você pode configurar um lembrete "
           "diário, semanal ou mensal pra não esquecer de importar — isso fica na edição da conta."},
+    {"kw": ["caixinha", "porquinho", "rendiment", "rentabil", "cdi"],
+     "a": "Vá em **Caixinhas** e clique em \"+ Caixinha\". Informe o tipo (% do CDI, % da Selic ou prefixada), "
+          "a taxa (ex.: 100% do CDI) e quanto já tem guardado. O Finora calcula o rendimento todo dia útil com a "
+          "taxa oficial do Banco Central e mostra quanto já rendeu, quanto rendeu no mês, o imposto estimado se "
+          "resgatar hoje e quanto deve render nos próximos meses. Use **Guardar** e **Resgatar** a cada movimento, "
+          "e **Acertar saldo** pra igualar com o app do banco."},
     {"kw": ["conect", "open finance", "pluggy", "sincroniz", "banco automatic"],
      "a": "Vá em **Conexões bancárias** e clique em \"Conectar banco\". Isso usa Open Finance (Pluggy) — "
           "precisa de uma chave configurada no servidor (`PLUGGY_CLIENT_ID`/`PLUGGY_CLIENT_SECRET`, "
@@ -171,6 +177,7 @@ _ROUTES = {
     "cartoes": "cards", "contas": "accounts", "contratos": "contracts",
     "renda": "incomes", "categorias": "categories", "metas": "goals", "consultor": "advisor",
     "mercado": "market", "conexoes": "bank", "banco": "bank", "configuracoes": "settings",
+    "caixinhas": "pots", "caixinha": "pots",
 }
 
 

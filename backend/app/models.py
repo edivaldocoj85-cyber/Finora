@@ -188,6 +188,30 @@ class Asset(Owned, Base):
     notes: Mapped[str] = mapped_column(String(300), default="")
 
 
+class Pot(Owned, Base):
+    """Caixinha com rendimento (Nubank, Inter, PicPay…). O saldo não é guardado: sai dos
+    movimentos + taxa diária do índice (ver services/pots.py)."""
+    __tablename__ = "pots"
+    name: Mapped[str] = mapped_column(String(120))
+    institution: Mapped[str] = mapped_column(String(120), default="")
+    color: Mapped[str] = mapped_column(String(9), default="#10b981")
+    yield_type: Mapped[str] = mapped_column(String(10), default="cdi")  # cdi | selic | pre
+    yield_rate: Mapped[float] = mapped_column(Float, default=100)  # % do índice, ou % a.a. se pre
+    tax_free: Mapped[bool] = mapped_column(Boolean, default=False)  # LCI/LCA/poupança: sem IR e IOF
+    goal_amount: Mapped[float | None] = mapped_column(Float)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    moves: Mapped[list["PotMove"]] = relationship(cascade="all, delete-orphan", order_by="PotMove.date")
+
+
+class PotMove(Owned, Base):
+    __tablename__ = "pot_moves"
+    pot_id: Mapped[int] = mapped_column(ForeignKey("pots.id", ondelete="CASCADE"), index=True)
+    date: Mapped[date] = mapped_column(Date)
+    kind: Mapped[str] = mapped_column(String(10))  # deposit | withdraw | adjust (acerto, pode ser negativo)
+    amount: Mapped[float] = mapped_column(Float)
+    note: Mapped[str] = mapped_column(String(200), default="")
+
+
 class PluggyItem(Owned, Base):
     __tablename__ = "pluggy_items"
     item_id: Mapped[str] = mapped_column(String(64), index=True)

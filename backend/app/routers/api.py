@@ -24,9 +24,9 @@ from ..auth import current_admin, current_editor, current_user, current_user_act
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
-                      Goal, Income, PluggyItem, Receivable, SharedAccess, Transaction, User,
+                      Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, market, pluggy, statement_import, storage, vendas
+from ..services import advisor, analytics, assistant, market, pluggy, pots, statement_import, storage, vendas
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -1130,6 +1130,125 @@ def read_alerts(u: User = Depends(current_editor), db: Session = Depends(get_db)
     db.query(Alert).filter_by(user_id=u.workspace_id, read=False).update({"read": True})
     db.commit()
     return {"ok": True}
+
+
+# ------------------------------------------------------------------ caixinhas
+class PotIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    institution: str = Field("", max_length=120)
+    color: str = Field("#10b981", max_length=9)
+    yield_type: str = Field("cdi", pattern="^(cdi|selic|pre)$")
+    yield_rate: float = Field(100, gt=0, le=1000)
+    tax_free: bool = False
+    goal_amount: Optional[float] = Field(None, ge=0)
+    archived: bool = False
+    # só na criação: quanto já tem guardado e desde quando
+    initial_amount: Optional[float] = Field(None, ge=0)
+    start_date: Optional[date] = None
+
+
+class PotMoveIn(BaseModel):
+    date: date
+    kind: str = Field(pattern="^(deposit|withdraw)$")
+    amount: float = Field(gt=0)
+    note: str = Field("", max_length=200)
+
+
+class PotBalanceIn(BaseModel):
+    balance: float = Field(ge=0)
+
+
+def _pot_out(p: Pot, today: date | None = None) -> dict:
+    d = to_dict(p)
+    d["summary"] = pots.compute(p, p.moves, today)
+    return d
+
+
+def _get_pot(db, uid, pid) -> Pot:
+    p = db.query(Pot).filter_by(id=pid, user_id=uid).first()
+    if not p:
+        raise HTTPException(404, "Caixinha não encontrada")
+    return p
+
+
+@router.get("/pots")
+def list_pots(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    return [_pot_out(p) for p in db.query(Pot).filter_by(user_id=u.workspace_id).order_by(Pot.archived, Pot.name)]
+
+
+@router.post("/pots")
+def create_pot(data: PotIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    vals = data.model_dump(exclude={"initial_amount", "start_date"})
+    p = Pot(user_id=u.workspace_id, **vals)
+    db.add(p)
+    db.flush()
+    if data.initial_amount:
+        db.add(PotMove(user_id=u.workspace_id, pot_id=p.id, date=data.start_date or date.today(),
+                       kind="deposit", amount=data.initial_amount, note="Saldo inicial"))
+    db.commit()
+    db.refresh(p)
+    return _pot_out(p)
+
+
+@router.put("/pots/{pid}")
+def update_pot(pid: int, data: PotIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    p = _get_pot(db, u.workspace_id, pid)
+    for k, v in data.model_dump(exclude={"initial_amount", "start_date"}).items():
+        setattr(p, k, v)
+    db.commit()
+    return _pot_out(p)
+
+
+@router.delete("/pots/{pid}")
+def delete_pot(pid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    db.delete(_get_pot(db, u.workspace_id, pid))
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/pots/{pid}/moves")
+def list_pot_moves(pid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    p = _get_pot(db, u.workspace_id, pid)
+    return [to_dict(m) for m in sorted(p.moves, key=lambda m: (m.date, m.id), reverse=True)]
+
+
+@router.post("/pots/{pid}/moves")
+def add_pot_move(pid: int, data: PotMoveIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    p = _get_pot(db, u.workspace_id, pid)
+    if data.kind == "withdraw":
+        bal = pots.compute(p, [m for m in p.moves if m.date <= data.date], data.date)["balance"]
+        if data.amount > bal + 0.01:
+            saldo = f"{bal:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            raise HTTPException(400, f"O resgate é maior que o saldo da caixinha nessa data (R$ {saldo}).")
+    db.add(PotMove(user_id=u.workspace_id, pot_id=p.id, **data.model_dump()))
+    db.commit()
+    db.refresh(p)
+    return _pot_out(p)
+
+
+@router.delete("/pots/{pid}/moves/{mid}")
+def delete_pot_move(pid: int, mid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    p = _get_pot(db, u.workspace_id, pid)
+    n = db.query(PotMove).filter_by(id=mid, pot_id=p.id, user_id=u.workspace_id).delete()
+    db.commit()
+    if not n:
+        raise HTTPException(404, "Movimento não encontrado")
+    db.refresh(p)
+    return _pot_out(p)
+
+
+@router.post("/pots/{pid}/balance")
+def set_pot_balance(pid: int, data: PotBalanceIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    """Acerta com o saldo que o app do banco mostra hoje: a diferença vira rendimento (acerto),
+    não depósito. Corrige feriados, centavos de arredondamento e taxa diferente da cadastrada."""
+    p = _get_pot(db, u.workspace_id, pid)
+    diff = round(data.balance - pots.compute(p, p.moves)["balance"], 2)
+    if diff:
+        db.add(PotMove(user_id=u.workspace_id, pot_id=p.id, date=date.today(), kind="adjust", amount=diff,
+                       note="Acerto com o saldo do banco"))
+        db.commit()
+        db.refresh(p)
+    return _pot_out(p)
 
 
 @router.get("/market")

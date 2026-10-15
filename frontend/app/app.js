@@ -52,6 +52,7 @@ const ICONS = {
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  piggy: '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>',
   tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
 };
 const navIcon = (id) => `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id] || ""}</svg>`;
@@ -90,6 +91,7 @@ const ROUTES = [
   { id: "cards", label: "Cartões", icon: "cards", mobile: true, primary: true },
   { id: "accounts", label: "Contas", icon: "accounts", primary: true },
   { id: "patrimonio", label: "Patrimônio", icon: "patrimonio", primary: true },
+  { id: "pots", label: "Caixinhas", icon: "piggy", primary: true },
   { id: "market", label: "Mercado e simulador", icon: "market", primary: true },
   { id: "contracts", label: "Contratos e fixas", icon: "contracts" },
   { id: "receivables", label: "Contas a receber", icon: "receivables" },
@@ -1311,6 +1313,109 @@ function reserveForm(g = {}) {
     onDelete: g.id ? () => api(`/goals/${g.id}`, { method: "DELETE" }) : null,
   });
 }
+/* ------------------------------------------------------------------ caixinhas */
+const POT_TYPES = { cdi: "% do CDI", selic: "% da Selic", pre: "Prefixada (% ao ano)" };
+const pctBR = (v, d = 2) => (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const potRateLabel = (p) => p.yield_type === "pre" ? `${pctBR(p.yield_rate)} ao ano` : `${pctBR(p.yield_rate, 0)} do ${p.yield_type === "cdi" ? "CDI" : "Selic"}`;
+
+function potForm(p = {}) {
+  const isEdit = !!p.id;
+  openForm({
+    title: isEdit ? "Editar caixinha" : "Nova caixinha",
+    values: { yield_type: "cdi", yield_rate: 100, color: "#10b981", start_date: today(), ...p },
+    fields: [
+      { row: [{ name: "name", label: "Nome", required: true, placeholder: "Ex.: Reserva, Viagem, IPVA" }, { name: "institution", label: "Banco", placeholder: "Nubank, Inter, PicPay…" }] },
+      { row: [{ name: "yield_type", label: "Tipo de rendimento", type: "select", options: Object.entries(POT_TYPES) },
+        { name: "yield_rate", label: "Rentabilidade (%)", type: "number", required: true, min: 0.01, placeholder: "100 = 100% do CDI" }] },
+      ...(isEdit ? [] : [{ row: [{ name: "initial_amount", label: "Quanto já tem guardado (R$)", type: "number", min: 0, nullable: true },
+        { name: "start_date", label: "Guardado desde", type: "date", nullable: true }] }]),
+      { row: [{ name: "goal_amount", label: "Meta (R$, opcional)", type: "number", min: 0, nullable: true }, { name: "color", label: "Cor", type: "color" }] },
+      { name: "tax_free", label: "Isenta de imposto de renda (LCI, LCA, poupança)", type: "checkbox" },
+      ...(isEdit ? [{ name: "archived", label: "Arquivar (ocultar)", type: "checkbox" }] : []),
+    ],
+    extra: isEdit ? "" : `<p class="small muted">Não lembra quando começou? Coloque o saldo de hoje e a data de hoje. Depois, use "Acertar saldo" quando quiser conferir com o app do banco.</p>`,
+    onSubmit: (d) => api(isEdit ? `/pots/${p.id}` : "/pots", { method: isEdit ? "PUT" : "POST", body: d }),
+    onDelete: isEdit ? () => api(`/pots/${p.id}`, { method: "DELETE" }) : null,
+  });
+}
+
+function potMoveForm(p, kind) {
+  const isDep = kind === "deposit";
+  openForm({
+    title: `${isDep ? "Guardar na" : "Resgatar da"} caixinha ${p.name}`,
+    values: { date: today() },
+    fields: [{ row: [{ name: "amount", label: "Valor (R$)", type: "number", required: true, min: 0.01 }, { name: "date", label: "Data", type: "date", required: true }] },
+      { name: "note", label: "Observação", placeholder: isDep ? "Ex.: sobra do mês" : "Ex.: pagar IPVA" }],
+    extra: isDep ? "" : `<p class="small muted">Saldo agora: <b>${brl(p.summary.balance)}</b>. O resgate sai primeiro do dinheiro guardado há mais tempo, que paga menos imposto.</p>`,
+    onSubmit: (d) => api(`/pots/${p.id}/moves`, { body: { ...d, kind } }),
+  });
+}
+
+function potBalanceForm(p) {
+  openForm({
+    title: `Acertar saldo · ${p.name}`,
+    values: { balance: p.summary.balance },
+    fields: [{ name: "balance", label: "Saldo que o app do banco mostra hoje (R$)", type: "number", required: true, min: 0 }],
+    extra: `<p class="small muted">O Finora calculou <b>${brl(p.summary.balance)}</b>. A diferença entra como rendimento, não como depósito. Isso corrige feriados, centavos de arredondamento ou uma taxa diferente da cadastrada.</p>`,
+    onSubmit: (d) => api(`/pots/${p.id}/balance`, { body: d }),
+  });
+}
+
+async function potMovesDialog(p) {
+  const form = $("#modalForm"), dlg = $("#modal");
+  const KIND = { deposit: ["Depósito", ""], withdraw: ["Resgate", "neg"], adjust: ["Acerto de saldo", "muted"] };
+  const render = (moves) => {
+    form.innerHTML = `<h2>Movimentos · ${esc(p.name)}</h2>
+      <div class="list">${moves.map((m) => `<div class="li"><div class="grow"><div class="title">${KIND[m.kind][0]}${m.note ? ` <span class="small muted">· ${esc(m.note)}</span>` : ""}</div><div class="small muted">${fdate(m.date)}</div></div>
+        <div class="amount ${KIND[m.kind][1]}">${m.kind === "withdraw" ? "−" : m.kind === "adjust" && m.amount > 0 ? "+" : ""}${brl(m.amount)}</div>
+        ${canEdit() ? `<button type="button" class="icon-btn" data-del="${m.id}" aria-label="Excluir movimento" title="Excluir">${navIcon("trash")}</button>` : ""}</div>`).join("") || '<div class="empty">Nenhum movimento.</div>'}</div>
+      <div class="modal-actions"><button class="btn primary">Fechar</button></div>`;
+    form.querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => {
+      if (!await askConfirm({ title: "Excluir esse movimento?", message: "O saldo e o rendimento da caixinha são recalculados.", confirmLabel: "Excluir", danger: true })) return;
+      await api(`/pots/${p.id}/moves/${b.dataset.del}`, { method: "DELETE" });
+      render(await api(`/pots/${p.id}/moves`));
+    }));
+  };
+  render(await api(`/pots/${p.id}/moves`));
+  form.onsubmit = null;
+  dlg.onclose = () => { dlg.onclose = null; route(); };
+  dlg.showModal();
+}
+
+VIEWS.pots = async (v) => {
+  const items = await api("/pots");
+  const active = items.filter((p) => !p.archived);
+  const sum = (k) => active.reduce((s, p) => s + p.summary[k], 0);
+  const approx = active.some((p) => !p.summary.official_rates);
+  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">Caixinhas rendem todo dia útil. O Finora usa a taxa oficial do Banco Central em cada dia, igual ao banco.</p>${canEdit() ? '<button class="btn" id="newPot">+ Caixinha</button>' : ""}</div>
+    ${active.length ? `<div class="grid g4" style="margin-bottom:16px">
+      <div class="card stat"><h3>Guardado</h3><div class="value" data-count="${sum("balance")}">${brl(sum("balance"))}</div><div class="sub">${active.length} caixinha(s)</div></div>
+      <div class="card stat"><h3>Já rendeu</h3><div class="value pos">${brl(sum("gross_yield"))}</div><div class="sub">sobre ${brl(sum("invested"))} guardados</div></div>
+      <div class="card stat"><h3>Rendeu este mês</h3><div class="value">${brl(sum("month_yield"))}</div><div class="sub">até ontem</div></div>
+      <div class="card stat"><h3>Próximos 30 dias</h3><div class="value">${brl(sum("monthly_estimate"))}</div><div class="sub">estimativa na taxa de hoje</div></div>
+    </div>` : ""}
+    ${approx ? `<p class="small imp-warn">Sem acesso ao Banco Central agora. O rendimento está estimado com a taxa atual em todos os dias úteis e volta ao valor exato quando a conexão voltar.</p>` : ""}
+    <div class="grid g2">${items.map((p, i) => { const s = p.summary; return `<div class="card pot${p.archived ? " muted" : ""}" style="--pot:${esc(p.color)}">
+      <div class="between"><h2><span class="dot" style="background:${esc(p.color)};display:inline-block"></span> ${esc(p.name)}${p.archived ? ' <span class="chip">arquivada</span>' : ""}</h2>${canEdit() ? `<button class="btn small" data-act="edit" data-i="${i}">Editar</button>` : ""}</div>
+      <div class="small muted">${p.institution ? esc(p.institution) + " · " : ""}${potRateLabel(p)}${s.annual_rate != null ? ` · ${pctBR(s.annual_rate)} ao ano hoje` : ""}${p.tax_free ? ' · <span class="chip c-green">isenta</span>' : ""}</div>
+      <div class="stat"><div class="value">${brl(s.balance)}</div>
+        <div class="sub">Rendeu <b class="pos">${brl(s.gross_yield)}</b>${s.yield_pct != null ? ` (${pctBR(s.yield_pct)})` : ""}${s.since ? ` desde ${fdate(s.since)}` : ""} · este mês <b>${brl(s.month_yield)}</b></div></div>
+      ${p.goal_amount ? `<div class="bar"><i style="${barFill(pct(s.balance, p.goal_amount))}"></i></div><div class="small muted" style="margin-top:4px">${Math.round(pct(s.balance, p.goal_amount))}% da meta de ${brl(p.goal_amount)}</div>` : ""}
+      <div class="pot-rows">
+        <div><span>Se resgatar tudo hoje</span><b>${brl(s.net_balance)}</b></div>
+        ${p.tax_free ? "" : `<div class="small muted"><span>Imposto estimado</span><span>IR ${brl(s.ir)}${s.iof ? ` · IOF ${brl(s.iof)}` : ""}</span></div>`}
+        <div class="small muted"><span>Deve render em 30 dias / 12 meses</span><span>${brl(s.monthly_estimate)} / ${brl(s.year_estimate)}</span></div>
+      </div>
+      ${canEdit() ? `<div class="pot-actions"><button class="btn small primary" data-act="deposit" data-i="${i}">Guardar</button><button class="btn small" data-act="withdraw" data-i="${i}">Resgatar</button><button class="btn small ghost" data-act="balance" data-i="${i}">Acertar saldo</button><button class="btn small ghost" data-act="moves" data-i="${i}">Movimentos</button></div>` : ""}
+    </div>`; }).join("") || `<div class="card empty">Nenhuma caixinha ainda. Cadastre a do seu banco pra acompanhar quanto o dinheiro guardado está rendendo.</div>`}</div>`;
+  if (canEdit()) $("#newPot").onclick = () => potForm();
+  v.querySelectorAll("[data-act]").forEach((b) => (b.onclick = () => {
+    const p = items[b.dataset.i];
+    ({ edit: () => potForm(p), deposit: () => potMoveForm(p, "deposit"), withdraw: () => potMoveForm(p, "withdraw"),
+       balance: () => potBalanceForm(p), moves: () => potMovesDialog(p) })[b.dataset.act]();
+  }));
+};
+
 VIEWS.reserve = async (v) => {
   const goals = await api("/goals");
   const g = goals.find((x) => x.kind === "emergency_fund");
