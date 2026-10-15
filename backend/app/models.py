@@ -28,6 +28,8 @@ class User(Base):
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime)
     monthly_goal_savings: Mapped[float] = mapped_column(Float, default=0)
     email_alerts: Mapped[bool] = mapped_column(Boolean, default=True)  # alertas importantes por e-mail
+    investor_profile: Mapped[str | None] = mapped_column(String(12))  # declarado: conservador|moderado|arrojado (vazio = calculado)
+    dashboard_layout: Mapped[str | None] = mapped_column(Text)  # JSON: ordem e seções escondidas do painel
     email_digest: Mapped[str] = mapped_column(String(10), default="weekly")  # weekly | none
     last_daily_run_at: Mapped[datetime | None] = mapped_column(DateTime)
     last_digest_at: Mapped[datetime | None] = mapped_column(DateTime)

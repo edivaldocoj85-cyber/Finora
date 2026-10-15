@@ -38,7 +38,8 @@ def _migrate(engine):
             cols = {c["name"] for c in insp.get_columns("users")}
             if "avatar_url" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
-            for col, ddl in (("email_alerts", "BOOLEAN DEFAULT TRUE"), ("email_digest", "VARCHAR(10) DEFAULT 'weekly'"),
+            for col, ddl in (("investor_profile", "VARCHAR(12)"), ("dashboard_layout", "TEXT"),
+                             ("email_alerts", "BOOLEAN DEFAULT TRUE"), ("email_digest", "VARCHAR(10) DEFAULT 'weekly'"),
                              ("last_daily_run_at", "TIMESTAMP"), ("last_digest_at", "TIMESTAMP")):
                 if col not in cols:
                     conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ddl}"))

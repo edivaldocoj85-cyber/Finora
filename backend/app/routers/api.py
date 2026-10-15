@@ -27,7 +27,8 @@ from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRu
                       Goal, Income, Investment, InvestmentEvent, InvestmentTrade, PluggyItem,
                       PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import (advisor, analytics, assistant, cashflow, market, notifications, pluggy, portfolio, pots, recurring,
+from ..services import (advisor, allocation, analytics, assistant, cashflow, market, montecarlo, notifications, pluggy,
+                        portfolio, pots, recurring,
                         statement_import, storage, vendas)
 from ..services import email as email_service
 from ..services.categorizer import categorize, seed_categories
@@ -50,6 +51,7 @@ def user_out(u: User, db: Session):
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
             "email_alerts": u.email_alerts is not False, "email_digest": u.email_digest or "weekly",
             "email_enabled": email_service.enabled(),
+            "investor_profile": u.investor_profile, "dashboard_layout": u.dashboard_layout,
             "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin,
             "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
             "trial_expired": trial_expired,
@@ -232,11 +234,15 @@ class MeIn(BaseModel):
     monthly_goal_savings: Optional[float] = None
     email_alerts: Optional[bool] = None
     email_digest: Optional[str] = Field(None, pattern="^(weekly|none)$")
+    investor_profile: Optional[str] = Field(None, pattern="^(auto|conservador|moderado|arrojado)$")  # auto = calculado
+    dashboard_layout: Optional[str] = Field(None, max_length=2000)
 
 
 @router.patch("/me")
 def update_me(data: MeIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
     for k, v in data.model_dump(exclude_none=True).items():
+        if k == "investor_profile" and v == "auto":
+            v = None
         setattr(u, k, v)
     db.merge(u)
     db.commit()
@@ -1467,6 +1473,34 @@ def portfolio_tax(year: Optional[int] = Query(None, ge=2000, le=2100), u: User =
 def portfolio_history(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     rows = db.query(PortfolioSnapshot).filter_by(user_id=u.workspace_id).order_by(PortfolioSnapshot.date).all()
     return [{"date": s.date.isoformat(), "value": s.value, "invested": s.invested, "net_worth": s.net_worth} for s in rows]
+
+
+# ------------------------------------------------------------------ consultoria: perfil, onde investir, Monte Carlo
+@router.get("/advisor/allocation")
+def advisor_allocation(profile: Optional[str] = Query(None, pattern="^(conservador|moderado|arrojado)$"),
+                       u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Perfil pelo comportamento + onde colocar a sobra do mês (por classe de ativo)."""
+    d = analytics.dashboard(db, u.workspace_id)
+    port = portfolio.build(db, u.workspace_id, with_benchmarks=False)
+    port.pop("_positions", None)
+    owner = db.get(User, u.workspace_id)
+    return allocation.suggest(db, u.workspace_id, d, port, date.today(), profile or (owner.investor_profile if owner else None))
+
+
+class MonteCarloIn(BaseModel):
+    target: float = Field(gt=0)
+    initial: float = Field(0, ge=0)
+    monthly: float = Field(0, ge=0)
+    months: int = Field(ge=1, le=600)
+    profile: str = Field("moderado", pattern="^(conservador|moderado|arrojado)$")
+
+
+@router.post("/simulate/montecarlo")
+def simulate_montecarlo(data: MonteCarloIn, u: User = Depends(current_user_active),
+                        _rl=Depends(rate_limit("montecarlo", 30, 300))):
+    r = montecarlo.simulate(data.target, data.initial, data.monthly, data.months, data.profile)
+    r["required_monthly_80"] = montecarlo.required_monthly(data.target, data.initial, data.months, data.profile, 0.8)
+    return r
 
 
 # ------------------------------------------------------------------ caixinhas

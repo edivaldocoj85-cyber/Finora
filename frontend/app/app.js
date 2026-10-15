@@ -1313,6 +1313,51 @@ function goalForm(g = {}) {
     onDelete: g.id ? () => api(`/goals/${g.id}`, { method: "DELETE" }) : null,
   });
 }
+
+/* simulação de Monte Carlo de uma meta (services/montecarlo.py) */
+const PROFILE_LABEL = { conservador: "Conservador", moderado: "Moderado", arrojado: "Arrojado" };
+async function goalSimulation(g) {
+  const form = $("#modalForm"), dlg = $("#modal");
+  const months0 = g.deadline ? Math.max(1, Math.round((new Date(g.deadline) - new Date()) / 2.63e9)) : 60;
+  const left = Math.max(g.target_amount - g.current_amount, 0);
+  let alloc = null; try { alloc = await api("/advisor/allocation"); } catch {}
+  const prof0 = alloc?.used_profile || "moderado";
+  form.innerHTML = `<h2>Simular meta · ${esc(g.name)}</h2>
+    <p class="small muted">Sorteia 2.000 cenários de rendimento (com altos e baixos do mercado) e mostra a chance de chegar lá. Valores em dinheiro de hoje: a inflação já está descontada.</p>
+    <div class="row"><label>Aporte por mês (R$)<input id="mcMonthly" type="number" min="0" step="10" value="${Math.round(months0 ? left / months0 : 0)}"></label>
+      <label>Prazo (meses)<input id="mcMonths" type="number" min="1" max="600" value="${months0}"></label>
+      <label>Perfil<select id="mcProfile">${Object.entries(PROFILE_LABEL).map(([k, l]) => `<option value="${k}" ${k === prof0 ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <button type="button" class="btn primary" id="mcRun">Simular</button>
+    <div id="mcOut" style="margin-top:12px"></div>
+    <div class="modal-actions"><button class="btn">Fechar</button></div>`;
+  form.onsubmit = null;
+  const run = async () => {
+    const b = $("#mcRun"); b.disabled = true; b.classList.add("loading");
+    try {
+      const r = await api("/simulate/montecarlo", { body: { target: g.target_amount, initial: g.current_amount, monthly: +$("#mcMonthly").value || 0, months: +$("#mcMonths").value || 1, profile: $("#mcProfile").value } });
+      const cls = r.probability >= 80 ? "pos" : r.probability >= 50 ? "" : "neg";
+      $("#mcOut").innerHTML = `<div class="grid g3">
+          <div class="card stat"><h3>Chance de chegar</h3><div class="value ${cls}">${pctBR(r.probability, 0)}</div><div class="sub">no prazo de ${r.months} meses</div></div>
+          <div class="card stat"><h3>Pra ter 80% de chance</h3><div class="value">${brl(r.required_monthly_80)}</div><div class="sub">por mês</div></div>
+          <div class="card stat"><h3>Prazo provável</h3><div class="value">${r.median_months_to_target ? `${Math.round(r.median_months_to_target / 12 * 10) / 10} anos` : "—"}</div><div class="sub">na metade dos cenários</div></div></div>
+        <div class="chart-box" style="height:220px;margin-top:10px"><canvas id="cMc"></canvas></div>
+        <p class="small muted">Cenário ruim (10%): ${brl(r.p10_final)} · mediano: ${brl(r.median_final)} · bom (90%): ${brl(r.p90_final)}. Premissas do perfil: ${pctBR(r.assumptions.real_return, 1)} ao ano acima da inflação, oscilação de ${pctBR(r.assumptions.volatility, 0)}.</p>`;
+      state.charts.forEach((c) => c.destroy()); state.charts = [];
+      chart($("#cMc"), { type: "line", data: { labels: r.bands.map((x) => x.month >= 12 ? `${Math.round(x.month / 12)}a` : `${x.month}m`), datasets: [
+        { label: "Cenário bom", data: r.bands.map((x) => x.p90), borderColor: cssVar("--green"), pointRadius: 0, fill: false },
+        { label: "Mediano", data: r.bands.map((x) => x.p50), borderColor: cssVar("--primary-2"), pointRadius: 0, borderWidth: 3 },
+        { label: "Cenário ruim", data: r.bands.map((x) => x.p10), borderColor: cssVar("--red"), pointRadius: 0 },
+        { label: "Meta", data: r.bands.map(() => r.target), borderColor: cssVar("--muted"), borderDash: [6, 4], pointRadius: 0 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${brl(c.raw)}` } } }, scales: { y: { ticks: { callback: (x) => brl(x).replace(",00", "") } } } } });
+    } catch (e) { $("#mcOut").innerHTML = `<p class="error">${esc(e.message)}</p>`; }
+    finally { b.disabled = false; b.classList.remove("loading"); }
+  };
+  $("#mcRun").onclick = run;
+  dlg.onclose = () => { dlg.onclose = null; route(); };
+  dlg.showModal();
+  run();
+}
+
 VIEWS.goals = async (v) => {
   const items = (await api("/goals")).filter((g) => g.kind !== "emergency_fund");
   simpleList(v, {
@@ -1324,9 +1369,11 @@ VIEWS.goals = async (v) => {
         const months = Math.max(1, Math.round((new Date(g.deadline) - new Date()) / 2.63e9));
         perMonth = ` · guardar ${brl(left / months)}/mês por ${months} meses`;
       }
-      return `<div class="grow"><div class="between"><span class="title">${esc(g.name)}</span><span class="small">${brl(g.current_amount)} / ${brl(g.target_amount)}</span></div><div class="bar"><i style="${barFill(pct(g.current_amount, g.target_amount))}"></i></div><div class="small muted" style="margin-top:4px">${g.deadline ? "Prazo " + fdate(g.deadline) : "Sem prazo"}${perMonth}</div></div>`;
+      return `<div class="grow"><div class="between"><span class="title">${esc(g.name)} <button type="button" class="btn small ghost" data-sim="${g.id}">Simular</button></span><span class="small">${brl(g.current_amount)} / ${brl(g.target_amount)}</span></div><div class="bar"><i style="${barFill(pct(g.current_amount, g.target_amount))}"></i></div><div class="small muted" style="margin-top:4px">${g.deadline ? "Prazo " + fdate(g.deadline) : "Sem prazo"}${perMonth}</div></div>`;
     },
   });
+  v.querySelectorAll("[data-sim]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); goalSimulation(items.find((g) => g.id == b.dataset.sim)); }));
+  v.querySelectorAll("[data-sim]").forEach((b) => (b.onkeydown = (ev) => ev.stopPropagation()));
 };
 
 /* ------------------------------------------------------------------ patrimônio (outros bens) */
@@ -1849,9 +1896,32 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 });
 const md = (s) => DOMPurify.sanitize(marked.parse(s || ""), { ADD_ATTR: ["target"] });
 
+
+/* perfil pelo comportamento + onde investir a sobra (services/allocation.py) */
+async function renderAllocationCard(box) {
+  let r;
+  try { r = await api("/advisor/allocation"); } catch (e) { box.innerHTML = ""; return; }
+  const p = r.profile;
+  box.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="between"><h2 style="margin:0">Onde investir a sobra do mês</h2>
+      <label class="imp-ym small">Perfil <select id="profSel"><option value="auto" ${!state.user.investor_profile ? "selected" : ""}>Calculado: ${esc(p.label)} (${p.score}/100)</option>${Object.entries(PROFILE_LABEL).map(([k, l]) => `<option value="${k}" ${state.user.investor_profile === k ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <p class="small muted" style="margin-top:6px">Perfil pelo seu comportamento real: ${p.reasons.map((x) => esc(x.text)).join(" ") || "ainda poucos dados."}</p>
+    <div class="grid g3" style="margin:10px 0">
+      <div class="card stat"><h3>Sobra média</h3><div class="value ${r.surplus >= 0 ? "pos" : "neg"}">${brl(r.surplus)}</div><div class="sub">por mês (renda − gasto médio)</div></div>
+      <div class="card stat"><h3>Margem de segurança</h3><div class="value">${brl(r.margin)}</div><div class="sub">10% da renda fica livre</div></div>
+      <div class="card stat"><h3>Pra investir</h3><div class="value">${brl(r.free)}</div><div class="sub">perfil usado: ${esc(r.used_label)}</div></div></div>
+    ${r.steps.map((s) => `<p class="small">${esc(s)}</p>`).join("")}
+    ${r.action === "cut" ? `<p class="small imp-warn">Primeiro, abrir espaço no orçamento: veja "O que fazer agora" no Painel e as sugestões em Contratos.</p>` : ""}
+    <div class="list">${r.plan.map((x) => `<div class="li" style="display:block"><div class="between"><b>${esc(x.label)}</b><span class="amount">${brl(x.amount)}</span></div><div class="small muted">${esc(x.why)}</div><div class="small">Exemplos: ${esc(x.examples)}</div></div>`).join("")}</div>
+    <p class="small muted" style="margin-top:8px">${esc(r.disclaimer)}</p></div>`;
+  $("#profSel").onchange = async (e) => {
+    state.user = await api("/me", { method: "PATCH", body: { investor_profile: e.target.value } });
+    renderAllocationCard(box);
+  };
+}
+
 VIEWS.advisor = async (v) => {
   const reports = await api("/advisor");
-  v.innerHTML = `<div class="card" style="margin-bottom:16px">
+  v.innerHTML = `<div id="allocBox"></div><div class="card" style="margin-bottom:16px">
     <h2>Consultor financeiro</h2>
     <p class="muted small">Analisa seus dados, pesquisa o mercado atual e sugere onde economizar e como fazer seu dinheiro render. Conteúdo educativo, que não substitui um profissional certificado.</p>
     <div class="row" style="flex-wrap:wrap"><input id="q" placeholder="Pergunte algo: vale a pena antecipar o financiamento? Onde investir minha reserva?" style="flex:3;min-width:220px">
@@ -1864,6 +1934,7 @@ VIEWS.advisor = async (v) => {
     catch (e) { $("#loading").textContent = e.message; }
     finally { ["#ask", "#gen"].forEach((s) => { $(s).disabled = false; $(s).classList.remove("loading"); }); }
   };
+  renderAllocationCard($("#allocBox"));
   $("#gen").onclick = () => run(null);
   $("#ask").onclick = () => $("#q").value.trim() && run($("#q").value.trim());
   $("#q").onkeydown = (e) => e.key === "Enter" && $("#ask").click();
