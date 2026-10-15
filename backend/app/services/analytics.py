@@ -246,6 +246,16 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
     pots_total = sum(pots_service.compute(p, p.moves, ref)["balance"]
                      for p in db.query(Pot).filter_by(user_id=user_id, archived=False))
     invest += pots_total
+    # carteira de investimentos (ações, FIIs, renda fixa, cripto…), com cotação do dia
+    portfolio_total = 0.0
+    from ..models import Investment
+    if db.query(Investment.id).filter_by(user_id=user_id, archived=False).first():
+        from . import portfolio as portfolio_service
+        try:
+            portfolio_total = portfolio_service.build(db, user_id, ref, with_benchmarks=False)["value"]
+        except Exception:
+            portfolio_total = 0.0
+    invest += portfolio_total
     cards = card_invoices(db, user_id, ref)
     card_debt = sum(c["outstanding_balance"] for c in cards)
     assets = db.query(Asset).filter_by(user_id=user_id).all()
@@ -281,7 +291,7 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         "health": health,
         "ref": ref.isoformat(),
         "net_worth": round(cash + invest + assets_total - card_debt, 2),
-        "cash": round(cash, 2), "investments": round(invest, 2), "pots_total": round(pots_total, 2), "card_debt": round(card_debt, 2),
+        "cash": round(cash, 2), "investments": round(invest, 2), "pots_total": round(pots_total, 2), "portfolio_total": round(portfolio_total, 2), "card_debt": round(card_debt, 2),
         "assets_total": round(assets_total, 2),
         "month": cur, "months": months,
         "expected_income": round(expected_income, 2), "fixed_costs": round(fixed_costs, 2),

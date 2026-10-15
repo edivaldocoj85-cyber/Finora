@@ -210,6 +210,63 @@ class Asset(Owned, Base):
     notes: Mapped[str] = mapped_column(String(300), default="")
 
 
+class Investment(Owned, Base):
+    """Um ativo da carteira. Renda variável/cripto: quantidade × cotação. Renda fixa e Tesouro:
+    cada aporte rende pelo indexador (% do CDI, prefixado ou IPCA+), como nas caixinhas."""
+    __tablename__ = "investments"
+    name: Mapped[str] = mapped_column(String(120))
+    ticker: Mapped[str] = mapped_column(String(30), default="")  # PETR4, HGLG11, BTC…
+    asset_class: Mapped[str] = mapped_column(String(15))  # acao|fii|etf|bdr|cripto|internacional|cdb|lci_lca|tesouro|debenture|fundo|outro
+    broker: Mapped[str] = mapped_column(String(80), default="")
+    currency: Mapped[str] = mapped_column(String(3), default="BRL")
+    # renda fixa
+    index_type: Mapped[str | None] = mapped_column(String(10))  # cdi | selic | pre | ipca
+    index_rate: Mapped[float | None] = mapped_column(Float)  # % do CDI, ou % a.a. (pre / spread do IPCA+)
+    maturity: Mapped[date | None] = mapped_column(Date)
+    tax_free: Mapped[bool] = mapped_column(Boolean, default=False)
+    # cotação informada à mão (sem API pra esse ativo, ou fundo)
+    manual_price: Mapped[float | None] = mapped_column(Float)
+    manual_price_at: Mapped[date | None] = mapped_column(Date)
+    target_pct: Mapped[float | None] = mapped_column(Float)  # % alvo na carteira (rebalanceamento)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    trades: Mapped[list["InvestmentTrade"]] = relationship(cascade="all, delete-orphan", order_by="InvestmentTrade.date")
+    events: Mapped[list["InvestmentEvent"]] = relationship(cascade="all, delete-orphan", order_by="InvestmentEvent.date")
+
+
+class InvestmentTrade(Owned, Base):
+    __tablename__ = "investment_trades"
+    investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id", ondelete="CASCADE"), index=True)
+    date: Mapped[date] = mapped_column(Date)
+    kind: Mapped[str] = mapped_column(String(5))  # buy | sell
+    quantity: Mapped[float] = mapped_column(Float)  # renda fixa: 1 (o valor vai em price)
+    price: Mapped[float] = mapped_column(Float)
+    fees: Mapped[float] = mapped_column(Float, default=0)
+    day_trade: Mapped[bool] = mapped_column(Boolean, default=False)
+    note: Mapped[str] = mapped_column(String(200), default="")
+
+
+class InvestmentEvent(Owned, Base):
+    """Proventos e eventos: dividendo, JCP, rendimento de FII, juros/amortização de título."""
+    __tablename__ = "investment_events"
+    investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id", ondelete="CASCADE"), index=True)
+    date: Mapped[date] = mapped_column(Date)  # data de pagamento
+    kind: Mapped[str] = mapped_column(String(12))  # dividend | jcp | income | interest | amortization
+    amount: Mapped[float] = mapped_column(Float)  # valor líquido recebido (total)
+    per_unit: Mapped[float | None] = mapped_column(Float)
+    note: Mapped[str] = mapped_column(String(200), default="")
+
+
+class PortfolioSnapshot(Owned, Base):
+    """Foto diária da carteira (rotina diária): base do TWRR e do gráfico de evolução."""
+    __tablename__ = "portfolio_snapshots"
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_portfolio_snapshot_day"),)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    value: Mapped[float] = mapped_column(Float)
+    invested: Mapped[float] = mapped_column(Float)
+    net_flow: Mapped[float] = mapped_column(Float, default=0)  # aportes − resgates − proventos do dia
+    net_worth: Mapped[float | None] = mapped_column(Float)
+
+
 class Pot(Owned, Base):
     """Caixinha com rendimento (Nubank, Inter, PicPay…). O saldo não é guardado: sai dos
     movimentos + taxa diária do índice (ver services/pots.py)."""

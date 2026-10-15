@@ -53,6 +53,7 @@ const ICONS = {
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   flow: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  pie: '<path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>',
   layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
   piggy: '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>',
   tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
@@ -95,6 +96,7 @@ const ROUTES = [
   { id: "accounts", label: "Contas", icon: "accounts", primary: true },
   { id: "patrimonio", label: "Patrimônio", icon: "patrimonio", primary: true },
   { id: "pots", label: "Caixinhas", icon: "piggy", primary: true },
+  { id: "investments", label: "Investimentos", icon: "pie", primary: true },
   { id: "market", label: "Mercado e simulador", icon: "market", primary: true },
   { id: "contracts", label: "Contratos e fixas", icon: "contracts" },
   { id: "receivables", label: "Contas a receber", icon: "receivables" },
@@ -1544,6 +1546,210 @@ VIEWS.cashflow = async (v) => {
   };
   await draw();
 };
+
+/* ------------------------------------------------------------------ investimentos */
+const INV_CLASSES = { acao: "Ações", fii: "FIIs", etf: "ETFs", bdr: "BDRs", cripto: "Cripto", internacional: "Internacional (US$)",
+  cdb: "CDB/RDB", lci_lca: "LCI/LCA", tesouro: "Tesouro Direto", debenture: "Debêntures/CRI/CRA", fundo: "Fundos", outro: "Outros" };
+const INV_VARIABLE = ["acao", "fii", "etf", "bdr", "cripto", "internacional"];
+const INV_INDEX = { cdi: "% do CDI", selic: "% da Selic", pre: "Prefixado (% a.a.)", ipca: "IPCA + (% a.a.)" };
+const EVENT_KINDS = { dividend: "Dividendo", jcp: "JCP", income: "Rendimento (FII)", interest: "Juros", amortization: "Amortização" };
+const PRICE_SRC = { quote: "cotação", manual: "preço informado", last_trade: "última compra", curve: "na curva" };
+const INV_COLORS = ["#2340d8", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#ec4899", "#84cc16", "#64748b", "#f97316", "#14b8a6", "#a855f7"];
+const qtyBR = (v) => (Number(v) || 0).toLocaleString("pt-BR", { maximumFractionDigits: 8 });
+const signPct = (v) => v == null ? "—" : `${v > 0 ? "+" : ""}${pctBR(v)}`;
+
+// mostra/esconde campos do formulário conforme a classe (openForm é genérico)
+function toggleFormFields(names, show) {
+  names.forEach((n) => { const el = $(`#modalForm [name="${n}"]`); if (el) el.closest("label").style.display = show ? "" : "none"; });
+}
+
+function investmentForm(inv = {}) {
+  const isEdit = !!inv.id;
+  openForm({
+    title: isEdit ? `Editar ${inv.name}` : "Novo investimento",
+    values: { asset_class: "acao", currency: "BRL", index_type: "cdi", trade_date: today(), ...inv },
+    fields: [
+      { row: [{ name: "asset_class", label: "Tipo", type: "select", options: Object.entries(INV_CLASSES) }, { name: "name", label: "Nome", required: true, placeholder: "Ex.: Petrobras, CDB Banco X" }] },
+      { row: [{ name: "ticker", label: "Código (ticker)", placeholder: "PETR4, HGLG11, BTC" }, { name: "broker", label: "Corretora/banco" }] },
+      { row: [{ name: "index_type", label: "Indexador", type: "select", options: Object.entries(INV_INDEX) }, { name: "index_rate", label: "Taxa (%)", type: "number", nullable: true, placeholder: "110 = 110% do CDI" },
+        { name: "maturity", label: "Vencimento", type: "date", nullable: true }] },
+      { name: "tax_free", label: "Isento de IR (LCI, LCA, CRI, CRA, debênture incentivada)", type: "checkbox" },
+      { row: [{ name: "manual_price", label: "Preço atual informado (opcional)", type: "number", nullable: true, step: "0.000001" }, { name: "target_pct", label: "% alvo na carteira", type: "number", nullable: true, min: 0, max: 100 }] },
+      ...(isEdit ? [{ name: "archived", label: "Arquivar (já vendi tudo / não acompanho mais)", type: "checkbox" }] : [
+        { row: [{ name: "trade_date", label: "Data da compra", type: "date" }, { name: "trade_qty", label: "Quantidade", type: "number", nullable: true, step: "0.00000001" },
+          { name: "trade_price", label: "Preço unitário (R$)", type: "number", nullable: true, step: "0.000001" }, { name: "trade_fees", label: "Taxas (R$)", type: "number", nullable: true }] },
+        { name: "trade_amount", label: "Valor aplicado (R$)", type: "number", nullable: true }]),
+    ],
+    extra: `<p class="small muted" id="invHint"></p>`,
+    onSubmit: async (d) => {
+      const variable = INV_VARIABLE.includes(d.asset_class);
+      const body = { name: d.name, ticker: d.ticker || "", asset_class: d.asset_class, broker: d.broker || "",
+        currency: d.asset_class === "internacional" ? "USD" : "BRL", index_type: variable ? null : d.index_type, index_rate: variable ? null : d.index_rate,
+        maturity: d.maturity, tax_free: !!d.tax_free, manual_price: d.manual_price, target_pct: d.target_pct, archived: !!d.archived };
+      const saved = await api(isEdit ? `/investments/${inv.id}` : "/investments", { method: isEdit ? "PUT" : "POST", body });
+      if (!isEdit) {
+        const t = variable ? (d.trade_qty && d.trade_price != null ? { quantity: d.trade_qty, price: d.trade_price, fees: d.trade_fees || 0 } : null)
+          : (d.trade_amount ? { quantity: 1, price: d.trade_amount, fees: 0 } : null);
+        if (t) await api(`/investments/${saved.id}/trades`, { body: { date: d.trade_date || today(), kind: "buy", ...t } });
+      }
+    },
+    onDelete: isEdit ? () => api(`/investments/${inv.id}`, { method: "DELETE" }) : null,
+  });
+  const sync = () => {
+    const cls = $('#modalForm [name="asset_class"]').value, variable = INV_VARIABLE.includes(cls);
+    toggleFormFields(["ticker"], variable || cls === "tesouro");
+    toggleFormFields(["index_type", "index_rate", "maturity", "tax_free"], !variable && cls !== "fundo" && cls !== "outro");
+    toggleFormFields(["trade_qty", "trade_price", "trade_fees"], variable);
+    toggleFormFields(["trade_amount"], !variable);
+    $("#invHint").textContent = cls === "cripto" ? "Código: BTC, ETH, SOL… (ou o id da CoinGecko). A cotação em reais vem sozinha."
+      : cls === "internacional" ? "Preço em dólar; o valor em reais usa o dólar do dia. Informe o preço atual à mão."
+      : variable ? "Ações, FIIs, ETFs e BDRs: a cotação vem da B3 (brapi). Se não vier, use o preço informado."
+      : cls === "fundo" || cls === "outro" ? "Informe o valor atual (preço) de vez em quando pra acompanhar o resultado."
+      : "Renda fixa rende pelo indexador todo dia útil (valor na curva). Vendendo antes do vencimento, o preço pode ser outro.";
+  };
+  $('#modalForm [name="asset_class"]').onchange = sync; sync();
+}
+
+function tradeForm(p, kind) {
+  const variable = INV_VARIABLE.includes(p.asset_class);
+  openForm({
+    title: `${kind === "buy" ? (variable ? "Comprar" : "Aplicar em") : (variable ? "Vender" : "Resgatar de")} ${p.ticker || p.name}`,
+    values: { date: today() },
+    fields: variable ? [
+      { row: [{ name: "date", label: "Data", type: "date", required: true }, { name: "quantity", label: "Quantidade", type: "number", required: true, step: "0.00000001" }] },
+      { row: [{ name: "price", label: `Preço unitário (${p.currency === "USD" ? "US$" : "R$"})`, type: "number", required: true, step: "0.000001" }, { name: "fees", label: "Taxas e corretagem (R$)", type: "number" }] },
+      { name: "day_trade", label: "Day trade (comprou e vendeu no mesmo dia)", type: "checkbox" },
+      { name: "note", label: "Observação" }]
+      : [{ row: [{ name: "date", label: "Data", type: "date", required: true }, { name: "price", label: "Valor (R$)", type: "number", required: true }] }, { name: "note", label: "Observação" }],
+    extra: kind === "sell" && variable ? `<p class="small muted">Você tem ${qtyBR(p.quantity)} a preço médio de ${brl(p.avg_price)}.</p>` : "",
+    onSubmit: (d) => api(`/investments/${p.id}/trades`, { body: { kind, date: d.date, quantity: variable ? d.quantity : 1, price: d.price, fees: d.fees || 0, day_trade: !!d.day_trade, note: d.note || "" } }),
+  });
+}
+
+function eventForm(p) {
+  openForm({
+    title: `Provento de ${p.ticker || p.name}`,
+    values: { date: today(), kind: p.asset_class === "fii" ? "income" : "dividend" },
+    fields: [{ row: [{ name: "kind", label: "Tipo", type: "select", options: Object.entries(EVENT_KINDS) }, { name: "date", label: "Data do pagamento", type: "date", required: true }] },
+      { row: [{ name: "amount", label: "Valor recebido (R$, total líquido)", type: "number", required: true }, { name: "per_unit", label: "Por cota/ação (opcional)", type: "number", nullable: true, step: "0.000001" }] }],
+    onSubmit: (d) => api(`/investments/${p.id}/events`, { body: d }),
+  });
+}
+
+async function investmentDetail(p, inv) {
+  const form = $("#modalForm"), dlg = $("#modal");
+  const render = async () => {
+    const h = await api(`/investments/${p.id}/history`);
+    const variable = INV_VARIABLE.includes(p.asset_class);
+    form.innerHTML = `<h2>${esc(p.ticker || p.name)} <span class="chip">${esc(p.class_label)}</span></h2>
+      <p class="small muted">${esc(p.name)}${p.broker ? " · " + esc(p.broker) : ""}${p.maturity ? " · vence " + fdate(p.maturity) : ""}</p>
+      <div class="pot-rows" style="border-top:0;padding-top:0">
+        <div><span>Valor hoje</span><b>${brl(p.value)}</b></div>
+        ${variable ? `<div class="small muted"><span>${qtyBR(p.quantity)} × ${p.price != null ? (p.currency === "USD" ? "US$ " + p.price.toLocaleString("pt-BR") : brl(p.price)) : "—"} (${PRICE_SRC[p.price_source] || ""})</span><span>médio ${brl(p.avg_price)}</span></div>` : `<div class="small muted"><span>Taxa hoje</span><span>${p.annual_rate != null ? pctBR(p.annual_rate) + " a.a." : "—"}</span></div>`}
+        <div><span>Resultado</span><b class="${p.gain >= 0 ? "pos" : "neg"}">${brl(p.gain)} (${signPct(p.gain_pct)})</b></div>
+        ${p.income ? `<div><span>Proventos recebidos</span><b class="pos">${brl(p.income)}</b></div>` : ""}
+        ${p.realized_gain ? `<div><span>Lucro realizado em vendas</span><b class="${p.realized_gain >= 0 ? "pos" : "neg"}">${brl(p.realized_gain)}</b></div>` : ""}
+        ${p.tax_estimate ? `<div class="small muted"><span>IR/IOF estimado se resgatar hoje</span><span>${brl(p.tax_estimate)}</span></div>` : ""}
+      </div>
+      ${canEdit() ? `<div class="pot-actions"><button type="button" class="btn small primary" data-a="buy">${variable ? "Comprar" : "Aplicar"}</button><button type="button" class="btn small" data-a="sell">${variable ? "Vender" : "Resgatar"}</button>${["acao", "fii", "etf", "bdr"].includes(p.asset_class) || !variable ? '<button type="button" class="btn small" data-a="event">+ Provento</button>' : ""}<button type="button" class="btn small ghost" data-a="edit">Editar</button></div>` : ""}
+      <h3 style="margin-top:16px">Operações</h3>
+      <div class="list">${h.trades.map((t) => `<div class="li"><div class="grow"><div class="title">${t.kind === "buy" ? (variable ? "Compra" : "Aplicação") : (variable ? "Venda" : "Resgate")}${t.day_trade ? ' <span class="chip c-amber">day trade</span>' : ""}</div><div class="small muted">${fdate(t.date)}${variable ? ` · ${qtyBR(t.quantity)} × ${brl(t.price)}` : ""}${t.fees ? ` · taxas ${brl(t.fees)}` : ""}${t.note ? " · " + esc(t.note) : ""}</div></div>
+        <div class="amount ${t.kind === "sell" ? "pos" : ""}">${brl(t.quantity * t.price)}</div>${canEdit() ? `<button type="button" class="icon-btn" data-dt="${t.id}" aria-label="Excluir operação">${navIcon("trash")}</button>` : ""}</div>`).join("") || '<div class="empty">Nenhuma operação.</div>'}</div>
+      ${h.events.length ? `<h3 style="margin-top:16px">Proventos</h3><div class="list">${h.events.map((e) => `<div class="li"><div class="grow"><div class="title">${EVENT_KINDS[e.kind]}</div><div class="small muted">${fdate(e.date)}${e.per_unit ? ` · ${brl(e.per_unit)} por cota` : ""}</div></div><div class="amount pos">${brl(e.amount)}</div>${canEdit() ? `<button type="button" class="icon-btn" data-de="${e.id}" aria-label="Excluir provento">${navIcon("trash")}</button>` : ""}</div>`).join("")}</div>` : ""}
+      <div class="modal-actions"><button class="btn primary">Fechar</button></div>`;
+    form.onsubmit = null;
+    const go = (fn) => () => { dlg.onclose = null; dlg.close(); fn(); };
+    form.querySelectorAll("[data-a]").forEach((b) => (b.onclick = go(() => ({ buy: () => tradeForm(p, "buy"), sell: () => tradeForm(p, "sell"), event: () => eventForm(p), edit: () => investmentForm(inv) })[b.dataset.a]())));
+    form.querySelectorAll("[data-dt]").forEach((b) => (b.onclick = async () => {
+      if (!await askConfirm({ title: "Excluir essa operação?", message: "Preço médio, resultado e imposto são recalculados.", confirmLabel: "Excluir", danger: true })) return;
+      await api(`/investments/${p.id}/trades/${b.dataset.dt}`, { method: "DELETE" }); dlg.close();
+    }));
+    form.querySelectorAll("[data-de]").forEach((b) => (b.onclick = async () => {
+      if (!await askConfirm({ title: "Excluir esse provento?", confirmLabel: "Excluir", danger: true })) return;
+      await api(`/investments/${p.id}/events/${b.dataset.de}`, { method: "DELETE" }); dlg.close();
+    }));
+  };
+  await render();
+  dlg.onclose = () => { dlg.onclose = null; route(); };
+  dlg.showModal();
+}
+
+VIEWS.investments = async (v) => {
+  let tab = localGet("finora_inv_tab") || "portfolio";
+  const draw = async () => {
+    v.innerHTML = `<div class="between" style="margin-bottom:6px"><p class="muted" style="margin:0">Ações, FIIs, renda fixa, Tesouro e cripto num lugar só, com preço médio, rentabilidade comparada ao CDI e o imposto de renda do mês.</p>${canEdit() ? '<button class="btn" id="newInv">+ Investimento</button>' : ""}</div>
+      <div class="tabs" role="tablist">${[["portfolio", "Carteira"], ["dividends", "Proventos"], ["tax", "Imposto de renda"]].map(([k, l]) => `<button type="button" class="${k === tab ? "active" : ""}" data-t="${k}">${l}</button>`).join("")}</div>
+      <div id="invBody" style="margin-top:12px"><div class="empty">Carregando…</div></div>`;
+    if (canEdit()) $("#newInv").onclick = () => investmentForm();
+    v.querySelectorAll("[data-t]").forEach((b) => (b.onclick = () => { tab = b.dataset.t; localSet("finora_inv_tab", tab); state.charts.forEach((c) => c.destroy()); state.charts = []; draw(); }));
+    const body = $("#invBody");
+    if (tab === "portfolio") await drawPortfolio(body);
+    else if (tab === "dividends") await drawDividends(body);
+    else await drawTax(body);
+  };
+  await draw();
+};
+
+async function drawPortfolio(body) {
+  const p = await api("/investments");
+  const live = p.positions.filter((x) => x.value || x.quantity);
+  const b = p.benchmarks || {};
+  const invAccounts = state.accounts.filter((a) => a.kind === "investment" && !a.archived && a.balance);
+  const beat = p.mwrr_annual != null && b.cdi_annual != null ? p.mwrr_annual - b.cdi_annual : null;
+  body.innerHTML = `${invAccounts.length && p.value ? `<p class="small imp-warn">Você também tem conta do tipo Investimentos com saldo (${invAccounts.map((a) => esc(a.name)).join(", ")}). Se for o mesmo dinheiro desta carteira, zere ou arquive a conta pra não contar duas vezes no patrimônio.</p>` : ""}
+    <div class="grid g4" style="margin-bottom:16px">
+      <div class="card stat"><h3>Valor hoje</h3><div class="value">${brl(p.value)}</div><div class="sub">investido ${brl(p.cost)}</div></div>
+      <div class="card stat"><h3>Resultado</h3><div class="value ${p.gain >= 0 ? "pos" : "neg"}">${brl(p.gain)}</div><div class="sub">${signPct(p.gain_pct)} · + proventos ${brl(p.income)}${p.realized_gain ? ` · vendas ${brl(p.realized_gain)}` : ""}</div></div>
+      <div class="card stat"><h3>Rentabilidade ao ano</h3><div class="value">${p.mwrr_annual != null ? pctBR(p.mwrr_annual) : "—"}</div><div class="sub">${b.cdi_annual != null ? `CDI ${pctBR(b.cdi_annual)}${beat != null ? ` · ${beat >= 0 ? "acima" : "abaixo"} ${pctBR(Math.abs(beat))}` : ""}` : "taxa interna de retorno"}</div></div>
+      <div class="card stat"><h3>No período</h3><div class="value" style="font-size:1.05rem">${p.since ? `desde ${fdate(p.since)}` : "—"}</div><div class="sub">${b.cdi_total != null ? `CDI ${pctBR(b.cdi_total)}` : ""}${b.ipca_total != null ? ` · IPCA ${pctBR(b.ipca_total)}` : ""}${p.twrr ? ` · TWRR ${signPct(p.twrr.total)}` : ""}</div></div>
+    </div>
+    ${live.length ? `<div class="grid g2">
+      <div class="card"><h2>Alocação</h2><div class="chart-box" style="height:240px"><canvas id="cAlloc"></canvas></div>
+        <div class="list" style="margin-top:8px">${p.allocation.map((a, i) => {
+          const tgt = live.filter((x) => x.asset_class === a.class).reduce((s, x) => s + (x.target_pct || 0), 0);
+          const diff = tgt ? a.pct - tgt : null;
+          return `<div class="li"><span class="dot" style="background:${INV_COLORS[i % INV_COLORS.length]}"></span><div class="grow">${esc(a.label)}${tgt ? ` <span class="small muted">alvo ${pctBR(tgt, 0)}</span>` : ""}</div><div class="amount">${brl(a.value)} <span class="small muted">${pctBR(a.pct, 1)}</span>${diff != null && Math.abs(diff) >= 3 ? ` <span class="chip ${diff > 0 ? "c-amber" : "c-cyan"}">${diff > 0 ? "acima" : "abaixo"} ${pctBR(Math.abs(diff), 0)}</span>` : ""}</div></div>`; }).join("")}</div></div>
+      <div class="card"><h2>Ativos</h2><div class="table-wrap"><table><thead><tr><th>Ativo</th><th class="num hide-sm">Preço médio</th><th class="num">Valor</th><th class="num">Resultado</th></tr></thead><tbody>
+        ${p.positions.map((x, i) => `<tr class="clickable" data-p="${i}" tabindex="0"><td><b>${esc(x.ticker || x.name)}</b> <span class="small muted">${esc(x.class_label)}</span><div class="small muted">${INV_VARIABLE.includes(x.asset_class) ? `${qtyBR(x.quantity)} · ${PRICE_SRC[x.price_source] || ""}` : x.annual_rate != null ? `${pctBR(x.annual_rate)} a.a.` : ""}${x.price_source === "last_trade" ? ' <span class="chip c-amber">sem cotação</span>' : ""}</div></td>
+          <td class="num hide-sm">${INV_VARIABLE.includes(x.asset_class) ? brl(x.avg_price) : "—"}</td><td class="num">${brl(x.value)}</td><td class="num ${x.gain >= 0 ? "pos" : "neg"}">${signPct(x.gain_pct)}</td></tr>`).join("")}
+      </tbody></table></div><p class="small muted" style="margin-top:6px">Toque num ativo pra comprar, vender, lançar provento ou editar.</p></div>
+    </div>` : `<div class="card empty">Nenhum investimento ainda. Clique em "+ Investimento" e cadastre o primeiro com a compra.</div>`}`;
+  body.querySelectorAll("[data-p]").forEach((el) => clickable(el, () => { const pos = p.positions[el.dataset.p]; investmentDetail(pos, pos); }));
+  if (live.length) chart($("#cAlloc"), { type: "doughnut", data: { labels: p.allocation.map((a) => a.label), datasets: [{ data: p.allocation.map((a) => a.value), backgroundColor: p.allocation.map((_, i) => INV_COLORS[i % INV_COLORS.length]), borderColor: cssVar("--surface"), borderWidth: 2 }] },
+    options: { maintainAspectRatio: false, cutout: "62%", plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${brl(c.raw)}` } } } } });
+}
+
+async function drawDividends(body) {
+  const d = await api("/portfolio/dividends");
+  body.innerHTML = `<div class="grid g3" style="margin-bottom:16px">
+      <div class="card stat"><h3>Recebido em 12 meses</h3><div class="value pos">${brl(d.last12)}</div><div class="sub">${brl(d.last12 / 12)} por mês em média</div></div>
+      <div class="card stat"><h3>Previsto em 6 meses</h3><div class="value">${brl(d.next6)}</div><div class="sub">pela média recente de cada ativo</div></div>
+      <div class="card stat"><h3>Ativos pagando</h3><div class="value">${d.assets.length}</div><div class="sub">nos últimos 12 meses</div></div></div>
+    <div class="card"><h2>Calendário de proventos</h2><div class="chart-box" style="height:260px"><canvas id="cDiv"></canvas></div></div>
+    <div class="card" style="margin-top:16px"><h2>Por ativo</h2><div class="list">${d.assets.map((a) => `<div class="li"><div class="grow"><div class="title">${esc(a.name)}</div><div class="small muted">${esc(INV_CLASSES[a.class] || a.class)} · ~${brl(a.monthly_estimate)} por mês</div></div><div class="amount pos">${brl(a.last12)}</div></div>`).join("") || '<div class="empty">Nenhum provento lançado. Abra um ativo e use "+ Provento".</div>'}</div></div>`;
+  chart($("#cDiv"), { type: "bar", data: { labels: d.months.map((m) => monthLabel(m.month)), datasets: [
+    { label: "Recebido", data: d.months.map((m) => m.received), backgroundColor: cssVar("--green"), borderRadius: 4 },
+    { label: "Previsto", data: d.months.map((m) => m.projected), backgroundColor: "rgba(35,64,216,.35)", borderRadius: 4 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${brl(c.raw)}` } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: (x) => brl(x).replace(",00", "") } } } } });
+}
+
+async function drawTax(body, year) {
+  const t = await api(`/portfolio/tax${year ? `?year=${year}` : ""}`);
+  const MON = (m) => new Date(m + "-15T12:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  body.innerHTML = `<div class="between" style="margin-bottom:12px"><p class="small muted" style="margin:0;max-width:720px">Cálculo automático pelas regras de pessoa física: ações isentas até R$ 20 mil de vendas no mês, FII 20%, ETF e BDR 15% sem isenção, day trade 20%, cripto isenta até R$ 35 mil de vendas. Prejuízos são compensados nos meses seguintes. Confira com seu contador antes de pagar.</p>
+      <label class="imp-ym">Ano <select id="taxYear">${t.years.map((y) => `<option ${y === t.year ? "selected" : ""}>${y}</option>`).join("")}</select></label></div>
+    <div class="card"><h2>Apuração mensal</h2><div class="table-wrap"><table><thead><tr><th>Mês</th><th class="num">Vendas de ações</th><th class="num">Lucro tributável</th><th class="num">Imposto</th><th>DARF</th></tr></thead><tbody>
+      ${t.months.map((m) => `<tr><td>${MON(m.month)}${m.acao_exempt ? ' <span class="chip c-green">ações isentas</span>' : ""}</td><td class="num">${brl(m.acao_sales)}</td><td class="num">${brl(m.taxable_base)}</td><td class="num">${brl(m.tax)}</td>
+        <td>${m.darfs.map((d) => `<b>${brl(d.amount)}</b> <span class="small muted">cód. ${d.code} · vence ${fdate(m.due_date)}</span>`).join("<br>") || (m.carry_next ? `<span class="small muted">${brl(m.carry_next)} passa pro mês seguinte (menos de R$ 10)</span>` : '<span class="small muted">nada a pagar</span>')}</td></tr>`).join("") || '<tr><td colspan="5" class="empty">Nenhuma venda neste ano.</td></tr>'}
+    </tbody></table></div>
+    <p class="small muted" style="margin-top:8px">Prejuízo acumulado pra compensar: ações/ETF/BDR ${brl(t.losses.comum)} · FII ${brl(t.losses.fii)} · day trade ${brl(t.losses.daytrade)}</p></div>
+    <div class="card" style="margin-top:16px"><h2>Pra declaração de ${t.year}</h2>
+      <div class="grid g2" style="margin-bottom:10px"><div class="pot-rows" style="border-top:0"><div><span>Rendimentos isentos (dividendos, FII, lucro isento)</span><b>${brl(t.annual.exempt_income)}</b></div><div><span>Tributação exclusiva (JCP)</span><b>${brl(t.annual.exclusive_income)}</b></div></div></div>
+      <h3>Bens e direitos (pelo custo, em 31/12)</h3><div class="table-wrap"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="num">Quantidade</th><th class="num">Custo</th></tr></thead><tbody>
+      ${t.annual.goods.map((g) => `<tr><td>${esc(g.ticker || g.name)}${g.broker ? ` <span class="small muted">${esc(g.broker)}</span>` : ""}</td><td>${esc(g.class)}</td><td class="num">${qtyBR(g.quantity)}</td><td class="num">${brl(g.cost)}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Nada em carteira.</td></tr>'}
+      </tbody></table></div></div>`;
+  $("#taxYear").onchange = (e) => drawTax(body, e.target.value);
+}
 
 function costCenterForm(c = {}) {
   openForm({

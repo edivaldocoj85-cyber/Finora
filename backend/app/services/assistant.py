@@ -177,7 +177,8 @@ _ROUTES = {
     "cartoes": "cards", "contas": "accounts", "contratos": "contracts",
     "renda": "incomes", "categorias": "categories", "metas": "goals", "consultor": "advisor",
     "mercado": "market", "conexoes": "bank", "banco": "bank", "configuracoes": "settings",
-    "caixinhas": "pots", "caixinha": "pots",
+    "caixinhas": "pots", "caixinha": "pots", "investimentos": "investments", "carteira": "investments",
+    "fluxo": "cashflow", "imposto": "investments",
 }
 
 

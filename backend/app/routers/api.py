@@ -24,9 +24,10 @@ from ..auth import current_admin, current_editor, current_user, current_user_act
 from ..config import get_settings
 from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
-                      Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
+                      Goal, Income, Investment, InvestmentEvent, InvestmentTrade, PluggyItem,
+                      PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import (advisor, analytics, assistant, cashflow, market, notifications, pluggy, pots, recurring,
+from ..services import (advisor, analytics, assistant, cashflow, market, notifications, pluggy, portfolio, pots, recurring,
                         statement_import, storage, vendas)
 from ..services import email as email_service
 from ..services.categorizer import categorize, seed_categories
@@ -1317,6 +1318,155 @@ def report_cost_centers(start: date, end: date, u: User = Depends(current_user_a
     return {"total_expense": round(total_exp, 2),
             "cost_centers": sorted(cc_rows, key=lambda x: (x["id"] is None, -x["expense"])),
             "tags": sorted(tag_rows, key=lambda x: -x["expense"])}
+
+
+# ------------------------------------------------------------------ investimentos
+_CLASSES = "^(acao|fii|etf|bdr|cripto|internacional|cdb|lci_lca|tesouro|debenture|fundo|outro)$"
+
+
+class InvestmentIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    ticker: str = Field("", max_length=30)
+    asset_class: str = Field(pattern=_CLASSES)
+    broker: str = Field("", max_length=80)
+    currency: str = Field("BRL", pattern="^(BRL|USD)$")
+    index_type: Optional[str] = Field(None, pattern="^(cdi|selic|pre|ipca)$")
+    index_rate: Optional[float] = Field(None, ge=0, le=1000)
+    maturity: Optional[date] = None
+    tax_free: bool = False
+    manual_price: Optional[float] = Field(None, ge=0)
+    target_pct: Optional[float] = Field(None, ge=0, le=100)
+    archived: bool = False
+
+
+class TradeIn(BaseModel):
+    date: date
+    kind: str = Field(pattern="^(buy|sell)$")
+    quantity: float = Field(gt=0)
+    price: float = Field(ge=0)
+    fees: float = Field(0, ge=0)
+    day_trade: bool = False
+    note: str = Field("", max_length=200)
+
+
+class EventIn(BaseModel):
+    date: date
+    kind: str = Field(pattern="^(dividend|jcp|income|interest|amortization)$")
+    amount: float = Field(gt=0)
+    per_unit: Optional[float] = Field(None, ge=0)
+    note: str = Field("", max_length=200)
+
+
+def _get_inv(db, uid, iid) -> Investment:
+    i = db.query(Investment).filter_by(id=iid, user_id=uid).first()
+    if not i:
+        raise HTTPException(404, "Investimento não encontrado")
+    return i
+
+
+def _clean_investment(data: InvestmentIn) -> dict:
+    vals = data.model_dump()
+    vals["ticker"] = vals["ticker"].strip().upper()
+    if vals["asset_class"] in portfolio.VARIABLE + ("cripto", "internacional"):
+        vals["index_type"] = vals["index_rate"] = None  # renda variável não tem indexador
+    return vals
+
+
+@router.get("/investments")
+def get_portfolio(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    p = portfolio.build(db, u.workspace_id)
+    p.pop("_positions", None)
+    return p
+
+
+@router.post("/investments")
+def create_investment(data: InvestmentIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    vals = _clean_investment(data)
+    i = Investment(user_id=u.workspace_id, manual_price_at=date.today() if vals["manual_price"] is not None else None, **vals)
+    db.add(i)
+    db.commit()
+    return to_dict(i)
+
+
+@router.put("/investments/{iid}")
+def update_investment(iid: int, data: InvestmentIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    vals = _clean_investment(data)
+    if vals["manual_price"] != i.manual_price:
+        i.manual_price_at = date.today() if vals["manual_price"] is not None else None
+    for k, v in vals.items():
+        setattr(i, k, v)
+    db.commit()
+    return to_dict(i)
+
+
+@router.delete("/investments/{iid}")
+def delete_investment(iid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    db.delete(_get_inv(db, u.workspace_id, iid))
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/investments/{iid}/history")
+def investment_history(iid: int, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    return {"trades": [to_dict(t) for t in sorted(i.trades, key=lambda t: (t.date, t.id), reverse=True)],
+            "events": [to_dict(e) for e in sorted(i.events, key=lambda e: (e.date, e.id), reverse=True)]}
+
+
+@router.post("/investments/{iid}/trades")
+def add_trade(iid: int, data: TradeIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    if data.kind == "sell" and i.asset_class in portfolio.VARIABLE + ("cripto", "internacional"):
+        have = portfolio.position(i, {}, data.date, None)["quantity"]
+        if data.quantity > have + 1e-9:
+            raise HTTPException(400, f"Você tem {have:g} nessa data; não dá pra vender {data.quantity:g}.")
+    db.add(InvestmentTrade(user_id=u.workspace_id, investment_id=i.id, **data.model_dump()))
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/investments/{iid}/trades/{tid}")
+def delete_trade(iid: int, tid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    if not db.query(InvestmentTrade).filter_by(id=tid, investment_id=i.id, user_id=u.workspace_id).delete():
+        raise HTTPException(404, "Operação não encontrada")
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/investments/{iid}/events")
+def add_event(iid: int, data: EventIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    db.add(InvestmentEvent(user_id=u.workspace_id, investment_id=i.id, **data.model_dump()))
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/investments/{iid}/events/{eid}")
+def delete_event(iid: int, eid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    i = _get_inv(db, u.workspace_id, iid)
+    if not db.query(InvestmentEvent).filter_by(id=eid, investment_id=i.id, user_id=u.workspace_id).delete():
+        raise HTTPException(404, "Provento não encontrado")
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/portfolio/dividends")
+def portfolio_dividends(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    return portfolio.dividends(db, u.workspace_id)
+
+
+@router.get("/portfolio/tax")
+def portfolio_tax(year: Optional[int] = Query(None, ge=2000, le=2100), u: User = Depends(current_user_active),
+                  db: Session = Depends(get_db)):
+    return portfolio.income_tax(db, u.workspace_id, year)
+
+
+@router.get("/portfolio/history")
+def portfolio_history(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    rows = db.query(PortfolioSnapshot).filter_by(user_id=u.workspace_id).order_by(PortfolioSnapshot.date).all()
+    return [{"date": s.date.isoformat(), "value": s.value, "invested": s.invested, "net_worth": s.net_worth} for s in rows]
 
 
 # ------------------------------------------------------------------ caixinhas

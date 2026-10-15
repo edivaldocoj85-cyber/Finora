@@ -73,6 +73,11 @@ def compute(pot, moves, today: date | None = None) -> dict:
     # taxa anual efetiva de hoje (pra projeção e pros dias sem taxa publicada)
     if pot.yield_type == "pre":
         annual = pct
+    elif pot.yield_type == "ipca":
+        # IPCA + taxa real: usa o IPCA acumulado de 12 meses como inflação corrente (aproximação;
+        # o título de verdade corrige pelo IPCA de cada mês, com defasagem)
+        ind = market.indicators().get("ipca_12m")
+        annual = (1 + ind["value"] / 100) * (1 + pct) - 1 if ind else None
     else:
         base = current_annual(pot.yield_type)
         annual = (base / 100) * pct if base is not None else None
@@ -83,14 +88,14 @@ def compute(pot, moves, today: date | None = None) -> dict:
     start = moves[0].date
     # prefixada também usa o calendário do CDI: os dias com taxa publicada são os dias úteis
     # (sem feriados); 252 deles fazem um ano
-    rates, official = daily_rates("cdi" if pot.yield_type == "pre" else pot.yield_type, start, today)
+    rates, official = daily_rates("cdi" if pot.yield_type in ("pre", "ipca") else pot.yield_type, start, today)
     out["official_rates"] = official
     last_pub = max(rates) if rates else None
     fallback_daily = (1 + annual) ** (1 / 252) - 1 if annual is not None else 0.0
 
     def factor(d: date) -> float:
         if d in rates:
-            if pot.yield_type == "pre":
+            if pot.yield_type in ("pre", "ipca"):
                 return fallback_daily
             return rates[d] * pct
         # depois da última taxa publicada (o BC publica no dia seguinte) ou sem acesso ao BC

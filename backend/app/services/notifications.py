@@ -84,6 +84,12 @@ def daily_job(db: Session, now: datetime | None = None) -> dict:
         try:
             if not u.last_daily_run_at or (u.last_daily_run_at - timedelta(hours=3)).date() < today:
                 analytics.run_alerts(db, u.id, today)
+                from . import portfolio  # foto do dia da carteira (base do TWRR)
+                try:
+                    nw = analytics.dashboard(db, u.id, today)["net_worth"]
+                    portfolio.snapshot(db, u.id, today, nw)
+                except Exception as ex:  # noqa: BLE001
+                    log.warning("foto da carteira falhou pro usuário %s: %s", u.id, ex)
                 u.last_daily_run_at = now + timedelta(hours=3)  # guarda em UTC, no relógio da rotina
                 stats["alerts"] += 1
             if (u.email_digest == "weekly" and today.weekday() == 0 and email_service.enabled()
