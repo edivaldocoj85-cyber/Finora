@@ -85,6 +85,15 @@ class Account(Owned, Base):
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     import_reminder: Mapped[str] = mapped_column(String(10), default="none")  # none|daily|weekly|monthly
     last_import_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # milhas, pontos e cashback (só cartão de crédito)
+    rewards_program: Mapped[str] = mapped_column(String(40), default="")  # Livelo, Smiles, Esfera, LATAM Pass…
+    rewards_rate: Mapped[float | None] = mapped_column(Float)  # pontos por unidade gasta
+    rewards_unit: Mapped[str] = mapped_column(String(3), default="usd")  # usd | brl
+    cashback_pct: Mapped[float | None] = mapped_column(Float)
+    point_value: Mapped[float | None] = mapped_column(Float)  # R$ por 1.000 pontos (padrão 20)
+    rewards_balance: Mapped[float | None] = mapped_column(Float)
+    rewards_expire: Mapped[date | None] = mapped_column(Date)
+    annual_fee: Mapped[float | None] = mapped_column(Float)
 
 
 class Transaction(Owned, Base):

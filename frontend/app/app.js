@@ -109,6 +109,7 @@ const ROUTES = [
   { id: "bank", label: "Conexões bancárias", icon: "bank" },
   { id: "taxes", label: "Impostos", icon: "taxes" },
   { id: "settings", label: "Configurações", icon: "settings" },
+  { id: "report", label: "Relatório do mês", icon: "contracts", hidden: true },
 ];
 function visibleRoutes() {
   return state.user?.is_admin ? [...ROUTES, { id: "admin", label: "Administração", icon: "admin" }] : ROUTES;
@@ -397,7 +398,7 @@ async function initAuth() {
 /* ------------------------------------------------------------------ shell */
 const navLink = (r, cls = "") => `<a class="nav-item${cls ? " " + cls : ""}" href="#${r.id}" data-r="${r.id}">${navIcon(r.icon)}<span class="nav-label">${esc(r.label)}</span></a>`;
 function buildNav() {
-  const routes = visibleRoutes();
+  const routes = visibleRoutes().filter((r) => !r.hidden);
   const primary = routes.filter((r) => r.primary);
   const secondary = routes.filter((r) => !r.primary && r.id !== "admin");
   const admin = routes.find((r) => r.id === "admin");
@@ -543,6 +544,7 @@ function route() {
   // cada navegação ganha um #view novo: se a tela anterior ainda estiver carregando (ex.:
   // Mercado esperando o Banco Central), ela termina num elemento solto e não sobrescreve esta
   const old = $("#view"), view = old.cloneNode(false);
+  view.className = "";  // classes de layout de uma tela (ex.: dash-flex do painel) não passam pra próxima
   old.replaceWith(view);
   view.innerHTML = `<div class="empty">Carregando…</div>`;
   (VIEWS[r.id] || VIEWS.dashboard)(view)
@@ -684,7 +686,7 @@ const barFill = (p) => `transform:scaleX(${Math.max(0, Math.min(100, p)) / 100})
 const VIEWS = {};
 
 VIEWS.more = async (v) => {
-  v.innerHTML = `<div class="card list">${visibleRoutes().map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}">${navIcon(r.icon)}<div class="grow title">${esc(r.label)}</div><span class="muted">›</span></a>`).join("")}
+  v.innerHTML = `<div class="card list">${visibleRoutes().filter((r) => !r.hidden).map((r) => `<a class="li" style="text-decoration:none;color:inherit" href="#${r.id}">${navIcon(r.icon)}<div class="grow title">${esc(r.label)}</div><span class="muted">›</span></a>`).join("")}
   <a class="li" style="text-decoration:none;color:inherit" href="#" onclick="logout();return false">${navIcon("logout")}<div class="grow title">Sair</div></a></div>`;
 };
 
@@ -699,12 +701,55 @@ function kpiValue(k) {
 function healthCard(h) {
   if (!h || h.score == null) return "";
   const cls = h.score >= 75 ? "good" : h.score >= 45 ? "warn" : "bad";
-  return `<div class="card health" style="margin-top:16px"><div class="between"><h2 style="margin:0">Saúde financeira</h2>
+  return `<div class="card health" data-sec="health" style="margin-top:16px"><div class="between"><h2 style="margin:0">Saúde financeira</h2>
       <span class="health-score ${cls}" title="Média dos indicadores (0 a 100)">${h.score}<small>/100</small></span></div>
     <div class="health-grid">${h.kpis.map((k) => `<div class="health-kpi ${k.status}" title="${esc(k.hint)}">
       <div class="small muted">${esc(k.label)}</div><div class="hv">${kpiValue(k)}</div>
       <div class="small"><span class="dot-st"></span>${HEALTH_LABEL[k.status]} · <span class="muted">meta ${esc(k.target)}</span></div></div>`).join("")}</div>
     <p class="small muted" style="margin:8px 0 0">Base: gasto médio de ${brl(h.base.avg_expense)} e renda de ${brl(h.base.income)} por mês (últimos 3 meses fechados). Passe o mouse num indicador pra ver como é calculado.</p></div>`;
+}
+
+/* painel personalizável: esconder e reordenar blocos (salvo na conta, vale em todo aparelho) */
+const DASH_SECTIONS = [["kpis", "Patrimônio e resultado do mês"], ["health", "Saúde financeira"], ["insights", "O que fazer agora"],
+  ["charts", "Gráficos de receitas e categorias"], ["bills", "Orçamentos, vencimentos e cartões"], ["accounts", "Contas e metas"],
+  ["receivables", "Contas a receber"], ["essentials", "Essenciais x não essenciais"]];
+function dashLayout() {
+  let l = {}; try { l = JSON.parse(state.user?.dashboard_layout || "{}") || {}; } catch {}
+  const order = (l.order || []).filter((k) => DASH_SECTIONS.some(([s]) => s === k));
+  DASH_SECTIONS.forEach(([k]) => { if (!order.includes(k)) order.push(k); });
+  return { order, hidden: l.hidden || [] };
+}
+function applyDashLayout(v) {
+  const l = dashLayout();
+  v.classList.add("dash-flex");
+  v.querySelectorAll("[data-sec]").forEach((el) => {
+    el.style.order = String(l.order.indexOf(el.dataset.sec) + 1);
+    el.style.display = l.hidden.includes(el.dataset.sec) ? "none" : "";
+  });
+  if (!$("#dashCustom", v)) {
+    v.insertAdjacentHTML("beforeend", `<div class="dash-custom" style="order:99"><a class="btn ghost small" href="#report">${navIcon("contracts")} Relatório do mês (PDF/Excel)</a><button type="button" class="btn ghost small" id="dashCustom">${navIcon("settings")} Personalizar painel</button></div>`);
+    $("#dashCustom", v).onclick = () => dashCustomize();
+  }
+}
+function dashCustomize() {
+  const form = $("#modalForm"), dlg = $("#modal"), l = dashLayout();
+  const label = Object.fromEntries(DASH_SECTIONS);
+  const render = () => {
+    form.innerHTML = `<h2>Personalizar painel</h2><p class="small muted">Escolha o que aparece e em que ordem.</p>
+      <div class="list">${l.order.map((k, i) => `<div class="li"><label class="check grow" style="margin:0"><input type="checkbox" data-k="${k}" ${l.hidden.includes(k) ? "" : "checked"}> ${esc(label[k])}</label>
+        <button type="button" class="icon-btn" data-up="${i}" ${i ? "" : "disabled"} aria-label="Subir">↑</button><button type="button" class="icon-btn" data-down="${i}" ${i < l.order.length - 1 ? "" : "disabled"} aria-label="Descer">↓</button></div>`).join("")}</div>
+      <div class="modal-actions"><button type="button" class="btn" id="dlReset" style="margin-right:auto">Padrão</button><button type="button" class="btn" id="dlCancel">Cancelar</button><button type="button" class="btn primary" id="dlSave">Salvar</button></div>`;
+    form.querySelectorAll("[data-k]").forEach((c) => (c.onchange = () => { l.hidden = c.checked ? l.hidden.filter((x) => x !== c.dataset.k) : [...l.hidden, c.dataset.k]; }));
+    const move = (i, d) => { const t = l.order[i]; l.order[i] = l.order[i + d]; l.order[i + d] = t; render(); };
+    form.querySelectorAll("[data-up]").forEach((b) => (b.onclick = () => move(+b.dataset.up, -1)));
+    form.querySelectorAll("[data-down]").forEach((b) => (b.onclick = () => move(+b.dataset.down, 1)));
+    $("#dlCancel").onclick = () => dlg.close();
+    $("#dlReset").onclick = async () => { state.user = await api("/me", { method: "PATCH", body: { dashboard_layout: "{}" } }); dlg.close(); route(); };
+    $("#dlSave").onclick = async () => { state.user = await api("/me", { method: "PATCH", body: { dashboard_layout: JSON.stringify(l) } }); dlg.close(); route(); };
+  };
+  form.onsubmit = (e) => e.preventDefault();
+  render();
+  dlg.showModal();
 }
 
 let dashboardTrendMonths = 6;
@@ -733,22 +778,22 @@ VIEWS.dashboard = async (v) => {
   v.innerHTML = `
   ${greeting}
   ${empty ? `<div class="card" style="margin-bottom:16px"><h2>Bem-vindo ao Finora</h2><p class="muted">Comece em 3 passos: <a href="#bank">conecte seus bancos</a> ou <a href="#accounts">cadastre contas e cartões</a>, informe sua <a href="#incomes">renda</a> e seus <a href="#contracts">contratos e contas fixas</a>.</p></div>` : ""}
-  <div class="grid g4 keep2">
+  <div class="grid g4 keep2" data-sec="kpis">
     <div class="card stat hero"><h3>Patrimônio líquido</h3><div class="value" data-count="${d.net_worth}">${brl(d.net_worth)}</div><div class="sub">Saldo ${brl(d.cash)} · Invest. ${brl(d.investments)}${d.assets_total ? ` · Bens ${brl(d.assets_total)}` : ""}</div></div>
     <div class="card stat tint-green"><h3>Receitas do mês</h3><div class="value pos" data-count="${d.month.income}">${brl(d.month.income)}</div><div class="sub">Esperado ${brl(d.expected_income)}</div></div>
     <div class="card stat tint-red"><h3>Despesas do mês</h3><div class="value neg" data-count="${d.month.expense}">${brl(d.month.expense)}</div><div class="sub">Projeção ${brl(d.projected_expense)}</div></div>
     <div class="card stat tint-violet"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
   </div>
   ${healthCard(d.health)}
-  ${d.insights?.length ? `<div class="card" style="margin-top:16px"><h2>${navIcon("sparkles")} O que fazer agora</h2>
+  ${d.insights?.length ? `<div class="card" data-sec="insights" style="margin-top:16px"><h2>${navIcon("sparkles")} O que fazer agora</h2>
     <div class="list">${d.insights.map((i) => `<a class="li insight" href="#${esc(i.action?.route || "dashboard")}"><div class="grow"><div class="title">${esc(i.title)}</div><div class="small muted">${esc(i.message)}</div></div>${i.action ? `<span class="small" style="flex:none;color:var(--primary)">${esc(i.action.label)} ›</span>` : ""}</a>`).join("")}</div></div>` : ""}
-  <div class="grid g2" style="margin-top:16px">
+  <div class="grid g2" data-sec="charts" style="margin-top:16px">
     <div class="card"><div class="between"><h2 style="margin:0">Receitas x despesas</h2>
       <div class="tabs" id="trendToggle" style="margin:0"><button type="button" data-m="6" class="${dashboardTrendMonths == 6 ? "active" : ""}">6 meses</button><button type="button" data-m="12" class="${dashboardTrendMonths == 12 ? "active" : ""}">12 meses</button></div></div>
       <div class="chart-box" style="margin-top:12px"><canvas id="cMonths"></canvas></div></div>
     <div class="card"><h2>Gastos por categoria</h2>${d.categories.length ? `<div class="chart-box"><canvas id="cCats"></canvas></div>` : '<div class="empty">Sem gastos neste mês.</div>'}</div>
   </div>
-  <div class="grid g3" style="margin-top:16px">
+  <div class="grid g3" data-sec="bills" style="margin-top:16px">
     <div class="card"><h2>Orçamentos</h2><div class="list">${d.categories.map((c) => {
       const p = pct(c.total, c.budget), cls = c.budget ? (c.total >= c.budget ? "over" : p >= 80 ? "warn" : "") : "";
       return `<div class="li" style="display:block"><div class="between"><span><span class="dot" style="display:inline-block;background:${esc(c.color)}"></span> ${esc(c.name)}</span><span class="amount">${brl(c.total)}${c.budget ? ` <span class="muted small">/ ${brl(c.budget)}</span>` : ""}</span></div>
@@ -758,14 +803,14 @@ VIEWS.dashboard = async (v) => {
     <div class="card"><h2>Cartões</h2><div class="list">${d.cards.map((c) => `<div class="li" style="display:block"><div class="between"><strong>${esc(c.name)}</strong><span class="amount">${brl(c.total)}</span></div>
       <div class="small muted">${c.closed ? "Fatura fechada · vence" : "Fatura aberta · vence"} ${fdate(c.due_date)}${c.limit ? ` · ${c.usage_pct}% do limite` : ""}</div>${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div>` : ""}</div>`).join("") || '<div class="empty">Nenhum cartão cadastrado.</div>'}</div></div>
   </div>
-  <div class="grid g2" style="margin-top:16px">
+  <div class="grid g2" data-sec="accounts" style="margin-top:16px">
     <div class="card"><h2>Contas</h2><div class="list">${d.accounts.filter((a) => a.kind !== "credit_card").map((a) => `<div class="li"><span class="dot" style="background:${esc(a.color)}"></span><div class="grow"><div class="title">${esc(a.name)}</div><div class="small muted">${esc(KINDS[a.kind])}${a.institution ? " · " + esc(a.institution) : ""}</div></div><div class="amount ${a.balance < 0 ? "neg" : ""}">${brl(a.balance)}</div></div>`).join("") || '<div class="empty">Nenhuma conta.</div>'}</div></div>
     <div class="card"><h2>Metas</h2><div class="list">
       ${d.emergency_fund ? `<a class="li" style="display:block;text-decoration:none;color:inherit" href="#reserve"><div class="between"><strong>${navIcon("reserve")} Reserva de emergência</strong><span class="small">${d.emergency_fund.months_covered} / ${d.emergency_fund.months_target} meses</span></div><div class="bar"><i style="${barFill(pct(d.emergency_fund.current, d.emergency_fund.target))}"></i></div></a>` : `<a class="li" style="display:block;text-decoration:none;color:inherit" href="#reserve"><strong>${navIcon("reserve")} Configure sua reserva de emergência</strong><div class="small muted">Meses de despesas guardados pra imprevistos</div></a>`}
       ${d.goals.map((g) => `<div class="li" style="display:block"><div class="between"><strong>${esc(g.name)}</strong><span class="small">${brl(g.current)} / ${brl(g.target)}</span></div><div class="bar"><i style="${barFill(pct(g.current, g.target))}"></i></div></div>`).join("") || (d.emergency_fund ? "" : '<div class="empty"><a href="#goals">Crie uma meta</a> para acompanhar sua evolução.</div>')}
     </div></div>
   </div>
-  ${d.receivables.count_pending ? `<div class="card" style="margin-top:16px"><div class="between"><h2>Contas a receber</h2><span class="small muted">${brl(d.receivables.total_pending)} pendente</span></div>
+  ${d.receivables.count_pending ? `<div class="card" data-sec="receivables" style="margin-top:16px"><div class="between"><h2>Contas a receber</h2><span class="small muted">${brl(d.receivables.total_pending)} pendente</span></div>
     <div class="list">${d.receivables.upcoming.map((r) => `<div class="li"><div class="grow"><div class="title">${esc(r.client_name)}${r.description ? " · " + esc(r.description) : ""}${r.overdue ? ' <span class="chip c-red">atrasado</span>' : ""}</div><div class="small muted">Vencia ${fdate(r.due_date)}</div></div><div class="amount">${brl(r.amount)}</div><button class="btn small" data-recv="${r.id}" style="margin-left:8px">Marcar recebido</button></div>`).join("") || '<div class="empty">Nada por enquanto.</div>'}</div></div>` : ""}
   ${(() => {
     const essTotal = d.categories.filter((c) => c.essential).reduce((s, c) => s + c.total, 0);
@@ -774,7 +819,7 @@ VIEWS.dashboard = async (v) => {
     const cTotal = essTotal + nonEssTotal;
     const essPct = cTotal ? Math.round((essTotal / cTotal) * 100) : 0;
     if (!cTotal) return "";
-    return `<div class="card" style="margin-top:16px"><h2>Essenciais x não essenciais</h2>
+    return `<div class="card" data-sec="essentials" style="margin-top:16px"><h2>Essenciais x não essenciais</h2>
       <div class="bar" style="height:14px"><i style="${barFill(essPct)};background:var(--green)"></i></div>
       <div class="between small muted" style="margin-top:8px"><span>Essenciais · ${essPct}% · ${brl(essTotal)}</span><span>Não essenciais · ${100 - essPct}% · ${brl(nonEssTotal)}</span></div>
       ${nonEss.length ? `<p class="small muted" style="margin:16px 0 6px">Maiores gastos não essenciais este mês</p>
@@ -798,6 +843,7 @@ VIEWS.dashboard = async (v) => {
       await refreshRefs(); route();
     } catch (e) { toast(e.message, "error"); b.disabled = false; b.classList.remove("loading"); }
   }));
+  applyDashLayout(v);
   chart($("#cMonths"), {
     type: "bar",
     data: { labels: d.months.map((m) => monthLabel(m.month)), datasets: [
@@ -1069,6 +1115,19 @@ VIEWS.cards = async (v) => {
         <div class="small muted">faltam ${p.remaining_installments}x · ${brl(p.remaining_amount)}</div></div>
       </div>`).join("") || '<div class="empty">Nenhuma compra parcelada em aberto.</div>'}</div></div>`;
   $("#newCard").onclick = () => accountForm({ kind: "credit_card" });
+  api("/cards/rewards").then((rw) => {
+    if (!rw.cards.length) return;
+    const has = rw.cards.some((c) => c.return_pct || c.balance);
+    v.insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:16px"><h2>Milhas, pontos e cashback</h2>
+      ${has ? "" : '<p class="small muted">Cadastre o programa de pontos ou o cashback de cada cartão (em Editar) pra ver quanto cada um devolve e qual usar.</p>'}
+      ${rw.tips.map((t) => `<p class="small">${navIcon("sparkles")} ${esc(t)}</p>`).join("")}
+      <div class="table-wrap"><table><thead><tr><th>Cartão</th><th class="num">Devolve</th><th class="num hide-sm">Pontos em 12 meses</th><th class="num">Ganho no ano</th><th class="num hide-sm">Saldo de pontos</th></tr></thead><tbody>
+      ${rw.cards.map((c) => `<tr><td><b>${esc(c.name)}</b>${c.account_id === rw.best_card ? ' <span class="chip c-green">use este</span>' : ""}<div class="small muted">${esc(c.program || "sem programa")}${c.rate ? ` · ${String(c.rate).replace(".", ",")} pts/${c.unit === "usd" ? "US$" : "R$"}` : ""}${c.best_day ? ` · melhor dia de compra: ${c.best_day}` : ""}</div></td>
+        <td class="num">${pctBR(c.return_pct)}</td><td class="num hide-sm">${c.points_12m ? c.points_12m.toLocaleString("pt-BR") : "—"}</td>
+        <td class="num ${c.net_year < 0 ? "neg" : "pos"}">${brl(c.net_year)}${c.annual_fee ? `<div class="small muted">${brl(c.value_12m)} − anuidade ${brl(c.annual_fee)}</div>` : ""}</td>
+        <td class="num hide-sm">${c.balance ? `${Math.round(c.balance).toLocaleString("pt-BR")}<div class="small muted">≈ ${brl(c.balance_value)}${c.expire_days != null ? ` · vence em ${c.expire_days} d` : ""}</div>` : "—"}</td></tr>`).join("")}
+      </tbody></table></div><p class="small muted" style="margin-top:6px">Retorno = pontos por real × valor do milheiro (padrão R$ 20). Dólar de hoje: ${rw.usd_brl ? brl(rw.usd_brl) : "—"}.</p></div>`);
+  }).catch(() => {});
   v.querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => accountForm(cards.find((c) => c.id == b.dataset.edit))));
 
   // cada cartão abre na fatura a pagar (a fechada, se houver; senão a aberta) e navega ‹ ›
@@ -1095,12 +1154,20 @@ function accountForm(values = {}) {
   const isEdit = !!values.id;
   openForm({
     title: isEdit ? "Editar conta" : values.kind === "credit_card" ? "Novo cartão" : "Nova conta",
-    values: { kind: "checking", color: "#0ea5e9", balance: 0, credit_limit: 0, import_reminder: "none", ...values },
+    values: { kind: "checking", color: "#0ea5e9", balance: 0, credit_limit: 0, import_reminder: "none", rewards_unit: "usd", ...values },
     fields: [
       { name: "name", label: "Nome", required: true, placeholder: "Ex.: Nubank, Itaú, Carteira" },
       { row: [{ name: "kind", label: "Tipo", type: "select", options: Object.entries(KINDS) }, { name: "institution", label: "Instituição" }] },
       { row: [{ name: "balance", label: "Saldo atual (R$)", type: "number" }, { name: "color", label: "Cor", type: "color" }] },
       { row: [{ name: "credit_limit", label: "Limite (cartão)", type: "number" }, { name: "closing_day", label: "Dia de fechamento", type: "number", step: 1, min: 1, max: 31 }, { name: "due_day", label: "Dia de vencimento", type: "number", step: 1, min: 1, max: 31 }] },
+      { row: [{ name: "rewards_program", label: "Programa de pontos (cartão)", placeholder: "Livelo, Smiles, Esfera, LATAM Pass…" },
+        { name: "rewards_rate", label: "Pontos por", type: "number", nullable: true, step: "0.01" },
+        { name: "rewards_unit", label: "a cada", type: "select", options: [["usd", "US$ 1 gasto"], ["brl", "R$ 1 gasto"]] }] },
+      { row: [{ name: "cashback_pct", label: "Ou cashback (%)", type: "number", nullable: true, step: "0.01" },
+        { name: "point_value", label: "Valor do milheiro (R$)", type: "number", nullable: true, placeholder: "20" },
+        { name: "annual_fee", label: "Anuidade (R$/ano)", type: "number", nullable: true }] },
+      { row: [{ name: "rewards_balance", label: "Saldo de pontos", type: "number", nullable: true, step: 1 },
+        { name: "rewards_expire", label: "Pontos vencem em", type: "date", nullable: true }] },
       ...(values.pluggy_account_id ? [] : [{ name: "import_reminder", label: "Lembrete para importar extrato", type: "select",
         options: [["none", "Sem lembrete"], ["daily", "Diário"], ["weekly", "Semanal"], ["monthly", "Mensal"]] }]),
       ...(isEdit ? [{ name: "archived", label: "Arquivar (ocultar)", type: "checkbox" }] : []),
@@ -1108,6 +1175,12 @@ function accountForm(values = {}) {
     onSubmit: async (d) => { await api(isEdit ? `/accounts/${values.id}` : "/accounts", { method: isEdit ? "PUT" : "POST", body: d }); await refreshRefs(); },
     onDelete: isEdit ? async () => { await api(`/accounts/${values.id}`, { method: "DELETE" }); await refreshRefs(); } : null,
   });
+  const syncKind = () => {
+    const card = $('#modalForm [name="kind"]').value === "credit_card";
+    toggleFormFields(["credit_limit", "closing_day", "due_day", "rewards_program", "rewards_rate", "rewards_unit", "cashback_pct",
+      "point_value", "annual_fee", "rewards_balance", "rewards_expire"], card);
+  };
+  if ($('#modalForm [name="kind"]')) { $('#modalForm [name="kind"]').addEventListener("change", syncKind); syncKind(); }
 }
 
 function simpleList(v, { items, empty, render, onNew, newLabel, intro = "" }) {
@@ -1548,6 +1621,48 @@ function cfLabel(b, gran) {
   if (gran === "month") return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(". de ", "/").replace(".", "");
   return String(d.getFullYear());
 }
+
+/* relatório executivo do mês: imprimir/salvar em PDF pelo navegador ou baixar Excel */
+VIEWS.report = async (v) => {
+  const ym = $("#monthRef").value || today().slice(0, 7);
+  const r = await api(`/reports/monthly?month=${ym}`);
+  const h = r.health;
+  v.innerHTML = `<div class="between no-print" style="margin-bottom:12px"><p class="muted" style="margin:0">Relatório de ${esc(r.label)}. Troque o mês no seletor lá em cima.</p>
+      <div class="row" style="gap:8px"><button class="btn" id="repXlsx">Baixar Excel</button><button class="btn primary" id="repPrint">Imprimir / salvar PDF</button></div></div>
+    <div class="report">
+      <header class="rep-head"><div><h1>Relatório financeiro · ${esc(r.label)}</h1><p class="muted small">${esc(state.user.name)} · gerado em ${fdate(r.generated_at)} pelo Finora</p></div>
+        ${h && h.score != null ? `<div class="health-score ${h.score >= 75 ? "good" : h.score >= 45 ? "warn" : "bad"}">${h.score}<small>/100</small></div>` : ""}</header>
+      <section class="card"><h2>Resumo</h2><div class="md">${md(r.summary)}</div><p class="small muted">${r.summary_source === "consultor" ? "Resumo do Consultor (IA) gerado neste mês." : "Resumo calculado a partir dos seus números."}</p></section>
+      <div class="grid g4">
+        <div class="card stat"><h3>Receitas</h3><div class="value pos">${brl(r.income)}</div></div>
+        <div class="card stat"><h3>Despesas</h3><div class="value neg">${brl(r.expense)}</div></div>
+        <div class="card stat"><h3>Resultado</h3><div class="value ${r.result >= 0 ? "pos" : "neg"}">${brl(r.result)}</div><div class="sub">${r.savings_rate != null ? `poupança ${pctBR(r.savings_rate, 1)}` : ""}</div></div>
+        <div class="card stat"><h3>Patrimônio líquido</h3><div class="value">${brl(r.net_worth)}</div><div class="sub">contas ${brl(r.cash)} · invest. ${brl(r.investments)}</div></div></div>
+      <div class="grid g2">
+        <section class="card"><h2>Receitas x despesas</h2><div class="chart-box" style="height:220px"><canvas id="cRepM"></canvas></div></section>
+        <section class="card"><h2>Gastos por categoria</h2><table><thead><tr><th>Categoria</th><th class="num">Mês</th><th class="num">Anterior</th><th class="num">Orçamento</th></tr></thead><tbody>
+          ${r.categories.map((c) => `<tr><td>${esc(c.name)}</td><td class="num">${brl(c.total)}</td><td class="num muted">${brl(c.prev)}</td><td class="num ${c.budget && c.total > c.budget ? "neg" : "muted"}">${c.budget ? brl(c.budget) : "—"}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Sem gastos.</td></tr>'}</tbody></table></section></div>
+      <div class="grid g2">
+        <section class="card"><h2>Maiores gastos</h2><table><tbody>${r.biggest.map((b) => `<tr><td>${fdate(b.date)}</td><td>${esc(b.description)}<div class="small muted">${esc(b.category)}</div></td><td class="num">${brl(b.amount)}</td></tr>`).join("") || '<tr><td class="empty">—</td></tr>'}</tbody></table></section>
+        <section class="card"><h2>Centros de custo</h2><table><tbody>${r.cost_centers.map((c) => `<tr><td>${esc(c.name)}</td><td class="num">${brl(c.total)}</td></tr>`).join("") || '<tr><td class="empty">—</td></tr>'}</tbody></table>
+          ${r.cards.length ? `<h2 style="margin-top:14px">Cartões</h2><table><tbody>${r.cards.map((c) => `<tr><td>${esc(c.name)}<div class="small muted">vence ${fdate(c.due_date)}</div></td><td class="num">${brl(c.total)}</td></tr>`).join("")}</tbody></table>` : ""}</section></div>
+      ${h ? `<section class="card"><h2>Saúde financeira</h2><div class="health-grid">${h.kpis.map((k) => `<div class="health-kpi ${k.status}"><div class="small muted">${esc(k.label)}</div><div class="hv">${kpiValue(k)}</div><div class="small muted">meta ${esc(k.target)}</div></div>`).join("")}</div></section>` : ""}
+      ${r.portfolio ? `<section class="card"><h2>Investimentos</h2><p>Valor ${brl(r.portfolio.value)} · investido ${brl(r.portfolio.cost)} · resultado <b class="${r.portfolio.gain >= 0 ? "pos" : "neg"}">${brl(r.portfolio.gain)}</b>${r.portfolio.mwrr_annual != null ? ` · ${pctBR(r.portfolio.mwrr_annual)} ao ano` : ""}${r.portfolio.benchmarks?.cdi_annual != null ? ` (CDI ${pctBR(r.portfolio.benchmarks.cdi_annual)})` : ""}</p>
+        <table><tbody>${r.portfolio.allocation.map((a) => `<tr><td>${esc(a.label)}</td><td class="num">${brl(a.value)}</td><td class="num muted">${pctBR(a.pct, 1)}</td></tr>`).join("")}</tbody></table></section>` : ""}
+      ${r.goals.length ? `<section class="card"><h2>Metas</h2><table><tbody>${r.goals.map((g) => `<tr><td>${esc(g.name)}</td><td class="num">${brl(g.current)} de ${brl(g.target)}</td><td class="num muted">${Math.round(pct(g.current, g.target))}%</td></tr>`).join("")}</tbody></table></section>` : ""}
+      ${r.insights.length ? `<section class="card"><h2>Próximos passos</h2><ol>${r.insights.map((i) => `<li><b>${esc(i.title)}.</b> ${esc(i.message)}</li>`).join("")}</ol></section>` : ""}
+    </div>`;
+  chart($("#cRepM"), { type: "bar", data: { labels: r.months.map((m) => monthLabel(m.month)), datasets: [
+    { label: "Receitas", data: r.months.map((m) => m.income), backgroundColor: cssVar("--green"), borderRadius: 4 },
+    { label: "Despesas", data: r.months.map((m) => m.expense), backgroundColor: cssVar("--red"), borderRadius: 4 }] },
+    options: { maintainAspectRatio: false, animation: false, plugins: { legend: { position: "bottom" } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: (x) => brl(x).replace(",00", "") } } } } });
+  $("#repPrint").onclick = () => window.print();
+  $("#repXlsx").onclick = async () => {
+    const res = await fetch(`/api/reports/monthly.xlsx?month=${ym}`, { headers: { Authorization: "Bearer " + state.token } });
+    if (!res.ok) { toast("Não foi possível gerar a planilha.", "error"); return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(await res.blob()); a.download = `finora-relatorio-${ym}.xlsx`; a.click();
+  };
+};
 
 VIEWS.cashflow = async (v) => {
   let gran = localGet("finora_cf_gran") || "month";

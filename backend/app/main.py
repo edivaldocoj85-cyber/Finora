@@ -70,6 +70,12 @@ def _migrate(engine):
                 conn.execute(text("ALTER TABLE accounts ADD COLUMN import_reminder VARCHAR(10) DEFAULT 'none'"))
             if "last_import_at" not in cols:
                 conn.execute(text("ALTER TABLE accounts ADD COLUMN last_import_at TIMESTAMP"))
+            for col, ddl in (("rewards_program", "VARCHAR(40) DEFAULT ''"), ("rewards_rate", "FLOAT"),
+                             ("rewards_unit", "VARCHAR(3) DEFAULT 'usd'"), ("cashback_pct", "FLOAT"),
+                             ("point_value", "FLOAT"), ("rewards_balance", "FLOAT"), ("rewards_expire", "DATE"),
+                             ("annual_fee", "FLOAT")):
+                if col not in cols:
+                    conn.execute(text(f"ALTER TABLE accounts ADD COLUMN {col} {ddl}"))
         if "transactions" in tables:
             cols = {c["name"] for c in insp.get_columns("transactions")}
             if "to_account_id" not in cols:

@@ -461,6 +461,11 @@ def run_alerts(db: Session, user_id: int, ref: date | None = None):
                f"Assinaturas somam {brl(subs['total'])} (mais de 5% da renda).")
 
     _contract_alerts(db, user_id, ref, brl)
+    for a in db.query(Account).filter_by(user_id=user_id, kind="credit_card", archived=False):
+        if a.rewards_expire and a.rewards_balance and 0 <= (a.rewards_expire - ref).days <= 30:
+            _alert(db, user_id, f"points-{a.id}-{a.rewards_expire}", "warning", f"Pontos do {a.name} vencendo",
+                   f"{int(a.rewards_balance):,} pontos vencem em {a.rewards_expire.strftime('%d/%m/%Y')}. ".replace(",", ".")
+                   + "Transfira pra um programa de milhas ou resgate antes.")
     _import_reminder_alerts(db, user_id, ref)
     db.commit()
 

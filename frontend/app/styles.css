@@ -464,3 +464,24 @@ tr.cf-current td { background: color-mix(in srgb, var(--primary-2) 6%, transpare
 
 .li.insight { text-decoration: none; color: inherit; align-items: center; gap: 10px; }
 .li.insight:hover .title { color: var(--primary); }
+
+/* painel personalizável: blocos com order (ver applyDashLayout) */
+#view.dash-flex { display: flex; flex-direction: column; }
+#view.dash-flex > * { min-width: 0; }
+.dash-custom { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+/* relatório do mês: na tela e impresso (salvar como PDF pelo navegador) */
+.report { display: grid; gap: 16px; }
+.report .grid { gap: 16px; }
+.rep-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.rep-head h1 { margin: 0; font-size: 1.5rem; }
+.dash-custom { gap: 8px; }
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; color: #111 !important; }
+  .sidebar, .topbar, .bottom-nav, #assistantBtn, #assistantPanel, #workspaceBanner, .no-print, .toast { display: none !important; }
+  .app, main, #view { display: block !important; padding: 0 !important; margin: 0 !important; }
+  .report .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd !important; background: #fff !important; }
+  .report .grid.g4 { grid-template-columns: repeat(4, 1fr) !important; }
+  .report .grid.g2 { grid-template-columns: 1fr 1fr !important; }
+}

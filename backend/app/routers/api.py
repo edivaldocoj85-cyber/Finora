@@ -28,7 +28,7 @@ from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRu
                       PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
 from ..services import (advisor, allocation, analytics, assistant, cashflow, market, montecarlo, notifications, pluggy,
-                        portfolio, pots, recurring,
+                        portfolio, pots, recurring, report, rewards,
                         statement_import, storage, vendas)
 from ..services import email as email_service
 from ..services.categorizer import categorize, seed_categories
@@ -412,6 +412,14 @@ class AccountIn(BaseModel):
     color: str = "#0ea5e9"
     archived: bool = False
     import_reminder: str = "none"  # none|daily|weekly|monthly
+    rewards_program: str = Field("", max_length=40)
+    rewards_rate: Optional[float] = Field(None, ge=0, le=100)
+    rewards_unit: str = Field("usd", pattern="^(usd|brl)$")
+    cashback_pct: Optional[float] = Field(None, ge=0, le=20)
+    point_value: Optional[float] = Field(None, ge=0, le=200)
+    rewards_balance: Optional[float] = Field(None, ge=0)
+    rewards_expire: Optional[date] = None
+    annual_fee: Optional[float] = Field(None, ge=0)
 
 
 class CategoryIn(BaseModel):
@@ -1501,6 +1509,29 @@ def simulate_montecarlo(data: MonteCarloIn, u: User = Depends(current_user_activ
     r = montecarlo.simulate(data.target, data.initial, data.monthly, data.months, data.profile)
     r["required_monthly_80"] = montecarlo.required_monthly(data.target, data.initial, data.months, data.profile, 0.8)
     return r
+
+
+# ------------------------------------------------------------------ milhas e pontos
+@router.get("/cards/rewards")
+def cards_rewards(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    return rewards.summary(db, u.workspace_id)
+
+
+# ------------------------------------------------------------------ relatório executivo do mês
+@router.get("/reports/monthly")
+def report_monthly(month: str = Query(pattern=r"^\d{4}-\d{2}$"), u: User = Depends(current_user_active),
+                   db: Session = Depends(get_db)):
+    r = report.monthly(db, u.workspace_id, month)
+    r.pop("_txs", None)
+    return r
+
+
+@router.get("/reports/monthly.xlsx")
+def report_monthly_xlsx(month: str = Query(pattern=r"^\d{4}-\d{2}$"), u: User = Depends(current_user_active),
+                        db: Session = Depends(get_db)):
+    data = report.xlsx(report.monthly(db, u.workspace_id, month))
+    return StreamingResponse(iter([data]), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             headers={"Content-Disposition": f"attachment; filename=finora-relatorio-{month}.xlsx"})
 
 
 # ------------------------------------------------------------------ caixinhas
