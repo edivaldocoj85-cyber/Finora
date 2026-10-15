@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from ..auth import current_admin, current_editor, current_user, current_user_active, rate_limit
 from ..config import get_settings
 from ..db import get_db, SessionLocal
-from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
+from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
                       Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
 from ..services import advisor, analytics, assistant, market, pluggy, pots, statement_import, storage, vendas
@@ -470,6 +470,22 @@ class TransactionIn(BaseModel):
     type: str = "expense"
     installments: int = Field(1, ge=1, le=48)  # compra parcelada no cartão
     notes: str = ""
+    cost_center_id: Optional[int] = None  # 0 ou vazio = sem centro de custo
+    tags: list[str] = []
+
+
+def _tags_in(tags) -> str:
+    """["Viagem", " casamento "] → ",viagem,casamento," (minúsculas, sem repetir, até 10)."""
+    out = []
+    for t in tags or []:
+        t = re.sub(r"\s+", " ", str(t).replace(",", " ")).strip().lower()[:30]
+        if t and t not in out:
+            out.append(t)
+    return ("," + ",".join(out[:10]) + ",") if out else ""
+
+
+def _tags_out(s: str | None) -> list[str]:
+    return [t for t in (s or "").split(",") if t]
 
 
 def _check_fk(db, user_id, model, id_):
@@ -746,6 +762,8 @@ def tx_out(t: Transaction):
     d["category_name"] = t.category.name if t.category else ""
     d["category_color"] = t.category.color if t.category else "#94a3b8"
     d["has_receipt"] = bool(t.receipt_path)
+    d["tags"] = _tags_out(t.tags)
+    d["cost_center_name"] = t.cost_center.name if t.cost_center else ""
     del d["receipt_path"]  # caminho no servidor não vai pro cliente; use GET .../receipt
     return d
 
@@ -756,6 +774,7 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
                       type: Optional[str] = None, q: Optional[str] = None,
                       min_amount: Optional[float] = None, max_amount: Optional[float] = None,
                       source: Optional[str] = None,
+                      cost_center_id: Optional[int] = None, tag: Optional[str] = None,
                       limit: int = 500, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     qry = db.query(Transaction).filter(Transaction.user_id == u.workspace_id)
     if start: qry = qry.filter(Transaction.date >= start)
@@ -764,6 +783,12 @@ def list_transactions(start: Optional[date] = None, end: Optional[date] = None,
     if category_id: qry = qry.filter(Transaction.category_id == category_id)
     if type: qry = qry.filter(Transaction.type == type)
     if source: qry = qry.filter(Transaction.source == source)
+    if cost_center_id is not None:  # 0 = só os sem centro de custo
+        qry = qry.filter(Transaction.cost_center_id == cost_center_id if cost_center_id else Transaction.cost_center_id.is_(None))
+    if tag:
+        t = _tags_out(_tags_in([tag]))
+        if t:
+            qry = qry.filter(Transaction.tags.like(f"%,{t[0]},%"))
     if min_amount is not None: qry = qry.filter(Transaction.amount >= min_amount)
     if max_amount is not None: qry = qry.filter(Transaction.amount <= max_amount)
     if q: qry = qry.filter(or_(Transaction.description.ilike(f"%{q}%"), Transaction.notes.ilike(f"%{q}%")))
@@ -782,6 +807,9 @@ def create_transaction(data: TransactionIn, u: User = Depends(current_editor), d
             raise HTTPException(400, "A conta de destino deve ser diferente da conta de origem.")
         _check_fk(db, u.workspace_id, Account, data.to_account_id)
     cat = data.category_id or categorize(db, u.workspace_id, data.description, data.type)
+    cc = data.cost_center_id or None
+    _check_fk(db, u.workspace_id, CostCenter, cc)
+    tags = _tags_in(data.tags)
     created = []
     per = round(data.amount / data.installments, 2)
     for i in range(data.installments):
@@ -791,7 +819,7 @@ def create_transaction(data: TransactionIn, u: User = Depends(current_editor), d
                         category_id=cat, date=analytics.add_months(data.date, i), description=data.description,
                         amount=amt, type=data.type, notes=data.notes,
                         installment=f"{i + 1}/{data.installments}" if data.installments > 1 else None,
-                        category_locked=bool(data.category_id))
+                        category_locked=bool(data.category_id), cost_center_id=cc, tags=tags)
         db.add(t)
         created.append(t)
         _apply_tx_effect(db, t, +1)
@@ -807,6 +835,8 @@ class TxPatch(BaseModel):
     date: Optional[_Date] = None
     amount: Optional[float] = None
     type: Optional[str] = None
+    cost_center_id: Optional[int] = None  # 0 = tirar do centro de custo
+    tags: Optional[list[str]] = None      # [] = tirar todas as tags
     create_rule: bool = False
 
 
@@ -818,6 +848,11 @@ def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_editor)
     _apply_tx_effect(db, t, -1)  # desfaz o efeito de caixa atual antes de editar
 
     vals = data.model_dump(exclude_none=True, exclude={"create_rule"})
+    if "cost_center_id" in vals:
+        vals["cost_center_id"] = vals["cost_center_id"] or None
+        _check_fk(db, u.workspace_id, CostCenter, vals["cost_center_id"])
+    if "tags" in vals:
+        vals["tags"] = _tags_in(vals["tags"])
     if "date" in vals and vals["date"] != t.date:
         t.invoice_month = None  # data mudou à mão: a fatura volta a seguir o dia de fechamento
     if "category_id" in vals:
@@ -855,8 +890,10 @@ def delete_transaction(tid: int, u: User = Depends(current_editor), db: Session 
 
 class TxBulk(BaseModel):
     ids: list[int] = Field(min_length=1, max_length=500)
-    action: str = Field(pattern="^(categorize|delete)$")
+    action: str = Field(pattern="^(categorize|delete|cost_center|add_tag|remove_tag)$")
     category_id: Optional[int] = None
+    cost_center_id: Optional[int] = None  # 0 = tirar do centro de custo
+    tag: Optional[str] = None
 
 
 @router.post("/transactions/bulk")
@@ -872,6 +909,18 @@ def bulk_transactions(data: TxBulk, u: User = Depends(current_editor), db: Sessi
         for t in txs:
             t.category_id = data.category_id
             t.category_locked = True
+    elif data.action == "cost_center":
+        cc = data.cost_center_id or None
+        _check_fk(db, u.workspace_id, CostCenter, cc)
+        for t in txs:
+            t.cost_center_id = cc
+    elif data.action in ("add_tag", "remove_tag"):
+        tag = _tags_out(_tags_in([data.tag]))
+        if not tag:
+            raise HTTPException(400, "Informe a tag.")
+        for t in txs:
+            cur = _tags_out(t.tags)
+            t.tags = _tags_in(cur + tag if data.action == "add_tag" else [x for x in cur if x != tag[0]])
     else:
         for t in txs:
             _apply_tx_effect(db, t, -1)
@@ -1097,11 +1146,12 @@ def _csv_safe(v: str) -> str:
 def export_csv(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
-    w.writerow(["data", "descricao", "valor", "tipo", "conta", "categoria", "parcela", "obs"])
+    w.writerow(["data", "descricao", "valor", "tipo", "conta", "categoria", "parcela", "obs", "centro_de_custo", "tags"])
     for t in db.query(Transaction).filter_by(user_id=u.workspace_id).order_by(Transaction.date):
         w.writerow([t.date.strftime("%d/%m/%Y"), _csv_safe(t.description), f"{t.amount:.2f}".replace(".", ","),
                     t.type, t.account.name if t.account else "", t.category.name if t.category else "",
-                    t.installment or "", _csv_safe(t.notes)])
+                    t.installment or "", _csv_safe(t.notes),
+                    _csv_safe(t.cost_center.name if t.cost_center else ""), _csv_safe(" ".join(_tags_out(t.tags)))])
     return StreamingResponse(iter(["﻿" + buf.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=finora-lancamentos.csv"})
 
@@ -1130,6 +1180,88 @@ def read_alerts(u: User = Depends(current_editor), db: Session = Depends(get_db)
     db.query(Alert).filter_by(user_id=u.workspace_id, read=False).update({"read": True})
     db.commit()
     return {"ok": True}
+
+
+# ------------------------------------------------------------------ centros de custo e tags
+class CostCenterIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    color: str = Field("#6366f1", max_length=9)
+    archived: bool = False
+
+
+@router.get("/cost-centers")
+def list_cost_centers(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    return [to_dict(c) for c in db.query(CostCenter).filter_by(user_id=u.workspace_id).order_by(CostCenter.archived, CostCenter.name)]
+
+
+@router.post("/cost-centers")
+def create_cost_center(data: CostCenterIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    c = CostCenter(user_id=u.workspace_id, **data.model_dump())
+    db.add(c)
+    db.commit()
+    return to_dict(c)
+
+
+@router.put("/cost-centers/{cid}")
+def update_cost_center(cid: int, data: CostCenterIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    c = db.query(CostCenter).filter_by(id=cid, user_id=u.workspace_id).first()
+    if not c:
+        raise HTTPException(404, "Não encontrado")
+    for k, v in data.model_dump().items():
+        setattr(c, k, v)
+    db.commit()
+    return to_dict(c)
+
+
+@router.delete("/cost-centers/{cid}")
+def delete_cost_center(cid: int, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    c = db.query(CostCenter).filter_by(id=cid, user_id=u.workspace_id).first()
+    if not c:
+        raise HTTPException(404, "Não encontrado")
+    # a coluna foi criada por ALTER TABLE (sem FK em bancos antigos): solta os lançamentos à mão
+    db.query(Transaction).filter_by(user_id=u.workspace_id, cost_center_id=cid).update({"cost_center_id": None})
+    db.delete(c)
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/tags")
+def list_tags(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    counts: dict = {}
+    for (s,) in db.query(Transaction.tags).filter(Transaction.user_id == u.workspace_id, Transaction.tags != ""):
+        for t in _tags_out(s):
+            counts[t] = counts.get(t, 0) + 1
+    return [{"tag": t, "count": n} for t, n in sorted(counts.items(), key=lambda x: (-x[1], x[0]))]
+
+
+@router.get("/reports/cost-centers")
+def report_cost_centers(start: date, end: date, u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Despesas e receitas do período por centro de custo e por tag (transferências ficam fora)."""
+    txs = db.query(Transaction).filter(Transaction.user_id == u.workspace_id, Transaction.date >= start,
+                                       Transaction.date <= end, Transaction.type.in_(("expense", "income"))).all()
+    centers = {c.id: c for c in db.query(CostCenter).filter_by(user_id=u.workspace_id)}
+    by_cc: dict = {}
+    by_tag: dict = {}
+    for t in txs:
+        k = t.cost_center_id if t.cost_center_id in centers else None
+        row = by_cc.setdefault(k, {"expense": 0.0, "income": 0.0, "count": 0})
+        row[t.type] += t.amount
+        row["count"] += 1
+        for tag in _tags_out(t.tags):
+            r = by_tag.setdefault(tag, {"expense": 0.0, "income": 0.0, "count": 0})
+            r[t.type] += t.amount
+            r["count"] += 1
+    total_exp = sum(r["expense"] for r in by_cc.values()) or 0
+    cc_rows = [{"id": k, "name": centers[k].name if k else "Sem centro de custo",
+                "color": centers[k].color if k else "#94a3b8",
+                "expense": round(r["expense"], 2), "income": round(r["income"], 2), "count": r["count"],
+                "share": round(r["expense"] / total_exp * 100, 1) if total_exp else 0}
+               for k, r in by_cc.items()]
+    tag_rows = [{"tag": k, "expense": round(r["expense"], 2), "income": round(r["income"], 2), "count": r["count"]}
+                for k, r in by_tag.items()]
+    return {"total_expense": round(total_exp, 2),
+            "cost_centers": sorted(cc_rows, key=lambda x: (x["id"] is None, -x["expense"])),
+            "tags": sorted(tag_rows, key=lambda x: -x["expense"])}
 
 
 # ------------------------------------------------------------------ caixinhas

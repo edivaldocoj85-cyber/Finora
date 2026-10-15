@@ -2,7 +2,7 @@
 const PLUGGY_CONNECT_SRC = "https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js";
 const GOOGLE_IDENTITY_SRC = "https://accounts.google.com/gsi/client";
 
-const state = { token: localGet("finora_token"), user: null, cats: [], accounts: [], charts: [] };
+const state = { token: localGet("finora_token"), user: null, cats: [], accounts: [], costCenters: [], charts: [] };
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const brl = (v) => (Number(v) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -52,6 +52,7 @@ const ICONS = {
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
   piggy: '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>',
   tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
 };
@@ -97,6 +98,7 @@ const ROUTES = [
   { id: "receivables", label: "Contas a receber", icon: "receivables" },
   { id: "incomes", label: "Renda", icon: "incomes" },
   { id: "categories", label: "Categorias e regras", icon: "categories" },
+  { id: "costcenters", label: "Centros de custo e tags", icon: "layers" },
   { id: "goals", label: "Metas", icon: "goals" },
   { id: "reserve", label: "Reserva de emergência", icon: "reserve" },
   { id: "advisor", label: "Consultor", icon: "advisor", mobile: true },
@@ -481,7 +483,7 @@ function showTrialExpired() {
   $("#teLogout").onclick = logout;
 }
 async function refreshRefs() {
-  [state.cats, state.accounts] = await Promise.all([api("/categories"), api("/accounts")]);
+  [state.cats, state.accounts, state.costCenters] = await Promise.all([api("/categories"), api("/accounts"), api("/cost-centers")]);
 }
 function refDate() {
   const m = $("#monthRef").value || today().slice(0, 7);
@@ -588,6 +590,8 @@ function openForm({ title, fields, values = {}, onSubmit, onDelete, extra = "" }
   dlg.showModal();
 }
 const catOptions = (kind) => [["", "Automática"], ...state.cats.filter((c) => !kind || c.kind === kind).map((c) => [c.id, c.name])];
+const ccOptions = () => [["0", "Nenhum"], ...state.costCenters.filter((c) => !c.archived).map((c) => [c.id, c.name])];
+const tagsChips = (tags) => (tags || []).map((t) => `<span class="chip c-tag">#${esc(t)}</span>`).join(" ");
 const accOptions = () => state.accounts.filter((a) => !a.archived).map((a) => [a.id, `${a.name}${a.kind === "credit_card" ? " (cartão)" : ""}`]);
 
 function txForm(values = {}) {
@@ -603,17 +607,20 @@ function txForm(values = {}) {
       { name: "installments", label: "Parcelas", type: "number", step: 1, min: 1, max: 48 },
     ] }]),
     { name: "category_id", label: "Categoria", type: "select", options: catOptions(), num: true },
+    { row: [{ name: "cost_center_id", label: "Centro de custo", type: "select", options: ccOptions(), num: true },
+      { name: "tags", label: "Tags (separe por vírgula)", placeholder: "viagem, reforma" }] },
     ...(isEdit ? [{ name: "create_rule", label: "Aplicar esta categoria sempre para descrições parecidas", type: "checkbox" }] : []),
     { name: "notes", label: "Observações", type: "textarea" },
   ];
   openForm({
     title: isEdit ? "Editar lançamento" : "Novo lançamento", fields,
-    values: { date: today(), installments: 1, type: "expense", ...values },
+    values: { date: today(), installments: 1, type: "expense", ...values, cost_center_id: values.cost_center_id || 0, tags: (values.tags || []).join(", ") },
     extra: isEdit ? `<label>${values.has_receipt ? "Comprovante anexado" : "Anexar comprovante"}
       ${values.has_receipt ? `<div class="row" style="margin-top:4px"><a class="btn small" href="/api/transactions/${values.id}/receipt" target="_blank" rel="noopener">Ver comprovante</a><button type="button" class="btn small danger" id="rmReceipt">Remover</button></div>` : `<input type="file" id="receiptFile" accept="image/*,.pdf">`}
       </label>` : "",
     onSubmit: async (d) => {
       if (!d.category_id) d.category_id = null;
+      d.tags = String(d.tags || "").split(",").map((t) => t.trim()).filter(Boolean);
       if (d.type !== "transfer") d.to_account_id = null;
       else if (!d.to_account_id) throw new Error("Escolha a conta de destino da transferência.");
       const r = isEdit ? await api(`/transactions/${values.id}`, { method: "PATCH", body: d }) : await api("/transactions", { body: d });
@@ -787,6 +794,8 @@ VIEWS.transactions = async (v) => {
       <select id="facc"><option value="">Todas as contas</option>${accOptions().map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select>
       <select id="fcat"><option value="">Todas as categorias</option>${state.cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
       <select id="ftype"><option value="">Todos os tipos</option><option value="expense">Despesas</option><option value="income">Receitas</option><option value="transfer">Transferências</option></select>
+      <select id="fcc" title="Centro de custo"><option value="">Todo centro de custo</option><option value="0">Sem centro de custo</option>${state.costCenters.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
+      <input id="ftag" placeholder="#tag" title="Filtrar por tag" style="max-width:120px">
       <select id="fsrc" title="Origem"><option value="">Toda origem</option><option value="manual">Lançado manual/CSV</option><option value="pluggy">Open Finance</option></select>
       <button class="btn" id="imp">Importar extrato</button><button class="btn" id="exp">Exportar</button>
     </div>
@@ -802,6 +811,10 @@ VIEWS.transactions = async (v) => {
       <strong id="bulkCount"></strong>
       <select id="bulkCat" aria-label="Categoria para os selecionados"><option value="">Categorizar como…</option>${state.cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
       <button class="btn small primary" id="bulkApply" type="button">${navIcon("tag")} Aplicar categoria</button>
+      <select id="bulkCc" aria-label="Centro de custo para os selecionados"><option value="">Centro de custo…</option>${ccOptions().map(([k, l]) => `<option value="${k}">${k === "0" ? "Tirar do centro de custo" : esc(l)}</option>`).join("")}</select>
+      <button class="btn small" id="bulkCcApply" type="button">Aplicar centro</button>
+      <input id="bulkTag" placeholder="tag" aria-label="Tag para os selecionados" style="max-width:110px">
+      <button class="btn small" id="bulkTagAdd" type="button">+ Tag</button>
       <button class="btn small danger" id="bulkDel" type="button">${navIcon("trash")} Excluir</button>
       <button class="btn small ghost" id="bulkClear" type="button">Limpar seleção</button>
     </div>
@@ -813,6 +826,8 @@ VIEWS.transactions = async (v) => {
     if ($("#fcat").value) p.set("category_id", $("#fcat").value);
     if ($("#ftype").value) p.set("type", $("#ftype").value);
     if ($("#fsrc").value) p.set("source", $("#fsrc").value);
+    if ($("#fcc").value !== "") p.set("cost_center_id", $("#fcc").value);
+    if ($("#ftag").value.trim()) p.set("tag", $("#ftag").value.trim().replace(/^#/, ""));
     if ($("#fmin").value) p.set("min_amount", $("#fmin").value);
     if ($("#fmax").value) p.set("max_amount", $("#fmax").value);
     const rows = await api("/transactions?" + p);
@@ -821,7 +836,7 @@ VIEWS.transactions = async (v) => {
     $("#sum").innerHTML = `${rows.length} lançamento(s) · Receitas <b class="pos">${brl(inc)}</b> · Despesas <b class="neg">${brl(exp)}</b>`;
     sel.clear(); syncBulk();
     $("#tb").innerHTML = rows.map((t) => `<tr class="clickable" data-id="${t.id}" tabindex="0" role="button">${canEdit() ? `<td class="sel"><input type="checkbox" data-sel="${t.id}" aria-label="Selecionar ${esc(t.description)}"></td>` : ""}<td>${fdate(t.date)}</td>
-      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip c-violet">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip c-cyan">Open Finance</span>' : ""}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
+      <td><div style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(t.description)}</div>${t.installment ? `<span class="chip c-violet">${esc(t.installment)}</span> ` : ""}${t.source === "pluggy" ? '<span class="chip c-cyan">Open Finance</span>' : ""}${t.cost_center_name ? ` <span class="chip c-cc">${esc(t.cost_center_name)}</span>` : ""} ${tagsChips(t.tags)}<div class="small muted" style="display:none" data-sm>${esc(t.category_name)}</div></td>
       <td class="hide-sm"><span class="dot" style="display:inline-block;background:${esc(t.category_color)}"></span> ${esc(t.category_name || "—")}</td>
       <td class="hide-sm">${esc(t.account_name)}</td>
       <td class="num ${t.type === "income" ? "pos" : t.type === "expense" ? "neg" : "muted"}">${t.type === "expense" ? "-" : ""}${brl(t.amount)}</td></tr>`).join("")
@@ -868,6 +883,18 @@ VIEWS.transactions = async (v) => {
     const n = await bulk({ action: "categorize", category_id: cat }, $("#bulkApply"));
     toast(`${nLanc(n)} em ${state.cats.find((c) => c.id === cat)?.name || "a categoria escolhida"}`, "success"); load();
   };
+  $("#bulkCcApply").onclick = async () => {
+    const cc = $("#bulkCc").value;
+    if (cc === "") { toast("Escolha o centro de custo primeiro.", "error"); shakeEl("#bulkBar"); $("#bulkCc").focus(); return; }
+    const n = await bulk({ action: "cost_center", cost_center_id: +cc }, $("#bulkCcApply"));
+    toast(+cc ? `${nLanc(n)} em ${state.costCenters.find((c) => c.id === +cc)?.name || "centro de custo"}` : `${nLanc(n)} sem centro de custo`, "success"); load();
+  };
+  $("#bulkTagAdd").onclick = async () => {
+    const tag = $("#bulkTag").value.trim().replace(/^#/, "");
+    if (!tag) { toast("Digite a tag primeiro.", "error"); shakeEl("#bulkBar"); $("#bulkTag").focus(); return; }
+    const n = await bulk({ action: "add_tag", tag }, $("#bulkTagAdd"));
+    toast(`#${tag.toLowerCase()} em ${nLanc(n)}`, "success"); $("#bulkTag").value = ""; load();
+  };
   $("#bulkDel").onclick = async () => {
     if (!await askConfirm({ title: `Excluir ${nLanc(sel.size)}?`, message: "Os saldos das contas são recalculados. Essa ação não pode ser desfeita.", confirmLabel: "Excluir lançamentos", danger: true })) return;
     const n = await bulk({ action: "delete" }, $("#bulkDel"));
@@ -875,7 +902,8 @@ VIEWS.transactions = async (v) => {
   };
   let deb; $("#fq").oninput = () => { clearTimeout(deb); deb = setTimeout(load, 300); };
   let debAmt; ["#fmin", "#fmax"].forEach((s) => ($(s).oninput = () => { clearTimeout(debAmt); debAmt = setTimeout(load, 300); }));
-  ["#facc", "#fcat", "#ftype", "#fsrc", "#fstart", "#fend"].forEach((s) => ($(s).onchange = load));
+  ["#facc", "#fcat", "#ftype", "#fsrc", "#fcc", "#fstart", "#fend"].forEach((s) => ($(s).onchange = load));
+  let debTag; $("#ftag").oninput = () => { clearTimeout(debTag); debTag = setTimeout(load, 300); };
   $("#fclear").onclick = () => { $("#fstart").value = s; $("#fend").value = e; $("#fmin").value = ""; $("#fmax").value = ""; load(); };
   $("#exp").onclick = async () => {
     const r = await fetch("/api/transactions/export", { headers: { Authorization: "Bearer " + state.token } });
@@ -1381,6 +1409,38 @@ async function potMovesDialog(p) {
   dlg.onclose = () => { dlg.onclose = null; route(); };
   dlg.showModal();
 }
+
+function costCenterForm(c = {}) {
+  openForm({
+    title: c.id ? "Editar centro de custo" : "Novo centro de custo",
+    values: { color: "#6366f1", ...c },
+    fields: [{ row: [{ name: "name", label: "Nome", required: true, placeholder: "Casa, Filhos, Empresa, Obra…" }, { name: "color", label: "Cor", type: "color" }] },
+      ...(c.id ? [{ name: "archived", label: "Arquivar (some das listas, mantém o histórico)", type: "checkbox" }] : [])],
+    onSubmit: async (d) => { await api(c.id ? `/cost-centers/${c.id}` : "/cost-centers", { method: c.id ? "PUT" : "POST", body: d }); await refreshRefs(); },
+    onDelete: c.id ? async () => { await api(`/cost-centers/${c.id}`, { method: "DELETE" }); await refreshRefs(); } : null,
+  });
+}
+
+VIEWS.costcenters = async (v) => {
+  await refreshRefs();
+  const [s, e] = monthRange();
+  const r = await api(`/reports/cost-centers?start=${s}&end=${e}`);
+  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">Centros de custo dizem <b>pra quem</b> é o gasto (Casa, Filhos, Empresa) e atravessam as categorias. Tags marcam projetos e eventos (#viagem, #reforma). Use os dois no lançamento ou em lote na tela de Lançamentos.</p>${canEdit() ? '<button class="btn" id="newCc">+ Centro de custo</button>' : ""}</div>
+    <div class="grid g2">
+      <div class="card"><h2>Gastos por centro de custo</h2><p class="small muted">${fdate(s)} a ${fdate(e)} · total ${brl(r.total_expense)}</p>
+        <div class="list">${r.cost_centers.map((c) => `<div class="li" style="display:block"><div class="between"><span><span class="dot" style="display:inline-block;background:${esc(c.color)}"></span> ${esc(c.name)}</span><span class="amount">${brl(c.expense)} <span class="small muted">${c.share}%</span></span></div>
+          <div class="bar"><i style="${barFill(c.share)};background:${esc(c.color)}"></i></div>
+          <div class="small muted" style="margin-top:4px">${c.count} lançamento(s)${c.income ? ` · receitas ${brl(c.income)}` : ""}</div></div>`).join("") || '<div class="empty">Nenhum lançamento no período.</div>'}</div></div>
+      <div class="card"><h2>Tags no período</h2>
+        <div class="list">${r.tags.map((t) => `<div class="li"><div class="grow"><span class="chip c-tag">#${esc(t.tag)}</span> <span class="small muted">${t.count} lançamento(s)</span></div><div class="amount">${brl(t.expense)}${t.income ? ` <span class="small pos">+${brl(t.income)}</span>` : ""}</div></div>`).join("") || '<div class="empty">Nenhuma tag usada no período.</div>'}</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2>Seus centros de custo</h2>
+      <div class="list">${state.costCenters.map((c, i) => `<div class="li clickable" data-i="${i}"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow">${esc(c.name)} ${c.archived ? '<span class="chip">arquivado</span>' : ""}</div></div>`).join("") || '<div class="empty">Nenhum ainda. Exemplos: Casa, Filhos, Carro, Empresa.</div>'}</div></div>`;
+  if (canEdit()) {
+    $("#newCc").onclick = () => costCenterForm();
+    v.querySelectorAll("[data-i]").forEach((el) => clickable(el, () => costCenterForm(state.costCenters[el.dataset.i])));
+  }
+};
 
 VIEWS.pots = async (v) => {
   const items = await api("/pots");

@@ -99,10 +99,23 @@ class Transaction(Owned, Base):
     source: Mapped[str] = mapped_column(String(10), default="manual")  # manual | pluggy
     category_locked: Mapped[bool] = mapped_column(Boolean, default=False)
     receipt_path: Mapped[str | None] = mapped_column(String(255))  # comprovante anexado (dar baixa)
+    cost_center_id: Mapped[int | None] = mapped_column(ForeignKey("cost_centers.id", ondelete="SET NULL"), index=True)
+    # tags livres em texto: ",viagem,casamento," (vírgulas nas pontas pra filtrar com LIKE '%,viagem,%')
+    tags: Mapped[str] = mapped_column(String(300), default="")
 
     account = relationship("Account", foreign_keys=[account_id])
     to_account = relationship("Account", foreign_keys=[to_account_id])
     category = relationship("Category")
+    cost_center = relationship("CostCenter")
+
+
+class CostCenter(Owned, Base):
+    """Centro de custo: pra quem é ou de onde vem o gasto (Casa, Filhos, Empresa X, Obra…).
+    Atravessa as categorias: "Mercado" pode ser da Casa ou da Empresa."""
+    __tablename__ = "cost_centers"
+    name: Mapped[str] = mapped_column(String(80))
+    color: Mapped[str] = mapped_column(String(9), default="#6366f1")
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Contract(Owned, Base):

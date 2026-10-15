@@ -441,3 +441,8 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .pot-rows > div { display: flex; justify-content: space-between; gap: 10px; }
 .pot-rows b { font-variant-numeric: tabular-nums; }
 .pot-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+/* centros de custo e tags */
+.chip.c-tag { background: color-mix(in srgb, var(--primary-2) 12%, var(--surface-2)); color: var(--primary-2); }
+.chip.c-cc { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.bulk-bar input { margin: 0; }
