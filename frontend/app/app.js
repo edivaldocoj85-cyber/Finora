@@ -686,6 +686,25 @@ VIEWS.more = async (v) => {
   <a class="li" style="text-decoration:none;color:inherit" href="#" onclick="logout();return false">${navIcon("logout")}<div class="grow title">Sair</div></a></div>`;
 };
 
+/* saúde financeira: indicadores com faixa de referência (cálculo em analytics.financial_health) */
+const HEALTH_LABEL = { good: "bom", warn: "atenção", bad: "crítico", unknown: "sem dados" };
+function kpiValue(k) {
+  if (k.value == null) return "—";
+  if (k.format === "pct") return pctBR(k.value, 1);
+  if (k.format === "months") return `${k.value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} ${k.value >= 1 && k.value < 2 ? "mês" : "meses"}`;
+  return k.value.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+function healthCard(h) {
+  if (!h || h.score == null) return "";
+  const cls = h.score >= 75 ? "good" : h.score >= 45 ? "warn" : "bad";
+  return `<div class="card health" style="margin-top:16px"><div class="between"><h2 style="margin:0">Saúde financeira</h2>
+      <span class="health-score ${cls}" title="Média dos indicadores (0 a 100)">${h.score}<small>/100</small></span></div>
+    <div class="health-grid">${h.kpis.map((k) => `<div class="health-kpi ${k.status}" title="${esc(k.hint)}">
+      <div class="small muted">${esc(k.label)}</div><div class="hv">${kpiValue(k)}</div>
+      <div class="small"><span class="dot-st"></span>${HEALTH_LABEL[k.status]} · <span class="muted">meta ${esc(k.target)}</span></div></div>`).join("")}</div>
+    <p class="small muted" style="margin:8px 0 0">Base: gasto médio de ${brl(h.base.avg_expense)} e renda de ${brl(h.base.income)} por mês (últimos 3 meses fechados). Passe o mouse num indicador pra ver como é calculado.</p></div>`;
+}
+
 let dashboardTrendMonths = 6;
 VIEWS.dashboard = async (v) => {
   const d = await api(`/dashboard?ref=${refDate()}&months=${dashboardTrendMonths}`);
@@ -718,6 +737,7 @@ VIEWS.dashboard = async (v) => {
     <div class="card stat tint-red"><h3>Despesas do mês</h3><div class="value neg" data-count="${d.month.expense}">${brl(d.month.expense)}</div><div class="sub">Projeção ${brl(d.projected_expense)}</div></div>
     <div class="card stat tint-violet"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
   </div>
+  ${healthCard(d.health)}
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><div class="between"><h2 style="margin:0">Receitas x despesas</h2>
       <div class="tabs" id="trendToggle" style="margin:0"><button type="button" data-m="6" class="${dashboardTrendMonths == 6 ? "active" : ""}">6 meses</button><button type="button" data-m="12" class="${dashboardTrendMonths == 12 ? "active" : ""}">12 meses</button></div></div>

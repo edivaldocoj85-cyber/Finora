@@ -451,3 +451,13 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 tr.cf-future td { color: var(--muted); }
 tr.cf-future td.pos, tr.cf-future td.neg { opacity: .75; }
 tr.cf-current td { background: color-mix(in srgb, var(--primary-2) 6%, transparent); }
+
+/* saúde financeira */
+.health-score { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.health-score small { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.health-score.good { color: var(--green); } .health-score.warn { color: var(--amber); } .health-score.bad { color: var(--red); }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+.health-kpi { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
+.health-kpi .hv { font-size: 1.25rem; font-weight: 700; margin: 2px 0; font-variant-numeric: tabular-nums; }
+.dot-st { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: middle; }
+.health-kpi.good .dot-st { background: var(--green); } .health-kpi.warn .dot-st { background: var(--amber); } .health-kpi.bad .dot-st { background: var(--red); }
