@@ -26,7 +26,7 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract,
                       Goal, Income, PluggyItem, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, market, pluggy, storage, vendas
+from ..services import advisor, analytics, assistant, market, pluggy, statement_import, storage, vendas
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -880,37 +880,72 @@ def bulk_transactions(data: TxBulk, u: User = Depends(current_editor), db: Sessi
 
 
 @router.post("/transactions/import")
-async def import_csv(account_id: int, file: UploadFile, u: User = Depends(current_editor),
-                     db: Session = Depends(get_db)):
-    """CSV com colunas: data;descricao;valor (valor negativo = gasto). Aceita , ou ; e data dd/mm/aaaa."""
+async def import_statement(account_id: int, file: UploadFile, invert: bool = False, dry_run: bool = False,
+                           u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    """Extrato ou fatura de cartão em CSV (layouts de vários bancos) ou OFX/XML.
+    invert=True quando o arquivo traz as compras com valor positivo (comum na fatura em CSV).
+    dry_run=True só devolve a prévia, sem gravar. Reimportar o mesmo arquivo não duplica:
+    cada linha vira um external_id (FITID no OFX; hash de data+descrição+valor no CSV)."""
     acc = db.query(Account).filter_by(id=account_id, user_id=u.workspace_id).first()
     if not acc:
-        raise HTTPException(400, "Account inválido")
-    raw = (await file.read()).decode("utf-8-sig", errors="ignore")
-    dialect = csv.Sniffer().sniff(raw[:2000], delimiters=";,")
-    n = 0
-    for row in csv.DictReader(io.StringIO(raw), dialect=dialect):
-        row = {k.strip().lower(): (v or "").strip() for k, v in row.items() if k}
-        try:
-            ds = row.get("data") or row.get("date")
-            d = datetime.strptime(ds, "%d/%m/%Y").date() if "/" in ds else date.fromisoformat(ds)
-            vs = row.get("valor") or row.get("amount")
-            v = float(vs.replace("R$", "").replace(".", "").replace(",", ".")) if "," in vs else float(vs)
-        except (ValueError, TypeError, AttributeError):
+        raise HTTPException(400, "Conta inválida")
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(400, "Arquivo grande demais (máx. 5 MB).")
+    try:
+        fmt, rows = statement_import.parse(file.filename or "", raw)
+    except statement_import.StatementError as e:
+        raise HTTPException(400, str(e))
+    if not rows:
+        raise HTTPException(400, "Nenhuma transação encontrada no arquivo.")
+
+    is_card = acc.kind == "credit_card"
+    seen, used, items = {}, set(), []
+    for r in rows:
+        v = -r.amount if invert else r.amount
+        if r.fitid:
+            ext = "ofx-" + hashlib.sha1(f"{account_id}{r.fitid}".encode()).hexdigest()[:20]
+        else:
+            # a 1ª ocorrência mantém o hash antigo (reimportar arquivos de antes não duplica);
+            # compras iguais no mesmo dia (dois cafés) ganham #2, #3… em vez de sumirem
+            base = f"{account_id}{r.date}{r.description}{v}"
+            seen[base] = seen.get(base, 0) + 1
+            ext = "csv-" + hashlib.sha1((base if seen[base] == 1 else f"{base}#{seen[base]}").encode()).hexdigest()[:20]
+        if ext in used:
             continue
-        desc = row.get("descricao") or row.get("descrição") or row.get("description") or "Lançamento"
+        used.add(ext)
+        if is_card and v > 0 and "pagamento" in statement_import._norm(r.description):
+            status = "skip"  # pagamento da fatura: não é receita, só quita o cartão
+        elif db.query(Transaction.id).filter_by(user_id=u.workspace_id, external_id=ext).first():
+            status = "dup"
+        else:
+            status = "new"
+        items.append({"date": r.date.isoformat(), "description": r.description, "amount": round(v, 2),
+                      "installment": r.installment, "status": status, "_ext": ext})
+
+    new = [i for i in items if i["status"] == "new"]
+    summary = {
+        "format": fmt, "total": len(items), "new": len(new),
+        "duplicates": sum(i["status"] == "dup" for i in items),
+        "skipped": sum(i["status"] == "skip" for i in items),
+        "expenses": round(-sum(i["amount"] for i in new if i["amount"] < 0), 2),
+        "incomes": round(sum(i["amount"] for i in new if i["amount"] > 0), 2),
+    }
+    if dry_run:
+        summary["rows"] = [{k: v for k, v in i.items() if k != "_ext"} for i in items[:300]]
+        return summary
+
+    for i in new:
+        v, d = i["amount"], date.fromisoformat(i["date"])
         typ = "expense" if v < 0 else "income"
-        ext = "csv-" + hashlib.sha1(f"{account_id}{d}{desc}{v}".encode()).hexdigest()[:20]
-        if db.query(Transaction.id).filter_by(user_id=u.workspace_id, external_id=ext).first():
-            continue
-        db.add(Transaction(user_id=u.workspace_id, account_id=account_id, date=d, description=desc[:255],
-                           amount=abs(v), type=typ, external_id=ext, source="manual",
-                           category_id=categorize(db, u.workspace_id, desc, typ)))
+        db.add(Transaction(user_id=u.workspace_id, account_id=account_id, date=d,
+                           description=i["description"], amount=abs(v), type=typ,
+                           installment=i["installment"], external_id=i["_ext"], source="manual",
+                           category_id=categorize(db, u.workspace_id, i["description"], typ)))
         _adjust_balance(db, account_id, d, v, +1)
-        n += 1
     acc.last_import_at = datetime.utcnow()
     db.commit()
-    return {"imported": n}
+    return {**summary, "imported": len(new)}
 
 
 def _csv_safe(v: str) -> str:

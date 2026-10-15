@@ -407,3 +407,12 @@ tr.clickable.selected:hover td { background: color-mix(in srgb, var(--primary) 1
 .ap-nome .nora-ic { width: 30px; height: 32px; flex: none; }
 .ap-nome span { display: grid; line-height: 1.15; font-family: var(--font-display); }
 .ap-nome small { font-family: var(--font-body); font-weight: 500; font-size: 11px; color: rgba(255,255,255,.82); }
+
+/* importar extrato/fatura: resumo + prévia rolável dentro do modal */
+.imp-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 4px; font-size: 14px; }
+.imp-tot { margin-left: auto; color: var(--muted); font-size: 13px; }
+.imp-warn { color: var(--amber); margin: 4px 0; }
+.imp-table { max-height: 300px; overflow: auto; margin-top: 6px; border: 1px solid var(--border); border-radius: 10px; }
+.imp-table th { position: sticky; top: 0; background: var(--surface); }
+.imp-table td, .imp-table th { padding: 8px; font-size: 13px; }
+.imp-table td:nth-child(2) { white-space: normal; min-width: 140px; }

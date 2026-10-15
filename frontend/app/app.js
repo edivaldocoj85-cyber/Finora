@@ -786,7 +786,7 @@ VIEWS.transactions = async (v) => {
       <select id="fcat"><option value="">Todas as categorias</option>${state.cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
       <select id="ftype"><option value="">Todos os tipos</option><option value="expense">Despesas</option><option value="income">Receitas</option><option value="transfer">Transferências</option></select>
       <select id="fsrc" title="Origem"><option value="">Toda origem</option><option value="manual">Lançado manual/CSV</option><option value="pluggy">Open Finance</option></select>
-      <button class="btn" id="imp">Importar CSV</button><button class="btn" id="exp">Exportar</button>
+      <button class="btn" id="imp">Importar extrato</button><button class="btn" id="exp">Exportar</button>
     </div>
     <div class="toolbar">
       <input id="fstart" type="date" title="De" value="${s}">
@@ -879,18 +879,84 @@ VIEWS.transactions = async (v) => {
     const r = await fetch("/api/transactions/export", { headers: { Authorization: "Bearer " + state.token } });
     const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = "finora-lancamentos.csv"; a.click();
   };
-  $("#imp").onclick = () => openForm({
-    title: "Importar extrato CSV",
-    fields: [{ name: "account_id", label: "Conta de destino", type: "select", options: accOptions(), num: true }],
-    extra: `<label>Arquivo CSV (colunas: data; descricao; valor — valores negativos são gastos)<input type="file" id="csvFile" accept=".csv,text/csv" required></label>`,
-    onSubmit: async (d) => {
-      const fd = new FormData(); fd.append("file", $("#csvFile").files[0]);
-      const r = await api(`/transactions/import?account_id=${d.account_id}`, { body: fd });
-      toast(`${r.imported} lançamento(s) importado(s)`, "success");
-    },
-  });
+  $("#imp").onclick = importForm;
   await load();
 };
+
+/* importar extrato/fatura (CSV ou OFX/XML): escolhe conta e arquivo, vê a prévia do que
+   entra (novos, já importados, pagamento de fatura ignorado) e só então grava */
+function importForm() {
+  if (!canEdit()) { toast("Você tem acesso somente leitura a esses dados.", "error"); return; }
+  if (!state.accounts.length) { toast("Cadastre uma conta ou cartão primeiro."); location.hash = "accounts"; return; }
+  const form = $("#modalForm"), dlg = $("#modal");
+  const accs = state.accounts.filter((a) => !a.archived);
+  const card = accs.find((a) => a.kind === "credit_card");
+  form.innerHTML = `<h2>Importar extrato ou fatura</h2>
+    <p class="muted small">Envie o arquivo que o banco exporta: <b>CSV</b> ou <b>OFX/XML</b>. As colunas são reconhecidas sozinhas (Nubank, Inter, Itaú, C6 e outros). Importar o mesmo arquivo de novo não duplica nada.</p>
+    <label>Conta ou cartão<select id="impAcc">${accOptions().map(([k, l]) => `<option value="${k}" ${card && k === card.id ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+    <label>Arquivo<input type="file" id="impFile" accept=".csv,.ofx,.xml,.txt,text/csv,text/xml,application/xml"></label>
+    <label class="check"><input type="checkbox" id="impInv"> No arquivo, as compras aparecem com valor positivo (comum na fatura do cartão em CSV)</label>
+    <div id="impPrev"></div>
+    <p class="error" id="formError"></p>
+    <div class="modal-actions"><button type="button" class="btn" id="fCancel">Cancelar</button><button class="btn primary" id="fSave" disabled>Importar</button></div>`;
+  let invTouched = false, seq = 0, last = null;
+  const accId = () => $("#impAcc").value;
+  const file = () => $("#impFile").files[0];
+  const send = (dry) => {
+    const fd = new FormData(); fd.append("file", file());
+    return api(`/transactions/import?account_id=${accId()}&invert=${$("#impInv").checked}&dry_run=${dry}`, { body: fd });
+  };
+  const autoInvert = () => {
+    if (invTouched || !file()) return;
+    const isCard = accs.find((a) => String(a.id) === accId())?.kind === "credit_card";
+    $("#impInv").checked = isCard && /\.(csv|txt)$/i.test(file().name);
+  };
+  const preview = async () => {
+    const box = $("#impPrev"), my = ++seq;
+    $("#formError").textContent = ""; $("#fSave").disabled = true; last = null;
+    if (!file()) { box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="empty">Lendo o arquivo…</div>`;
+    try {
+      const r = await send(true);
+      if (my !== seq) return;
+      last = r;
+      const isCard = accs.find((a) => String(a.id) === accId())?.kind === "credit_card";
+      const looksInverted = isCard && r.new && !r.expenses && r.incomes;
+      const chip = { new: '<span class="chip c-green">novo</span>', dup: '<span class="chip">já importado</span>', skip: '<span class="chip c-amber">pagamento da fatura</span>' };
+      box.innerHTML = `<div class="imp-sum">
+          <span class="chip c-cyan">${r.format.toUpperCase()}</span>
+          <b>${r.new}</b> ${r.new === 1 ? "novo" : "novos"}${r.duplicates ? ` · ${r.duplicates} já importado(s)` : ""}${r.skipped ? ` · ${r.skipped} pagamento(s) de fatura ignorado(s)` : ""}
+          <span class="imp-tot">Gastos <b class="neg">${brl(r.expenses)}</b>${r.incomes ? ` · Créditos <b class="pos">${brl(r.incomes)}</b>` : ""}</span>
+        </div>
+        ${looksInverted ? `<p class="small imp-warn">As compras estão entrando como crédito. Se isso é uma fatura, marque a opção "compras com valor positivo" acima.</p>` : ""}
+        <div class="table-wrap imp-table"><table><thead><tr><th>Data</th><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead><tbody>
+        ${r.rows.map((x) => `<tr${x.status !== "new" ? ' class="muted"' : ""}><td>${fdate(x.date)}</td><td>${esc(x.description)}${x.installment ? ` <span class="chip">${esc(x.installment)}</span>` : ""}</td>
+          <td class="num ${x.amount < 0 ? "neg" : "pos"}">${x.amount < 0 ? "-" : ""}${brl(Math.abs(x.amount))}</td><td>${chip[x.status]}</td></tr>`).join("")}
+        </tbody></table></div>${r.total > r.rows.length ? `<p class="small muted">Mostrando ${r.rows.length} de ${r.total} linhas.</p>` : ""}`;
+      $("#fSave").disabled = !r.new;
+      $("#fSave").textContent = r.new ? `Importar ${r.new} ${r.new === 1 ? "lançamento" : "lançamentos"}` : "Nada novo pra importar";
+    } catch (e) {
+      if (my !== seq) return;
+      box.innerHTML = ""; $("#formError").textContent = e.message;
+    }
+  };
+  $("#impFile").onchange = () => { autoInvert(); preview(); };
+  $("#impAcc").onchange = () => { autoInvert(); preview(); };
+  $("#impInv").onchange = () => { invTouched = true; preview(); };
+  $("#fCancel").onclick = () => dlg.close();
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    if (!last?.new) return;
+    $("#fSave").disabled = true; $("#fSave").classList.add("loading");
+    try {
+      const r = await send(false);
+      dlg.close(); route();
+      toast(r.imported === 1 ? "1 lançamento importado" : `${r.imported} lançamentos importados`, "success");
+    } catch (err) { $("#formError").textContent = err.message; shakeEl(dlg); $("#fSave").disabled = false; }
+    finally { $("#fSave").classList.remove("loading"); }
+  };
+  dlg.showModal();
+}
 
 VIEWS.cards = async (v) => {
   const [d, plans] = await Promise.all([api(`/dashboard?ref=${refDate()}`), api(`/installments?ref=${refDate()}`)]);

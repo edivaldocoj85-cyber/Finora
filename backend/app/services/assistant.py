@@ -30,9 +30,11 @@ def _norm(s: str) -> str:
 # dois lados na hora de comparar, e o radical casa com qualquer conjugação (importar,
 # importo, importação, importando...) em vez de exigir a palavra exata.
 HELP_TOPICS = [
-    {"kw": ["import", "csv", "extrato manual", "planilha"],
-     "a": "Vá em **Lançamentos → Importar CSV**, escolha a conta de destino e envie um arquivo com colunas "
-          "`data;descricao;valor` (valores negativos são gastos). Você pode configurar um lembrete "
+    {"kw": ["import", "csv", "ofx", "xml", "fatura", "extrato manual", "planilha"],
+     "a": "Vá em **Lançamentos → Importar extrato**, escolha a conta ou o cartão e envie o arquivo que o "
+          "banco exporta, em **CSV** ou **OFX/XML** (extrato ou fatura do cartão). As colunas são reconhecidas "
+          "sozinhas e você vê uma prévia antes de confirmar; parcelas (\"Parcela 3/10\") viram parcelamento e o "
+          "pagamento da fatura é ignorado. Reimportar o mesmo arquivo não duplica. Você pode configurar um lembrete "
           "diário, semanal ou mensal pra não esquecer de importar — isso fica na edição da conta."},
     {"kw": ["conect", "open finance", "pluggy", "sincroniz", "banco automatic"],
      "a": "Vá em **Conexões bancárias** e clique em \"Conectar banco\". Isso usa Open Finance (Pluggy) — "
