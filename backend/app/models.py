@@ -27,6 +27,10 @@ class User(Base):
     lgpd_consent_at: Mapped[datetime | None] = mapped_column(DateTime)
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime)
     monthly_goal_savings: Mapped[float] = mapped_column(Float, default=0)
+    email_alerts: Mapped[bool] = mapped_column(Boolean, default=True)  # alertas importantes por e-mail
+    email_digest: Mapped[str] = mapped_column(String(10), default="weekly")  # weekly | none
+    last_daily_run_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_digest_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
 

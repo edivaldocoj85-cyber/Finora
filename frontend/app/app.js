@@ -1830,6 +1830,12 @@ VIEWS.settings = async (v) => {
     <button class="btn primary full" id="saveMe">Salvar</button>
     <h2 style="margin-top:22px">Aparência</h2>
     <div class="tabs" id="themeTabs">${THEME_ORDER.map((m) => `<button type="button" data-mode="${m}" class="${m === theme ? "active" : ""}">${navIcon(THEME_ICON[m])} ${esc(THEME_LABEL[m].split(" (")[0])}</button>`).join("")}</div></div>
+    <div class="card"><h2>Notificações</h2>
+      ${state.user.email_enabled ? "" : `<p class="small imp-warn">O envio de e-mail ainda não está ligado no servidor. As preferências ficam salvas e passam a valer quando ele for configurado.</p>`}
+      <label class="check"><input type="checkbox" id="nAlerts" ${state.user.email_alerts ? "checked" : ""}> Avisos importantes por e-mail (orçamento perto do limite, conta vencendo, saldo negativo, prazo pra cancelar contrato)</label>
+      <label>Resumo semanal por e-mail<select id="nDigest"><option value="weekly" ${state.user.email_digest === "weekly" ? "selected" : ""}>Toda segunda, às 7h</option><option value="none" ${state.user.email_digest === "none" ? "selected" : ""}>Não quero</option></select></label>
+      <p class="small muted">Vai para ${esc(state.user.email)}. Os avisos também aparecem no sininho do app.</p>
+      <div class="row" style="gap:8px"><button class="btn primary" id="saveNotif" type="button">Salvar notificações</button>${state.user.email_enabled ? '<button class="btn ghost" id="testDigest" type="button">Enviar resumo agora</button>' : ""}</div></div>
     <div class="card">${sharedHtml}</div>
     <div class="card"><h2>Instalar no dispositivo</h2><p class="muted small">No celular, abra o menu do navegador e toque em “Adicionar à tela inicial”. No computador, use o ícone de instalação na barra de endereço.</p><button class="btn" id="installBtn" ${window._installPrompt ? "" : "disabled"}>Instalar app</button>
     <h2 style="margin-top:22px">Privacidade (LGPD)</h2><p class="muted small">Você pode exportar seus lançamentos na tela de Lançamentos. Excluir a conta remove todos os seus dados e revoga as conexões bancárias.</p>
@@ -1840,6 +1846,16 @@ VIEWS.settings = async (v) => {
     $("#themeTabs").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
   }));
   $("#installBtn").onclick = () => window._installPrompt?.prompt();
+  $("#saveNotif").onclick = async () => {
+    state.user = await api("/me", { method: "PATCH", body: { email_alerts: $("#nAlerts").checked, email_digest: $("#nDigest").value } });
+    toast("Notificações salvas", "success");
+  };
+  if ($("#testDigest")) $("#testDigest").onclick = async () => {
+    const b = $("#testDigest"); b.disabled = true; b.classList.add("loading");
+    try { const r = await api("/me/digest-test", { method: "POST" }); toast(`Resumo enviado para ${r.to}`, "success"); }
+    catch (e) { toast(e.message, "error"); }
+    finally { b.disabled = false; b.classList.remove("loading"); }
+  };
   $("#delMe").onclick = async () => {
     if (!await askConfirm({ title: "Excluir sua conta definitivamente?", message: "Todos os seus dados — contas, lançamentos, comprovantes e metas — serão apagados. Exporte antes se quiser guardar uma cópia.", confirmLabel: "Excluir minha conta", danger: true, requireText: "EXCLUIR" })) return;
     await api("/me", { method: "DELETE" }); logout();

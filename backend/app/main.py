@@ -18,7 +18,7 @@ from .config import get_settings
 from .db import Base, SessionLocal, engine
 from .models import Category, PluggyItem, User
 from .routers.api import router
-from .services import analytics, pluggy
+from .services import analytics, notifications, pluggy
 from .services.categorizer import DEFAULT_CATEGORIES
 
 log = logging.getLogger("finora")
@@ -38,6 +38,10 @@ def _migrate(engine):
             cols = {c["name"] for c in insp.get_columns("users")}
             if "avatar_url" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500)"))
+            for col, ddl in (("email_alerts", "BOOLEAN DEFAULT TRUE"), ("email_digest", "VARCHAR(10) DEFAULT 'weekly'"),
+                             ("last_daily_run_at", "TIMESTAMP"), ("last_digest_at", "TIMESTAMP")):
+                if col not in cols:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ddl}"))
             if "onboarded_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN onboarded_at TIMESTAMP"))
             if "is_admin" not in cols:
@@ -131,6 +135,21 @@ async def periodic_sync():
             db.close()
 
 
+async def daily_jobs():
+    """Alertas de todo mundo 1x por dia (e-mail chega sem abrir o app) + resumo de segunda."""
+    while True:
+        db = SessionLocal()
+        try:
+            stats = await asyncio.to_thread(notifications.daily_job, db)
+            if stats.get("alerts") or stats.get("digests"):
+                log.info("rotina diária: %s", stats)
+        except Exception as e:  # noqa: BLE001
+            log.warning("rotina diária falhou: %s", e)
+        finally:
+            db.close()
+        await asyncio.sleep(30 * 60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     s = get_settings()
@@ -139,9 +158,9 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
     _migrate(engine)
     _backfill_default_categories()
-    task = None if ON_VERCEL else asyncio.create_task(periodic_sync())
+    tasks = [] if ON_VERCEL else [asyncio.create_task(periodic_sync()), asyncio.create_task(daily_jobs())]
     yield
-    if task:
+    for task in tasks:
         task.cancel()
 
 

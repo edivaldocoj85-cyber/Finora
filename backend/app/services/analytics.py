@@ -354,7 +354,7 @@ def financial_health(db: Session, user_id: int, ref: date, *, cash, pots_total, 
                  Receivable.received_at.is_(None), Receivable.due_date <= in30))
     current_ratio = (liquid + recv30 + income) / due30 if due30 else None
 
-    months_cov = liquid / avg_exp if avg_exp else None
+    months_cov = max(liquid, 0) / avg_exp if avg_exp else None
     savings = (income - avg_exp) / income * 100 if income else None
     debt_ratio = debt / assets_all * 100 if assets_all > 0 else (100.0 if debt else 0.0)
     burden = monthly_debt / income * 100 if income else None
@@ -394,7 +394,7 @@ def _alert(db, user_id, key, level, title, message):
     # sininho, senão vira spam de aviso pouco importante
     if level in ("danger", "warning") and email_service.enabled():
         u = db.get(User, user_id)
-        if u and u.email:
+        if u and u.email and u.email_alerts is not False:
             public_url = get_settings().public_url.rstrip("/")
             email_service.send(u.email, f"Finora — {title}",
                               f"<p>{message}</p><p><a href='{public_url}/app/'>Abrir o Finora</a></p>")

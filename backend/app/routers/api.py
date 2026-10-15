@@ -26,7 +26,9 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
                       Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, cashflow, market, pluggy, pots, recurring, statement_import, storage, vendas
+from ..services import (advisor, analytics, assistant, cashflow, market, notifications, pluggy, pots, recurring,
+                        statement_import, storage, vendas)
+from ..services import email as email_service
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -45,6 +47,8 @@ def user_out(u: User, db: Session):
         workspace_owner = {"name": owner.name, "email": owner.email} if owner else None
     return {"id": u.id, "name": u.name, "email": u.email, "plan": u.plan,
             "monthly_goal_savings": u.monthly_goal_savings, "avatar_url": u.avatar_url,
+            "email_alerts": u.email_alerts is not False, "email_digest": u.email_digest or "weekly",
+            "email_enabled": email_service.enabled(),
             "onboarded": bool(u.onboarded_at), "is_admin": u.is_admin,
             "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
             "trial_expired": trial_expired,
@@ -225,6 +229,8 @@ def me(u: User = Depends(current_user), db: Session = Depends(get_db)):
 class MeIn(BaseModel):
     name: Optional[str] = None
     monthly_goal_savings: Optional[float] = None
+    email_alerts: Optional[bool] = None
+    email_digest: Optional[str] = Field(None, pattern="^(weekly|none)$")
 
 
 @router.patch("/me")
@@ -234,6 +240,17 @@ def update_me(data: MeIn, u: User = Depends(current_user), db: Session = Depends
     db.merge(u)
     db.commit()
     return user_out(u, db)
+
+
+@router.post("/me/digest-test")
+def send_test_digest(u: User = Depends(current_user_active), db: Session = Depends(get_db),
+                     _rl=Depends(rate_limit("digest-test", 3, 3600))):
+    """Manda o resumo semanal agora, pro próprio e-mail, pra pessoa ver como fica."""
+    if not email_service.enabled():
+        raise HTTPException(400, "O envio de e-mail não está configurado no servidor (RESEND_API_KEY).")
+    if not notifications.send_digest(db, u):
+        raise HTTPException(502, "Não foi possível enviar o e-mail agora. Tente de novo em alguns minutos.")
+    return {"ok": True, "to": u.email}
 
 
 @router.post("/me/onboarded")
