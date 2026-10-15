@@ -738,6 +738,8 @@ VIEWS.dashboard = async (v) => {
     <div class="card stat tint-violet"><h3>Resultado</h3><div class="value ${bal >= 0 ? "pos" : "neg"}" data-count="${bal}">${brl(bal)}</div><div class="sub">Poupança projetada ${d.savings_rate ?? "–"}%</div></div>
   </div>
   ${healthCard(d.health)}
+  ${d.insights?.length ? `<div class="card" style="margin-top:16px"><h2>${navIcon("sparkles")} O que fazer agora</h2>
+    <div class="list">${d.insights.map((i) => `<a class="li insight" href="#${esc(i.action?.route || "dashboard")}"><div class="grow"><div class="title">${esc(i.title)}</div><div class="small muted">${esc(i.message)}</div></div>${i.action ? `<span class="small" style="flex:none;color:var(--primary)">${esc(i.action.label)} ›</span>` : ""}</a>`).join("")}</div></div>` : ""}
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><div class="between"><h2 style="margin:0">Receitas x despesas</h2>
       <div class="tabs" id="trendToggle" style="margin:0"><button type="button" data-m="6" class="${dashboardTrendMonths == 6 ? "active" : ""}">6 meses</button><button type="button" data-m="12" class="${dashboardTrendMonths == 12 ? "active" : ""}">12 meses</button></div></div>

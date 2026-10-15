@@ -30,6 +30,11 @@ def _snapshot_text(dash: dict) -> str:
                                   "savings_rate", "cards", "upcoming", "goals")}
     slim["categories"] = [{k: c[k] for k in ("name", "total", "prev", "budget", "essential")}
                           for c in dash["categories"]]
+    # números já calculados no código: o consultor explica e prioriza, não recalcula
+    if dash.get("health"):
+        slim["health"] = {"score": dash["health"]["score"],
+                          "kpis": [{k: x[k] for k in ("label", "value", "status", "target")} for x in dash["health"]["kpis"]]}
+    slim["insights"] = [{k: i[k] for k in ("title", "message")} for i in dash.get("insights", [])]
     return json.dumps(slim, ensure_ascii=False)
 
 

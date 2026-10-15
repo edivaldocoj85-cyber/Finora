@@ -461,3 +461,6 @@ tr.cf-current td { background: color-mix(in srgb, var(--primary-2) 6%, transpare
 .health-kpi .hv { font-size: 1.25rem; font-weight: 700; margin: 2px 0; font-variant-numeric: tabular-nums; }
 .dot-st { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: middle; }
 .health-kpi.good .dot-st { background: var(--green); } .health-kpi.warn .dot-st { background: var(--amber); } .health-kpi.bad .dot-st { background: var(--red); }
+
+.li.insight { text-decoration: none; color: inherit; align-items: center; gap: 10px; }
+.li.insight:hover .title { color: var(--primary); }

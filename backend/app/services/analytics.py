@@ -277,7 +277,7 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
     health = financial_health(db, user_id, ref, cash=cash, pots_total=pots_total, invest=invest,
                               assets_total=assets_total, cards=cards, months=months,
                               expected_income=expected_income, contracts=contracts)
-    return {
+    out = {
         "health": health,
         "ref": ref.isoformat(),
         "net_worth": round(cash + invest + assets_total - card_debt, 2),
@@ -304,6 +304,12 @@ def dashboard(db: Session, user_id: int, ref: date | None = None, trend_months: 
         },
         "unread_alerts": db.query(Alert).filter_by(user_id=user_id, read=False).count(),
     }
+    from . import insights as insights_service  # import tardio: insights usa analytics
+    try:
+        out["insights"] = insights_service.build(db, user_id, out, ref)
+    except Exception:  # insight nunca derruba o painel
+        out["insights"] = []
+    return out
 
 
 def _kpi(key, label, value, fmt, status, target, hint):
