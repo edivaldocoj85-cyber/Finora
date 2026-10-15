@@ -14,7 +14,7 @@ from typing import Optional
 _Date = date
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_
@@ -818,6 +818,8 @@ def patch_transaction(tid: int, data: TxPatch, u: User = Depends(current_editor)
     _apply_tx_effect(db, t, -1)  # desfaz o efeito de caixa atual antes de editar
 
     vals = data.model_dump(exclude_none=True, exclude={"create_rule"})
+    if "date" in vals and vals["date"] != t.date:
+        t.invoice_month = None  # data mudou à mão: a fatura volta a seguir o dia de fechamento
     if "category_id" in vals:
         _check_fk(db, u.workspace_id, Category, vals["category_id"])
         t.category_locked = True
@@ -881,11 +883,16 @@ def bulk_transactions(data: TxBulk, u: User = Depends(current_editor), db: Sessi
 
 @router.post("/transactions/import")
 async def import_statement(account_id: int, file: UploadFile, invert: bool = False, dry_run: bool = False,
+                           invoice: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
                            u: User = Depends(current_editor), db: Session = Depends(get_db)):
     """Extrato ou fatura de cartão em CSV (layouts de vários bancos) ou OFX/XML.
     invert=True quando o arquivo traz as compras com valor positivo (comum na fatura em CSV).
     dry_run=True só devolve a prévia, sem gravar. Reimportar o mesmo arquivo não duplica:
-    cada linha vira um external_id (FITID no OFX; hash de data+descrição+valor no CSV)."""
+    cada linha vira um external_id (FITID no OFX; hash de data+descrição+valor no CSV).
+
+    No cartão, o arquivo é a fatura `invoice` (mês do fechamento; se omitido, a do ciclo da
+    compra mais recente) e todas as linhas ficam presas a ela (invoice_month). Assim o total
+    bate com o do banco mesmo quando uma compra perto do fechamento entrou na fatura seguinte."""
     acc = db.query(Account).filter_by(id=account_id, user_id=u.workspace_id).first()
     if not acc:
         raise HTTPException(400, "Conta inválida")
@@ -901,17 +908,19 @@ async def import_statement(account_id: int, file: UploadFile, invert: bool = Fal
 
     is_card = acc.kind == "credit_card"
     uid = u.workspace_id
-    # data de referência da fatura: alguns bancos repetem a data da compra original em
-    # todas as parcelas (03/10 de uma compra de 3 meses atrás). Essas parcelas vão pro mês
-    # do arquivo, senão cairiam na fatura errada.
-    ref = max(r.date for r in rows)
+    ym = (invoice or analytics.invoice_of_date(acc, max(r.date for r in rows))) if is_card else None
 
-    def billed_on(d: date, inst: str | None) -> date:
-        if not inst or (ref - d).days <= 45:
-            return d
-        return analytics.add_months(d, (ref.year - d.year) * 12 + ref.month - d.month)
+    def fit_cycle(d: date, ym_k: str) -> date:
+        """Parcela dentro do ciclo da sua fatura. Alguns bancos repetem a data da compra
+        original em todas as parcelas (03/10 de uma compra de meses atrás)."""
+        s, e, _ = analytics.invoice_cycle(acc, ym_k)
+        for _ in range(48):
+            if d >= s:
+                break
+            d = analytics.add_months(d, 1)
+        return min(d, e)
 
-    seen, used, items, file_inst = {}, set(), [], set()
+    seen, used, touched, items, file_inst = {}, set(), set(), [], set()
     for r in rows:
         if r.installment:
             n, tot = map(int, r.installment.split("/"))
@@ -929,20 +938,24 @@ async def import_statement(account_id: int, file: UploadFile, invert: bool = Fal
         if ext in used:
             continue
         used.add(ext)
-        d = billed_on(r.date, r.installment)
-        match = None
+        d = fit_cycle(r.date, ym) if is_card and r.installment else r.date
+        tx = None
         if is_card and v > 0 and "pagamento" in statement_import._norm(r.description):
-            status = "skip"  # pagamento da fatura: não é receita, só quita o cartão
-        elif db.query(Transaction.id).filter_by(user_id=uid, external_id=ext).first():
+            status = "skip"  # pagamento da fatura anterior: não é receita nem entra no total
+        elif tx := db.query(Transaction).filter_by(user_id=uid, external_id=ext).first():
             status = "dup"
-        elif r.installment and v < 0 and (match := _find_installment(db, uid, account_id, r.description, r.installment, -v, d)):
+        elif r.installment and v < 0 and (tx := _find_installment(db, uid, account_id, r.description, r.installment, -v, d, touched)):
             status = "match"  # parcela já prevista (importação anterior) ou lançada à mão
+        elif is_card and v < 0 and not r.installment and (tx := _find_manual(db, uid, account_id, -v, r.date, touched)):
+            status = "manual"  # mesma compra que você já tinha lançado à mão
         else:
             status = "new"
+        if tx:
+            touched.add(tx.id)
         items.append({"date": d.isoformat(), "description": r.description, "amount": round(v, 2),
-                      "installment": r.installment, "status": status, "_ext": ext, "_match": match})
+                      "installment": r.installment, "status": status, "_ext": ext, "_tx": tx})
 
-    # parcelas futuras: "Loja X 3/10" na fatura de hoje → prevê 4/10…10/10 nos meses seguintes.
+    # parcelas futuras: "Loja X 3/10" na fatura de hoje → prevê 4/10…10/10 nas faturas seguintes.
     # Quando a fatura do mês chegar, a parcela real substitui a prevista (status "match").
     future = {}
     for i in items:
@@ -954,24 +967,49 @@ async def import_statement(account_id: int, file: UploadFile, invert: bool = Fal
         for k in range(n + 1, tot + 1):
             if (desc.lower(), tot, k) in file_inst:
                 continue
+            ym_k = analytics.ym_add(ym, k - n) if ym else None
             dk = analytics.add_months(d0, k - n)
+            if ym_k:
+                s, e, _ = analytics.invoice_cycle(acc, ym_k)
+                dk = min(max(dk, s), e)
             ext = "prev-" + hashlib.sha1(f"{account_id}{desc.lower()}{tot}{k}{first}{round(amt)}".encode()).hexdigest()[:20]
             if ext in future or db.query(Transaction.id).filter_by(user_id=uid, external_id=ext).first():
                 continue
             if _find_installment(db, uid, account_id, desc, f"{k}/{tot}", amt, dk):
                 continue
-            future[ext] = {"date": dk.isoformat(), "description": desc, "amount": -amt, "installment": f"{k}/{tot}"}
+            future[ext] = {"date": dk.isoformat(), "description": desc, "amount": -amt,
+                           "installment": f"{k}/{tot}", "invoice_month": ym_k}
 
     new = [i for i in items if i["status"] == "new"]
-    matched = [i for i in items if i["status"] == "match"]
+    linked = [i for i in items if i["status"] in ("dup", "match", "manual")]
     summary = {
-        "format": fmt, "total": len(items), "new": len(new), "matched": len(matched), "future": len(future),
+        "format": fmt, "total": len(items), "new": len(new), "future": len(future),
+        "matched": sum(i["status"] in ("match", "manual") for i in items),
         "duplicates": sum(i["status"] == "dup" for i in items),
         "skipped": sum(i["status"] == "skip" for i in items),
         "expenses": round(-sum(i["amount"] for i in new if i["amount"] < 0), 2),
         "incomes": round(sum(i["amount"] for i in new if i["amount"] > 0), 2),
         "future_amount": round(-sum(f["amount"] for f in future.values()), 2),
+        # ainda não estava presa a esta fatura → vai ser re-vinculada ao importar
+        "relink": sum(1 for i in linked if is_card and i["_tx"].invoice_month != ym),
     }
+    if is_card:
+        start, end, due = analytics.invoice_cycle(acc, ym)
+        file_total = -sum(i["amount"] for i in items if i["status"] != "skip")
+        # lançamentos que o Finora põe nesta fatura mas que não estão no arquivo do banco:
+        # é aqui que costuma estar a diferença (lançado à mão, parcela prevista que não veio)
+        extra = [t for t in analytics.invoice_transactions(db, acc, ym) if t.id not in touched]
+        extra_total = sum(t.amount if t.type == "expense" else -t.amount for t in extra)
+        bank = statement_import.statement_balance(raw) if fmt == "ofx" else None
+        summary["invoice"] = {
+            "ym": ym, "period_start": start.isoformat(), "period_end": end.isoformat(), "due_date": due.isoformat(),
+            "file_total": round(file_total, 2), "bank_total": round(abs(bank), 2) if bank is not None else None,
+            "after_total": round(file_total + extra_total, 2),
+            "extra": [{"date": t.date.isoformat(), "description": t.description, "installment": t.installment,
+                       "amount": round(t.amount if t.type == "expense" else -t.amount, 2),
+                       "predicted": (t.external_id or "").startswith("prev-")} for t in extra[:50]],
+            "missing_days": not (acc.closing_day and acc.due_day),
+        }
     if dry_run:
         summary["rows"] = [{k: v for k, v in i.items() if not k.startswith("_")} for i in items[:300]]
         return summary
@@ -979,30 +1017,37 @@ async def import_statement(account_id: int, file: UploadFile, invert: bool = Fal
     for i in new:
         v, d = i["amount"], date.fromisoformat(i["date"])
         typ = "expense" if v < 0 else "income"
-        db.add(Transaction(user_id=uid, account_id=account_id, date=d,
+        db.add(Transaction(user_id=uid, account_id=account_id, date=d, invoice_month=ym,
                            description=i["description"], amount=abs(v), type=typ,
                            installment=i["installment"], external_id=i["_ext"], source="manual",
                            category_id=categorize(db, uid, i["description"], typ)))
         _adjust_balance(db, account_id, d, v, +1)
-    for i in matched:
-        t = i["_match"]
-        if (t.external_id or "").startswith("prev-"):  # prevista vira real: valor e data da fatura
+    for i in linked:
+        t = i["_tx"]
+        if i["status"] == "match" and (t.external_id or "").startswith("prev-"):  # prevista vira real
             _apply_tx_effect(db, t, -1)
             t.date, t.amount, t.notes = date.fromisoformat(i["date"]), -i["amount"], ""
             _apply_tx_effect(db, t, +1)
-        t.external_id = i["_ext"]
+        if i["status"] != "dup":
+            t.external_id = i["_ext"]
+        if is_card:
+            t.invoice_month = ym
     for ext, f in future.items():
         db.add(Transaction(user_id=uid, account_id=account_id, date=date.fromisoformat(f["date"]),
+                           invoice_month=f["invoice_month"],
                            description=f["description"], amount=-f["amount"], type="expense",
                            installment=f["installment"], external_id=ext, source="manual",
                            notes="Parcela prevista: confirmada quando a fatura desse mês for importada.",
                            category_id=categorize(db, uid, f["description"], "expense")))
     acc.last_import_at = datetime.utcnow()
     db.commit()
-    return {**summary, "imported": len(new)}
+    out = {**summary, "imported": len(new)}
+    if is_card:
+        out["invoice"]["after_total"] = analytics.invoice(db, acc, ym)["total"]
+    return out
 
 
-def _find_installment(db, uid, account_id, desc, inst, amount, near):
+def _find_installment(db, uid, account_id, desc, inst, amount, near, exclude=()):
     """Parcela n/T já existente da mesma compra — prevista por uma importação anterior ou
     lançada à mão (sem external_id). Tolera centavos de arredondamento e alguns dias de
     diferença na data; nunca casa com outra linha já importada de verdade."""
@@ -1011,9 +1056,34 @@ def _find_installment(db, uid, account_id, desc, inst, amount, near):
         Transaction.installment == inst, func.lower(Transaction.description) == desc.lower(),
         or_(Transaction.external_id.is_(None), Transaction.external_id.like("prev-%")))
     for t in q:
-        if abs(t.amount - amount) <= max(1.0, 0.02 * amount) and abs((t.date - near).days) <= 45:
+        if t.id not in exclude and abs(t.amount - amount) <= max(1.0, 0.02 * amount) and abs((t.date - near).days) <= 45:
             return t
     return None
+
+
+def _find_manual(db, uid, account_id, amount, near, exclude=()):
+    """Compra à vista lançada à mão no cartão (sem external_id) com o mesmo valor, até 3
+    dias de diferença — a descrição costuma ser outra ("Mercado" × "SUPERMERCADO XYZ")."""
+    q = db.query(Transaction).filter(
+        Transaction.user_id == uid, Transaction.account_id == account_id, Transaction.type == "expense",
+        Transaction.external_id.is_(None), Transaction.installment.is_(None),
+        Transaction.date >= near - timedelta(days=3), Transaction.date <= near + timedelta(days=3))
+    for t in q:
+        if t.id not in exclude and round(t.amount, 2) == round(amount, 2):
+            return t
+    return None
+
+
+@router.get("/cards/{account_id}/invoices/{ym}")
+def card_invoice(account_id: int, ym: str = Path(..., pattern=r"^\d{4}-\d{2}$"),
+                 u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Uma fatura do cartão com a composição (compras, parcelas, encargos, créditos) e os lançamentos."""
+    acc = db.query(Account).filter_by(id=account_id, user_id=u.workspace_id, kind="credit_card").first()
+    if not acc:
+        raise HTTPException(404, "Cartão não encontrado")
+    inv = analytics.invoice(db, acc, ym, with_items=True)
+    inv["items"] = [tx_out(t) for t in inv["items"]]
+    return inv
 
 
 def _csv_safe(v: str) -> str:

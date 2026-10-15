@@ -163,6 +163,16 @@ def parse_ofx(text: str) -> list[Row]:
     return out
 
 
+def statement_balance(raw: bytes) -> float | None:
+    """Total que o banco informa no OFX (<LEDGERBAL><BALAMT>): na fatura do cartão é o valor
+    a pagar, normalmente negativo. Serve pra conferir a soma das linhas importadas."""
+    m = re.search(r"<LEDGERBAL>.*?<BALAMT>\s*([^<\r\n]+)", decode(raw), re.I | re.S)
+    try:
+        return parse_amount(m.group(1)) if m else None
+    except ValueError:
+        return None
+
+
 def parse(filename: str, raw: bytes) -> tuple[str, list[Row]]:
     """("ofx" | "csv", linhas). Detecta pelo conteúdo, não só pela extensão."""
     text = decode(raw)

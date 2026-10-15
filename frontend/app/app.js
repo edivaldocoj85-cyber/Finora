@@ -721,7 +721,7 @@ VIEWS.dashboard = async (v) => {
     }).join("") || '<div class="empty">Nada por aqui.</div>'}</div></div>
     <div class="card"><h2>Próximos vencimentos</h2><div class="list">${d.upcoming.map((b) => `<div class="li"><div class="grow"><div class="title">${esc(b.name)}</div><div class="small muted">${fdate(b.due_date)} · ${b.days_left === 0 ? "hoje" : `em ${b.days_left} dia(s)`}</div></div><div class="amount">${brl(b.amount)}</div>${b.kind === "contract" && b.account_id ? `<button class="btn small" data-pay="${b.contract_id}" data-amt="${b.amount}" data-due="${b.due_date}" style="margin-left:8px">Marcar pago</button>` : ""}</div>`).join("") || '<div class="empty">Nada vencendo nos próximos 10 dias.</div>'}</div></div>
     <div class="card"><h2>Cartões</h2><div class="list">${d.cards.map((c) => `<div class="li" style="display:block"><div class="between"><strong>${esc(c.name)}</strong><span class="amount">${brl(c.total)}</span></div>
-      <div class="small muted">Vence ${fdate(c.due_date)}${c.limit ? ` · ${c.usage_pct}% do limite` : ""}</div>${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div>` : ""}</div>`).join("") || '<div class="empty">Nenhum cartão cadastrado.</div>'}</div></div>
+      <div class="small muted">${c.closed ? "Fatura fechada · vence" : "Fatura aberta · vence"} ${fdate(c.due_date)}${c.limit ? ` · ${c.usage_pct}% do limite` : ""}</div>${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div>` : ""}</div>`).join("") || '<div class="empty">Nenhum cartão cadastrado.</div>'}</div></div>
   </div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><h2>Contas</h2><div class="list">${d.accounts.filter((a) => a.kind !== "credit_card").map((a) => `<div class="li"><span class="dot" style="background:${esc(a.color)}"></span><div class="grow"><div class="title">${esc(a.name)}</div><div class="small muted">${esc(KINDS[a.kind])}${a.institution ? " · " + esc(a.institution) : ""}</div></div><div class="amount ${a.balance < 0 ? "neg" : ""}">${brl(a.balance)}</div></div>`).join("") || '<div class="empty">Nenhuma conta.</div>'}</div></div>
@@ -899,12 +899,12 @@ function importForm() {
     <div id="impPrev"></div>
     <p class="error" id="formError"></p>
     <div class="modal-actions"><button type="button" class="btn" id="fCancel">Cancelar</button><button class="btn primary" id="fSave" disabled>Importar</button></div>`;
-  let invTouched = false, seq = 0, last = null;
+  let invTouched = false, seq = 0, last = null, invYm = null;
   const accId = () => $("#impAcc").value;
   const file = () => $("#impFile").files[0];
   const send = (dry) => {
     const fd = new FormData(); fd.append("file", file());
-    return api(`/transactions/import?account_id=${accId()}&invert=${$("#impInv").checked}&dry_run=${dry}`, { body: fd });
+    return api(`/transactions/import?account_id=${accId()}&invert=${$("#impInv").checked}&dry_run=${dry}${invYm ? `&invoice=${invYm}` : ""}`, { body: fd });
   };
   const autoInvert = () => {
     if (invTouched || !file()) return;
@@ -922,13 +922,28 @@ function importForm() {
       last = r;
       const isCard = accs.find((a) => String(a.id) === accId())?.kind === "credit_card";
       const looksInverted = isCard && r.new && !r.expenses && r.incomes;
-      const chip = { new: '<span class="chip c-green">novo</span>', dup: '<span class="chip">já importado</span>', skip: '<span class="chip c-amber">pagamento da fatura</span>', match: '<span class="chip c-violet">parcela prevista</span>' };
-      const todo = r.new + r.matched + r.future;
+      const chip = { new: '<span class="chip c-green">novo</span>', dup: '<span class="chip">já importado</span>', skip: '<span class="chip c-amber">pagamento da fatura</span>', match: '<span class="chip c-violet">parcela prevista</span>', manual: '<span class="chip c-violet">já lançado à mão</span>' };
+      const todo = r.new + r.matched + r.future + (r.relink || 0);
+      const inv = r.invoice, diff = (a, b) => Math.abs(a - b) > 0.009;
+      const invBox = !inv ? "" : `<div class="imp-inv">
+          <div class="between"><label class="imp-ym">Fatura que fecha em <select id="impYm">${[-1, 0, 1].map((n) => ymAdd(inv.ym, n)).map((y) => `<option value="${y}" ${y === inv.ym ? "selected" : ""}>${ymLabel(y)}</option>`).join("")}</select></label>
+            <span class="small muted">${fdate(inv.period_start)} a ${fdate(inv.period_end)} · vence ${fdate(inv.due_date)}</span></div>
+          <div class="imp-totals">
+            <div><span>Soma do arquivo</span><b>${brl(inv.file_total)}</b></div>
+            ${inv.bank_total != null ? `<div><span>Total informado pelo banco</span><b class="${diff(inv.bank_total, inv.file_total) ? "neg" : ""}">${brl(inv.bank_total)}</b></div>` : ""}
+            <div><span>Fatura no Finora depois de importar</span><b class="${diff(inv.after_total, inv.file_total) ? "neg" : "pos"}">${brl(inv.after_total)}</b></div>
+          </div>
+          ${inv.missing_days ? `<p class="small imp-warn">Esse cartão está sem dia de fechamento ou de vencimento. Cadastre em Cartões → Editar pra fatura cair no período certo.</p>` : ""}
+          ${inv.bank_total != null && diff(inv.bank_total, inv.file_total) ? `<p class="small imp-warn">O total do banco é diferente da soma das linhas (${brl(inv.bank_total - inv.file_total)}). Pode ser saldo da fatura anterior, juros do rotativo ou linhas que o banco não exporta.</p>` : ""}
+          ${inv.extra.length ? `<p class="small imp-warn">Estes lançamentos estão nessa fatura no Finora, mas não aparecem no arquivo do banco (${brl(inv.after_total - inv.file_total)}). Confira se são duplicados ou de outra fatura:</p>
+            <div class="list imp-extra">${inv.extra.map((t) => `<div class="li"><div class="grow"><div class="title">${esc(t.description)}${t.installment ? ` <span class="chip">${esc(t.installment)}</span>` : ""}${t.predicted ? ' <span class="chip c-violet">prevista</span>' : ""}</div><div class="small muted">${fdate(t.date)}</div></div><div class="amount">${brl(t.amount)}</div></div>`).join("")}</div>` : ""}
+        </div>`;
       box.innerHTML = `<div class="imp-sum">
           <span class="chip c-cyan">${r.format.toUpperCase()}</span>
-          <b>${r.new}</b> ${r.new === 1 ? "novo" : "novos"}${r.duplicates ? ` · ${r.duplicates} já importado(s)` : ""}${r.matched ? ` · ${r.matched} confirma(m) parcela(s) prevista(s)` : ""}${r.skipped ? ` · ${r.skipped} pagamento(s) de fatura ignorado(s)` : ""}
+          <b>${r.new}</b> ${r.new === 1 ? "novo" : "novos"}${r.duplicates ? ` · ${r.duplicates} já importado(s)` : ""}${r.matched ? ` · ${r.matched} já lançado(s) ou previsto(s)` : ""}${r.skipped ? ` · ${r.skipped} pagamento(s) de fatura ignorado(s)` : ""}
           <span class="imp-tot">Gastos <b class="neg">${brl(r.expenses)}</b>${r.incomes ? ` · Créditos <b class="pos">${brl(r.incomes)}</b>` : ""}</span>
         </div>
+        ${invBox}
         ${r.future ? `<p class="small imp-fut">${navIcon("cards")} Também ${r.future === 1 ? "vai ser lançada 1 parcela futura" : `vão ser lançadas ${r.future} parcelas futuras`} (${brl(r.future_amount)}) nas faturas dos próximos meses.</p>` : ""}
         ${looksInverted ? `<p class="small imp-warn">As compras estão entrando como crédito. Se isso é uma fatura, marque a opção "compras com valor positivo" acima.</p>` : ""}
         <div class="table-wrap imp-table"><table><thead><tr><th>Data</th><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead><tbody>
@@ -938,28 +953,40 @@ function importForm() {
       $("#fSave").disabled = !todo;
       $("#fSave").textContent = !todo ? "Nada novo pra importar"
         : r.new ? `Importar ${r.new} ${r.new === 1 ? "lançamento" : "lançamentos"}${r.future ? ` + ${r.future} ${r.future === 1 ? "parcela" : "parcelas"}` : ""}`
-        : r.future ? `Lançar ${r.future} ${r.future === 1 ? "parcela futura" : "parcelas futuras"}` : "Confirmar parcelas";
+        : r.future ? `Lançar ${r.future} ${r.future === 1 ? "parcela futura" : "parcelas futuras"}` : "Atualizar a fatura";
+      const ymSel = $("#impYm"); if (ymSel) ymSel.onchange = () => { invYm = ymSel.value; preview(); };
     } catch (e) {
       if (my !== seq) return;
       box.innerHTML = ""; $("#formError").textContent = e.message;
     }
   };
-  $("#impFile").onchange = () => { autoInvert(); preview(); };
-  $("#impAcc").onchange = () => { autoInvert(); preview(); };
+  $("#impFile").onchange = () => { invYm = null; autoInvert(); preview(); };
+  $("#impAcc").onchange = () => { invYm = null; autoInvert(); preview(); };
   $("#impInv").onchange = () => { invTouched = true; preview(); };
   $("#fCancel").onclick = () => dlg.close();
   form.onsubmit = async (e) => {
     e.preventDefault();
-    if (!last || !(last.new + last.matched + last.future)) return;
+    if (!last || !(last.new + last.matched + last.future + (last.relink || 0))) return;
     $("#fSave").disabled = true; $("#fSave").classList.add("loading");
     try {
       const r = await send(false);
       dlg.close(); route();
-      toast(`${r.imported === 1 ? "1 lançamento importado" : `${r.imported} lançamentos importados`}${r.future ? ` · ${r.future} ${r.future === 1 ? "parcela futura lançada" : "parcelas futuras lançadas"}` : ""}`, "success");
+      toast(`${r.imported === 1 ? "1 lançamento importado" : `${r.imported} lançamentos importados`}${r.future ? ` · ${r.future} ${r.future === 1 ? "parcela futura lançada" : "parcelas futuras lançadas"}` : ""}${r.invoice ? ` · fatura ${brl(r.invoice.after_total)}` : ""}`, "success");
     } catch (err) { $("#formError").textContent = err.message; shakeEl(dlg); $("#fSave").disabled = false; }
     finally { $("#fSave").classList.remove("loading"); }
   };
   dlg.showModal();
+}
+
+const MONTHS_SHORT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const ymLabel = (ym) => { const [y, m] = ym.split("-").map(Number); return `${MONTHS_SHORT[m - 1]}/${y}`; };
+const ymAdd = (ym, n) => { const [y, m] = ym.split("-").map(Number); const d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+const INVOICE_STATUS = { open: ["aberta", "c-cyan"], closed: ["fechada · a pagar", "c-amber"], past: ["vencida", ""] };
+
+/* composição da fatura, na mesma ordem que o banco mostra */
+function invoiceBreakdown(inv) {
+  const parts = [["Compras", inv.purchases], ["Parcelas", inv.installments], ["Encargos e IOF", inv.charges]].filter(([, v]) => v);
+  return `<div class="inv-break">${parts.map(([l, v]) => `<span>${l} <b>${brl(v)}</b></span>`).join("")}${inv.credits ? `<span>Estornos e créditos <b class="pos">−${brl(inv.credits)}</b></span>` : ""}</div>`;
 }
 
 VIEWS.cards = async (v) => {
@@ -967,11 +994,13 @@ VIEWS.cards = async (v) => {
   const cards = state.accounts.filter((a) => a.kind === "credit_card" && !a.archived);
   const dueThisMonth = plans.filter((p) => p.this_month_amount != null);
   const dueTotal = dueThisMonth.reduce((s, p) => s + p.this_month_amount, 0);
-  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">Todos os gastos no cartão entram na fatura de acordo com o dia de fechamento.</p><button class="btn" id="newCard">+ Cartão</button></div>
+  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">A fatura soma compras, parcelas e encargos, menos estornos. O que veio de um arquivo de fatura fica na fatura do banco; o resto segue o dia de fechamento.</p><button class="btn" id="newCard">+ Cartão</button></div>
   <div class="grid g2">${d.cards.map((c) => `<div class="card"><div class="between"><h2>${esc(c.name)}</h2><button class="btn small" data-edit="${c.account_id}">Editar</button></div>
-    <div class="stat"><div class="value">${brl(c.total)}</div><div class="sub">Fatura de ${fdate(c.period_start)} a ${fdate(c.period_end)} · vence ${fdate(c.due_date)}</div></div>
-    ${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div><div class="small muted" style="margin-top:6px">${c.usage_pct}% de ${brl(c.limit)} · disponível ${brl(c.limit - c.total)}</div>` : ""}
-    <div class="list" id="inv-${c.account_id}" style="margin-top:10px"></div></div>`).join("") || '<div class="card empty">Nenhum cartão cadastrado.</div>'}</div>
+    ${c.missing_days ? `<p class="small imp-warn">Cadastre o dia de fechamento e o de vencimento deste cartão (em Editar). Sem eles, os períodos das faturas não batem com os do banco.</p>` : ""}
+    ${c.closed ? `<div class="inv-next small muted">Fatura aberta (fecha ${fdate(c.open.period_end)}): <b>${brl(c.open.total)}</b></div>` : ""}
+    <div id="inv-${c.account_id}" class="inv-box"></div>
+    ${c.limit ? `<div class="bar ${c.usage_pct >= 80 ? "over" : c.usage_pct >= 60 ? "warn" : ""}"><i style="${barFill(c.usage_pct)}"></i></div><div class="small muted" style="margin-top:6px">${c.usage_pct}% de ${brl(c.limit)} em uso · disponível ${brl(c.limit - c.open.total - (c.closed ? c.closed.total : 0))}</div>` : ""}
+    </div>`).join("") || '<div class="card empty">Nenhum cartão cadastrado.</div>'}</div>
   <div class="card" style="margin-top:16px"><h2>Parcelamentos em aberto</h2>
     ${plans.length ? `<p class="muted small">Este mês entram <b>${dueThisMonth.length}</b> parcela(s) somando <b>${brl(dueTotal)}</b> nas faturas.</p>` : ""}
     <div class="list">${plans.map((p) => `<div class="li"><div class="grow">
@@ -984,10 +1013,25 @@ VIEWS.cards = async (v) => {
       </div>`).join("") || '<div class="empty">Nenhuma compra parcelada em aberto.</div>'}</div></div>`;
   $("#newCard").onclick = () => accountForm({ kind: "credit_card" });
   v.querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => accountForm(cards.find((c) => c.id == b.dataset.edit))));
-  for (const c of d.cards) {
-    const rows = await api(`/transactions?account_id=${c.account_id}&start=${c.period_start}&end=${c.period_end}`);
-    $(`#inv-${c.account_id}`).innerHTML = rows.map((t) => `<div class="li"><span class="dot" style="background:${esc(t.category_color)}"></span><div class="grow"><div class="title">${esc(t.description)}</div><div class="small muted">${fdate(t.date)} · ${esc(t.category_name)} ${t.installment ? "· parcela " + esc(t.installment) : ""}</div></div><div class="amount">${brl(t.amount)}</div></div>`).join("") || '<div class="empty">Sem compras nesta fatura.</div>';
-  }
+
+  // cada cartão abre na fatura a pagar (a fechada, se houver; senão a aberta) e navega ‹ ›
+  const show = async (c, ym) => {
+    const box = $(`#inv-${c.account_id}`, v);
+    if (!box) return;
+    box.innerHTML = `<div class="empty">Carregando…</div>`;
+    const inv = await api(`/cards/${c.account_id}/invoices/${ym}`);
+    const [label, cls] = INVOICE_STATUS[inv.status] || ["", ""];
+    box.innerHTML = `<div class="inv-nav">
+        <button type="button" class="icon-btn" data-nav="-1" aria-label="Fatura anterior">‹</button>
+        <div class="grow"><b>Fatura que fecha em ${ymLabel(ym)}</b> <span class="chip ${cls}">${label}</span>
+          <div class="small muted">${fdate(inv.period_start)} a ${fdate(inv.period_end)} · vence ${fdate(inv.due_date)}</div></div>
+        <button type="button" class="icon-btn" data-nav="1" aria-label="Próxima fatura">›</button></div>
+      <div class="stat"><div class="value">${brl(inv.total)}</div></div>
+      ${invoiceBreakdown(inv)}
+      <div class="list" style="margin-top:10px">${inv.items.map((t) => `<div class="li"><span class="dot" style="background:${esc(t.category_color)}"></span><div class="grow"><div class="title">${esc(t.description)}${(t.external_id || "").startsWith("prev-") ? ' <span class="chip c-violet">prevista</span>' : ""}</div><div class="small muted">${fdate(t.date)} · ${esc(t.category_name)}${t.installment ? " · parcela " + esc(t.installment) : ""}</div></div><div class="amount ${t.type === "income" ? "pos" : ""}">${t.type === "income" ? "−" : ""}${brl(t.amount)}</div></div>`).join("") || '<div class="empty">Sem lançamentos nesta fatura.</div>'}</div>`;
+    box.querySelectorAll("[data-nav]").forEach((b) => (b.onclick = () => show(c, ymAdd(ym, +b.dataset.nav))));
+  };
+  await Promise.all(d.cards.map((c) => show(c, (c.closed || c.open).ym)));
 };
 
 function accountForm(values = {}) {

@@ -92,6 +92,8 @@ class Transaction(Owned, Base):
     amount: Mapped[float] = mapped_column(Float)  # sempre positivo
     type: Mapped[str] = mapped_column(String(10))  # expense | income | transfer
     installment: Mapped[str | None] = mapped_column(String(20))  # "3/10"
+    # fatura a que pertence (mês do fechamento, "2026-10"); vazio = pela data e o dia de fechamento
+    invoice_month: Mapped[str | None] = mapped_column(String(7), index=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     external_id: Mapped[str | None] = mapped_column(String(64))
     source: Mapped[str] = mapped_column(String(10), default="manual")  # manual | pluggy

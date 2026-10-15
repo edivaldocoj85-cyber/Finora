@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 import calendar
 import re
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
@@ -52,32 +52,98 @@ def by_category(db: Session, user_id: int, start: date, end: date, kind="expense
              "total": round(t or 0, 2)} for i, n, c, b, ess, t in rows]
 
 
+# ------------------------------------------------------------------ fatura do cartão
+# Uma fatura é identificada pelo mês do FECHAMENTO ("2026-10" = fecha em outubro). Cada
+# lançamento do cartão pertence a uma fatura: a gravada em Transaction.invoice_month
+# (importação da fatura do banco, parcelas previstas) ou, se vazia, a do ciclo da data.
+# Total = compras + parcelas + encargos − estornos/créditos, igual ao banco calcula.
+_CHARGE_RE = re.compile(r"\b(iof|juros|encargo|anuidade|multa|mora|tarifa|rotativo)", re.I)
+
+
+def ym_add(ym: str, n: int) -> str:
+    y, m = map(int, ym.split("-"))
+    return add_months(date(y, m, 1), n).strftime("%Y-%m")
+
+
+def _closing(acc) -> int:
+    return acc.closing_day or 1  # sem dia cadastrado: a tela avisa (missing_days)
+
+
+def invoice_cycle(acc, ym: str) -> tuple[date, date, date]:
+    """(início, fechamento, vencimento) da fatura que fecha no mês ym."""
+    y, m = map(int, ym.split("-"))
+    end = date(y, m, min(_closing(acc), calendar.monthrange(y, m)[1]))
+    prev = add_months(date(y, m, 1), -1)
+    start = date(prev.year, prev.month, min(_closing(acc), calendar.monthrange(prev.year, prev.month)[1])) + timedelta(days=1)
+    due_day = acc.due_day or 10
+    due_month = add_months(date(y, m, 1), 0 if due_day > _closing(acc) else 1)
+    due = due_month.replace(day=min(due_day, calendar.monthrange(due_month.year, due_month.month)[1]))
+    return start, end, due
+
+
+def invoice_of_date(acc, d: date) -> str:
+    """Fatura em que cai uma compra feita no dia d (pelo dia de fechamento)."""
+    closing = min(_closing(acc), calendar.monthrange(d.year, d.month)[1])
+    return (d if d.day <= closing else add_months(d.replace(day=1), 1)).strftime("%Y-%m")
+
+
+def invoice_transactions(db: Session, acc, ym: str):
+    start, end, _ = invoice_cycle(acc, ym)
+    return (db.query(Transaction).filter(
+        Transaction.account_id == acc.id, Transaction.type.in_(("expense", "income")),
+        or_(Transaction.invoice_month == ym,
+            and_(Transaction.invoice_month.is_(None), Transaction.date >= start, Transaction.date <= end)))
+        .order_by(Transaction.date, Transaction.id).all())
+
+
+def invoice(db: Session, acc, ym: str, ref: date | None = None, with_items: bool = False) -> dict:
+    ref = ref or date.today()
+    start, end, due = invoice_cycle(acc, ym)
+    txs = invoice_transactions(db, acc, ym)
+    purchases = installments = charges = credits = 0.0
+    for t in txs:
+        if t.type == "income":
+            credits += t.amount
+        elif _CHARGE_RE.search(t.description or ""):
+            charges += t.amount
+        elif t.installment:
+            installments += t.amount
+        else:
+            purchases += t.amount
+    total = purchases + installments + charges - credits
+    status = "open" if ref <= end else "closed" if ref <= due else "past"
+    out = {"ym": ym, "period_start": start.isoformat(), "period_end": end.isoformat(),
+           "due_date": due.isoformat(), "status": status, "count": len(txs),
+           "purchases": round(purchases, 2), "installments": round(installments, 2),
+           "charges": round(charges, 2), "credits": round(credits, 2), "total": round(total, 2)}
+    if with_items:
+        out["items"] = txs
+    return out
+
+
 def card_invoices(db: Session, user_id: int, ref: date):
-    """Fatura aberta de cada cartão, respeitando o dia de fechamento."""
+    """Por cartão: a fatura aberta (onde caem as compras de hoje) e, entre o fechamento e o
+    vencimento, a fatura fechada — que é a que o banco mostra como "atual" e cobra."""
     out = []
     for acc in db.query(Account).filter_by(user_id=user_id, kind="credit_card", archived=False):
-        closing = acc.closing_day or 1
-        # período: do dia seguinte ao fechamento anterior até o próximo fechamento
-        if ref.day > closing:
-            start = ref.replace(day=min(closing, calendar.monthrange(ref.year, ref.month)[1])) + timedelta(days=1)
-            end = add_months(start, 1) - timedelta(days=1)
-        else:
-            prev = add_months(ref.replace(day=1), -1)
-            start = prev.replace(day=min(closing, calendar.monthrange(prev.year, prev.month)[1])) + timedelta(days=1)
-            end = ref.replace(day=min(closing, calendar.monthrange(ref.year, ref.month)[1]))
-        total = (db.query(func.sum(Transaction.amount))
-                 .filter(Transaction.account_id == acc.id, Transaction.type == "expense",
-                         Transaction.date >= start, Transaction.date <= end).scalar() or 0)
-        due_month = add_months(end.replace(day=1), 0 if (acc.due_day or 10) > closing else 1)
-        due = due_month.replace(day=min(acc.due_day or 10, calendar.monthrange(due_month.year, due_month.month)[1]))
+        cur = invoice(db, acc, invoice_of_date(acc, ref), ref)
+        prev = invoice(db, acc, ym_add(cur["ym"], -1), ref)
+        closed = prev if prev["status"] == "closed" else None
+        # o que vence primeiro é o que vai pra "próximos vencimentos" e pro card do painel
+        payable = closed or cur
         # Saldo devedor real: cartões conectados via Open Finance reportam o total que o
         # banco cobra (inclui faturas anteriores não pagas / rotativo); a fatura do ciclo
         # aberto sozinha subestimaria a dívida nesse caso. Cartão manual não tem outra fonte.
-        outstanding = abs(acc.balance) if acc.pluggy_account_id else total
+        outstanding = abs(acc.balance) if acc.pluggy_account_id else cur["total"] + (closed["total"] if closed else 0)
+        used = cur["total"] + (closed["total"] if closed else 0)
         out.append({"account_id": acc.id, "name": acc.name, "limit": acc.credit_limit,
-                    "total": round(total, 2), "outstanding_balance": round(outstanding, 2),
-                    "period_start": start.isoformat(), "period_end": end.isoformat(), "due_date": due.isoformat(),
-                    "usage_pct": round(total / acc.credit_limit * 100, 1) if acc.credit_limit else None})
+                    # campos de antes = fatura a pagar (fechada, se houver; senão a aberta)
+                    "total": payable["total"], "period_start": payable["period_start"],
+                    "period_end": payable["period_end"], "due_date": payable["due_date"],
+                    "open": cur, "closed": closed,
+                    "missing_days": not (acc.closing_day and acc.due_day),
+                    "outstanding_balance": round(max(outstanding, 0), 2),
+                    "usage_pct": round(used / acc.credit_limit * 100, 1) if acc.credit_limit else None})
     return out
 
 
@@ -258,7 +324,7 @@ def run_alerts(db: Session, user_id: int, ref: date | None = None):
     for card in d["cards"]:
         if card["usage_pct"] and card["usage_pct"] >= 80:
             _alert(db, user_id, f"card-limit-{card['account_id']}-{ym}", "danger", f"Limite do cartão {card['name']}",
-                   f"A fatura aberta já usa {card['usage_pct']}% do limite.")
+                   f"O que está em aberto no cartão já usa {card['usage_pct']}% do limite.")
 
     for b in d["upcoming"]:
         if b["days_left"] <= 3:
