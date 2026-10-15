@@ -132,6 +132,11 @@ class Contract(Owned, Base):
     total_installments: Mapped[int | None] = mapped_column(Integer)
     interest_rate_month: Mapped[float] = mapped_column(Float, default=0)
     adjustment_index: Mapped[str] = mapped_column(String(20), default="")  # IPCA, IGP-M...
+    kind: Mapped[str] = mapped_column(String(20), default="contract")  # contract|subscription|rent|financing|insurance|service
+    adjustment_month: Mapped[int | None] = mapped_column(Integer)  # mês do reajuste (vazio = mês do início)
+    last_adjusted_at: Mapped[date | None] = mapped_column(Date)
+    renewal_date: Mapped[date | None] = mapped_column(Date)  # fim do período / renovação automática
+    cancel_notice_days: Mapped[int] = mapped_column(Integer, default=0)  # aviso prévio pra cancelar sem multa
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str] = mapped_column(Text, default="")
 

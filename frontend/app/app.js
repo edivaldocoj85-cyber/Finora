@@ -1102,32 +1102,86 @@ VIEWS.accounts = async (v) => {
   });
 };
 
+const CONTRACT_KINDS = { contract: "Contrato", subscription: "Assinatura", rent: "Aluguel", financing: "Financiamento", insurance: "Seguro", service: "Serviço" };
+const MONTH_OPTS = [["", "Mês do início"], ...["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"].map((m, i) => [i + 1, m])];
 function contractForm(c = {}) {
   return openForm({
     title: c.id ? "Editar contrato" : "Novo contrato / conta fixa",
-    values: { due_day: 10, active: true, interest_rate_month: 0, ...c },
+    values: { due_day: 10, active: true, interest_rate_month: 0, kind: "contract", cancel_notice_days: 0, ...c },
     fields: [
-      { name: "name", label: "Nome", required: true, placeholder: "Aluguel, financiamento, plano de saúde…" },
+      { row: [{ name: "name", label: "Nome", required: true, placeholder: "Aluguel, financiamento, plano de saúde…" }, { name: "kind", label: "Tipo", type: "select", options: Object.entries(CONTRACT_KINDS) }] },
       { row: [{ name: "provider", label: "Fornecedor/credor" }, { name: "category_id", label: "Categoria", type: "select", options: catOptions("expense"), num: true }] },
       { name: "account_id", label: "Conta de pagamento (pra confirmar com 1 clique quando vencer)", type: "select", options: [["", "Nenhuma"], ...accOptions()], num: true, nullable: true },
       { row: [{ name: "amount", label: "Valor mensal (R$)", type: "number", required: true }, { name: "due_day", label: "Dia do vencimento", type: "number", step: 1, min: 1, max: 31 }] },
       { row: [{ name: "start_date", label: "Início", type: "date", nullable: true }, { name: "end_date", label: "Fim", type: "date", nullable: true }] },
-      { row: [{ name: "total_installments", label: "Nº de parcelas", type: "number", step: 1 }, { name: "interest_rate_month", label: "Juros ao mês (%)", type: "number" }, { name: "adjustment_index", label: "Reajuste", placeholder: "IPCA, IGP-M" }] },
+      { row: [{ name: "total_installments", label: "Nº de parcelas", type: "number", step: 1 }, { name: "interest_rate_month", label: "Juros ao mês (%)", type: "number" }] },
+      { row: [{ name: "adjustment_index", label: "Índice de reajuste", type: "select", options: [["", "Sem reajuste"], ["IPCA", "IPCA"], ["IGP-M", "IGP-M"], ["INPC", "INPC"],
+          // valor antigo digitado à mão (antes era texto livre): mantém pra não apagar ao salvar
+          ...(c.adjustment_index && !["IPCA", "IGP-M", "INPC"].includes(c.adjustment_index) ? [[c.adjustment_index, c.adjustment_index]] : [])] },
+        { name: "adjustment_month", label: "Mês do reajuste", type: "select", options: MONTH_OPTS, num: true, nullable: true },
+        { name: "last_adjusted_at", label: "Último reajuste", type: "date", nullable: true }] },
+      { row: [{ name: "renewal_date", label: "Renova (ou termina) em", type: "date", nullable: true },
+        { name: "cancel_notice_days", label: "Aviso prévio pra cancelar (dias)", type: "number", step: 1, min: 0, max: 365 }] },
       { name: "active", label: "Ativo", type: "checkbox" },
       { name: "notes", label: "Observações", type: "textarea" },
     ],
-    onSubmit: (d) => { if (!d.category_id) d.category_id = null; return api(c.id ? `/contracts/${c.id}` : "/contracts", { method: c.id ? "PUT" : "POST", body: d }); },
+    extra: `<p class="small muted">Com o índice e o mês do reajuste, o Finora avisa 30 dias antes quanto o valor deve subir. Com a renovação e o aviso prévio, avisa o último dia pra cancelar sem multa.</p>`,
+    onSubmit: (d) => {
+      if (!d.category_id) d.category_id = null;
+      if (!d.adjustment_month) d.adjustment_month = null;
+      if (d.cancel_notice_days == null) d.cancel_notice_days = 0;
+      return api(c.id ? `/contracts/${c.id}` : "/contracts", { method: c.id ? "PUT" : "POST", body: d });
+    },
     onDelete: c.id ? () => api(`/contracts/${c.id}`, { method: "DELETE" }) : null,
   });
 }
 VIEWS.contracts = async (v) => {
-  const items = await api("/contracts");
+  const [items, ins] = await Promise.all([api("/contracts"), api("/contracts/insights")]);
+  const info = Object.fromEntries(ins.contracts.map((x) => [x.id, x]));
   const total = items.filter((c) => c.active).reduce((s, c) => s + c.amount, 0);
-  simpleList(v, {
-    items, empty: "Cadastre aluguel, financiamentos, seguros, escola, assinaturas…", newLabel: "+ Contrato", onNew: contractForm,
-    intro: `Custos fixos ativos: <b>${brl(total)}</b>/mês`,
-    render: (c) => `<div class="grow"><div class="title">${esc(c.name)} ${c.active ? "" : '<span class="chip">inativo</span>'} ${c.interest_rate_month > 2 ? '<span class="chip c-red">juros altos</span>' : ""}</div><div class="small muted">Vence todo dia ${c.due_day}${c.provider ? " · " + esc(c.provider) : ""}${c.end_date ? " · até " + fdate(c.end_date) : ""}</div></div><div class="amount">${brl(c.amount)}</div>`,
-  });
+  let hidden = []; try { hidden = JSON.parse(localGet("finora_subs_hidden") || "[]"); } catch {}
+  const detected = ins.detected.filter((d) => !hidden.includes(d.key));
+  const chips = (c) => {
+    const x = info[c.id] || {}, out = [];
+    if (x.adjustment) {
+      const a = x.adjustment, late = a.days_left < 0;
+      out.push(`<span class="chip ${late ? "c-red" : a.days_left <= 30 ? "c-amber" : ""}">${late ? "reajuste pendente" : "reajuste"} ${esc(a.label)}${a.pct != null ? ` · ${esc(a.index)} ${pctBR(a.pct)} → ${brl(a.new_amount)}` : ""}</span>`);
+    }
+    if (x.renewal) {
+      const r = x.renewal;
+      out.push(r.cancel_days_left >= 0
+        ? `<span class="chip ${r.cancel_days_left <= 15 ? "c-red" : ""}">cancelar até ${fdate(r.cancel_deadline)}</span>`
+        : `<span class="chip">renova ${fdate(r.date)}</span>`);
+    }
+    if (x.ends_in_days != null && x.ends_in_days >= 0 && x.ends_in_days <= 60) out.push(`<span class="chip c-amber">termina em ${x.ends_in_days} dia(s)</span>`);
+    return out.join(" ");
+  };
+  v.innerHTML = `<div class="between" style="margin-bottom:14px"><p class="muted" style="margin:0">Custos fixos ativos: <b>${brl(total)}</b>/mês · assinaturas <b>${brl(ins.subscriptions_monthly)}</b>/mês (${brl(ins.subscriptions_yearly)} por ano)</p>${canEdit() ? '<button class="btn" id="newItem">+ Contrato</button>' : ""}</div>
+    ${ins.tips.length ? `<div class="card" style="margin-bottom:16px"><h2>${navIcon("sparkles")} Onde dá pra economizar</h2><div class="list">${ins.tips.map((t) => `<div class="li"><div class="grow small">${esc(t.message)}</div></div>`).join("")}</div></div>` : ""}
+    ${detected.length ? `<div class="card" style="margin-bottom:16px"><h2>Cobranças que parecem assinatura</h2><p class="small muted">Aparecem todo mês com o mesmo valor, mas ainda não estão cadastradas. Cadastre pra entrar nos custos fixos, no fluxo de caixa e nos avisos.</p>
+      <div class="list">${detected.map((d, i) => `<div class="li"><div class="grow"><div class="title">${esc(d.name)} ${d.price_increase_pct ? `<span class="chip c-amber">subiu ${pctBR(d.price_increase_pct, 1)}</span>` : ""}</div><div class="small muted">${esc(d.description)} · ${d.months} meses · todo dia ${d.day} · ${brl(d.yearly)}/ano</div></div>
+        <div class="amount">${brl(d.amount)}</div>${canEdit() ? `<button class="btn small" data-add="${i}" style="margin-left:8px">Cadastrar</button><button class="btn small ghost" data-hide="${i}">Não é</button>` : ""}</div>`).join("")}</div></div>` : ""}
+    <div class="card"><div class="list">${items.map((c, i) => `<div class="li clickable" data-i="${i}"><div class="grow"><div class="title">${esc(c.name)} <span class="chip">${esc(CONTRACT_KINDS[c.kind] || "Contrato")}</span> ${c.active ? "" : '<span class="chip">inativo</span>'} ${c.interest_rate_month > 2 ? '<span class="chip c-red">juros altos</span>' : ""} ${chips(c)}</div>
+      <div class="small muted">Vence todo dia ${c.due_day}${c.provider ? " · " + esc(c.provider) : ""}${c.end_date ? " · até " + fdate(c.end_date) : ""}</div></div>
+      <div class="amount">${brl(c.amount)}</div>${canEdit() && info[c.id]?.adjustment?.new_amount && info[c.id].adjustment.days_left <= 30 ? `<button class="btn small" data-adj="${c.id}" style="margin-left:8px">Aplicar reajuste</button>` : ""}</div>`).join("") || '<div class="empty">Cadastre aluguel, financiamentos, seguros, escola, assinaturas…</div>'}</div></div>`;
+  if (canEdit()) {
+    $("#newItem").onclick = () => contractForm();
+    v.querySelectorAll("[data-i]").forEach((el) => clickable(el, () => contractForm(items[el.dataset.i])));
+    v.querySelectorAll("[data-add]").forEach((b) => (b.onclick = () => {
+      const d = detected[b.dataset.add];
+      contractForm({ name: d.name, kind: "subscription", amount: d.amount, due_day: d.day, category_id: d.category_id, account_id: d.account_id });
+    }));
+    v.querySelectorAll("[data-hide]").forEach((b) => (b.onclick = () => {
+      hidden.push(detected[b.dataset.hide].key); localSet("finora_subs_hidden", JSON.stringify(hidden)); route();
+    }));
+    v.querySelectorAll("[data-adj]").forEach((b) => (b.onclick = async (ev) => {
+      ev.stopPropagation();
+      const c = items.find((x) => x.id == b.dataset.adj), a = info[c.id].adjustment;
+      if (!await askConfirm({ title: `Aplicar reajuste em ${c.name}?`, message: `${a.index} dos últimos 12 meses: ${pctBR(a.pct)}. O valor passa de ${brl(c.amount)} pra ${brl(a.new_amount)}. Se o reajuste combinado for outro, edite o valor do contrato direto.`, confirmLabel: "Aplicar reajuste" })) return;
+      await api(`/contracts/${c.id}/apply-adjustment`, { body: { pct: a.pct } });
+      toast("Reajuste aplicado", "success"); route();
+    }));
+  }
 };
 
 function receivableForm(r = {}) {

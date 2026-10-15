@@ -83,6 +83,11 @@ def _migrate(engine):
             cols = {c["name"] for c in insp.get_columns("contracts")}
             if "account_id" not in cols:
                 conn.execute(text("ALTER TABLE contracts ADD COLUMN account_id INTEGER"))
+            for col, ddl in (("kind", "VARCHAR(20) DEFAULT 'contract'"), ("adjustment_month", "INTEGER"),
+                             ("last_adjusted_at", "DATE"), ("renewal_date", "DATE"),
+                             ("cancel_notice_days", "INTEGER DEFAULT 0")):
+                if col not in cols:
+                    conn.execute(text(f"ALTER TABLE contracts ADD COLUMN {col} {ddl}"))
         if "goals" in tables:
             cols = {c["name"] for c in insp.get_columns("goals")}
             if "kind" not in cols:

@@ -26,7 +26,7 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
                       Goal, Income, PluggyItem, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
                       WaitlistSignup)
-from ..services import advisor, analytics, assistant, cashflow, market, pluggy, pots, statement_import, storage, vendas
+from ..services import advisor, analytics, assistant, cashflow, market, pluggy, pots, recurring, statement_import, storage, vendas
 from ..services.categorizer import categorize, seed_categories
 
 router = APIRouter(prefix="/api")
@@ -420,6 +420,11 @@ class ContractIn(BaseModel):
     adjustment_index: str = ""
     active: bool = True
     notes: str = ""
+    kind: str = Field("contract", pattern="^(contract|subscription|rent|financing|insurance|service)$")
+    adjustment_month: Optional[int] = Field(None, ge=1, le=12)
+    last_adjusted_at: Optional[date] = None
+    renewal_date: Optional[date] = None
+    cancel_notice_days: int = Field(0, ge=0, le=365)
 
 
 class ReceivableIn(BaseModel):
@@ -620,6 +625,29 @@ def fipe_valor(marca: str, modelo: str, ano: str, u: User = Depends(current_user
 class ConfirmPaymentIn(BaseModel):
     date: Optional[_Date] = None
     amount: Optional[float] = None
+
+
+@router.get("/contracts/insights")
+def contracts_insights(u: User = Depends(current_user_active), db: Session = Depends(get_db)):
+    """Reajustes e renovações previstos + assinaturas detectadas nas cobranças repetidas."""
+    return {"contracts": recurring.contract_insights(db, u.workspace_id),
+            **recurring.detect_subscriptions(db, u.workspace_id)}
+
+
+class AdjustIn(BaseModel):
+    pct: float = Field(ge=-50, le=100)
+
+
+@router.post("/contracts/{cid}/apply-adjustment")
+def apply_contract_adjustment(cid: int, data: AdjustIn, u: User = Depends(current_editor), db: Session = Depends(get_db)):
+    """Aplica o reajuste (percentual confirmado pela pessoa, vem sugerido pelo índice)."""
+    c = db.query(Contract).filter_by(id=cid, user_id=u.workspace_id).first()
+    if not c:
+        raise HTTPException(404, "Contrato não encontrado")
+    c.amount = round(c.amount * (1 + data.pct / 100), 2)
+    c.last_adjusted_at = date.today()
+    db.commit()
+    return to_dict(c)
 
 
 @router.post("/contracts/{cid}/confirm-payment")

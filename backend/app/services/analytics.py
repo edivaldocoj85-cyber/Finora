@@ -366,8 +366,30 @@ def run_alerts(db: Session, user_id: int, ref: date | None = None):
         _alert(db, user_id, f"subs-{ym}", "info", "Revise suas assinaturas",
                f"Assinaturas somam {brl(subs['total'])} (mais de 5% da renda).")
 
+    _contract_alerts(db, user_id, ref, brl)
     _import_reminder_alerts(db, user_id, ref)
     db.commit()
+
+
+def _contract_alerts(db, user_id, ref, brl):
+    """Reajuste chegando (30 dias) e último dia pra cancelar sem multa (15 dias)."""
+    from . import recurring  # import tardio: recurring usa analytics
+    try:
+        insights = recurring.contract_insights(db, user_id, ref)
+    except Exception:
+        return
+    for c in insights:
+        a = c.get("adjustment")
+        if a and 0 <= a["days_left"] <= 30:
+            extra = (f" Pelo {a['index']} dos últimos 12 meses ({str(a['pct']).replace('.', ',')}%), deve passar de "
+                     f"{brl(c['amount'])} pra {brl(a['new_amount'])}.") if a["new_amount"] else ""
+            _alert(db, user_id, f"adjust-{c['id']}-{a['date']}", "info", f"Reajuste de {c['name']} em {a['label']}",
+                   f"O contrato faz aniversário em {date.fromisoformat(a['date']).strftime('%d/%m/%Y')}.{extra}")
+        r = c.get("renewal")
+        if r and 0 <= r["cancel_days_left"] <= 15:
+            dl = date.fromisoformat(r["cancel_deadline"]).strftime("%d/%m/%Y")
+            _alert(db, user_id, f"cancel-{c['id']}-{r['cancel_deadline']}", "warning", f"Prazo pra cancelar {c['name']}",
+                   f"Pra não renovar (ou cancelar sem multa), avise até {dl}. Depois disso o contrato renova sozinho.")
 
 
 _REMINDER_DAYS = {"daily": 1, "weekly": 7, "monthly": 30}
