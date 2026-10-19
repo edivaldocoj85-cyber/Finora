@@ -18,6 +18,7 @@ from .config import get_settings
 from .db import Base, SessionLocal, engine
 from .models import Category, PluggyItem, User
 from .routers.api import router
+from .routers.whatsapp import router as whatsapp_router
 from .services import analytics, notifications, pluggy
 from .services.categorizer import DEFAULT_CATEGORIES
 
@@ -202,6 +203,7 @@ async def security_headers(request, call_next):
 
 
 app.include_router(router)
+app.include_router(whatsapp_router)
 
 
 @app.get("/api/health")

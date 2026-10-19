@@ -2369,6 +2369,7 @@ VIEWS.settings = async (v) => {
       <label>Resumo semanal por e-mail<select id="nDigest"><option value="weekly" ${state.user.email_digest === "weekly" ? "selected" : ""}>Toda segunda, às 7h</option><option value="none" ${state.user.email_digest === "none" ? "selected" : ""}>Não quero</option></select></label>
       <p class="small muted">Vai para ${esc(state.user.email)}. Os avisos também aparecem no sininho do app.</p>
       <div class="row" style="gap:8px"><button class="btn primary" id="saveNotif" type="button">Salvar notificações</button>${state.user.email_enabled ? '<button class="btn ghost" id="testDigest" type="button">Enviar resumo agora</button>' : ""}</div></div>
+    <div class="card" id="waCard"><h2>WhatsApp</h2><p class="small muted">Carregando…</p></div>
     <div class="card">${sharedHtml}</div>
     <div class="card"><h2>Instalar no dispositivo</h2><p class="muted small">No celular, abra o menu do navegador e toque em “Adicionar à tela inicial”. No computador, use o ícone de instalação na barra de endereço.</p><button class="btn" id="installBtn" ${window._installPrompt ? "" : "disabled"}>Instalar app</button>
     <h2 style="margin-top:22px">Privacidade (LGPD)</h2><p class="muted small">Você pode exportar seus lançamentos na tela de Lançamentos. Excluir a conta remove todos os seus dados e revoga as conexões bancárias.</p>
@@ -2406,7 +2407,50 @@ VIEWS.settings = async (v) => {
     await api("/me", { method: "DELETE" }); logout();
   };
   wireSharedAccessCard(v);
+  renderWhatsAppCard();
 };
+
+/* Nora no WhatsApp: gera o código, a pessoa manda "FINORA <código>" do celular e o número
+   que enviou fica ligado à conta (o vínculo só existe depois dessa mensagem). */
+async function renderWhatsAppCard() {
+  const card = $("#waCard");
+  if (!card) return;
+  let st;
+  try { st = await api("/whatsapp"); } catch { card.remove(); return; }
+  const intro = `<p class="small muted">Converse com a Nora pelo WhatsApp: pergunte o saldo, o que vence na semana ou mande “gastei 35 na padaria” que ela lança.</p>`;
+  if (!st.enabled) {
+    card.innerHTML = `<h2>WhatsApp</h2>${intro}<p class="small imp-warn">A integração ainda não está ligada no servidor.</p>`;
+    return;
+  }
+  if (st.linked) {
+    card.innerHTML = `<h2>WhatsApp</h2>${intro}<div class="li"><div class="grow"><div class="title">Conectado</div><div class="small muted">${esc(st.phone)}</div></div>
+      <button type="button" class="btn small danger" id="waUnlink">Desconectar</button></div>`;
+    $("#waUnlink").onclick = async () => {
+      if (!await askConfirm({ title: "Desconectar o WhatsApp?", message: "A Nora para de responder nesse número até você conectar de novo.", confirmLabel: "Desconectar", danger: true })) return;
+      await api("/whatsapp", { method: "DELETE" }); toast("WhatsApp desconectado", "success"); renderWhatsAppCard();
+    };
+    return;
+  }
+  card.innerHTML = `<h2>WhatsApp</h2>${intro}<div id="waCode"></div>
+    <div class="row" style="gap:8px"><button type="button" class="btn primary" id="waGen">Conectar WhatsApp</button></div>`;
+  $("#waGen").onclick = async () => {
+    const b = $("#waGen"); b.disabled = true;
+    try {
+      const r = await api("/whatsapp/link-code", { method: "POST" });
+      const link = r.bot_number ? `https://wa.me/${encodeURIComponent(r.bot_number)}?text=${encodeURIComponent(r.message)}` : "";
+      $("#waCode").innerHTML = `<p>Mande esta mensagem do seu WhatsApp${r.bot_number ? "" : " para o número da Nora"}:</p>
+        <p class="title" style="font-size:1.4em;letter-spacing:.08em">${esc(r.message)}</p>
+        <p class="small muted">Vale por 15 minutos. Depois de mandar, toque em “Já mandei”.</p>
+        <div class="row" style="gap:8px">${link ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">Abrir no WhatsApp</a>` : ""}<button type="button" class="btn ghost" id="waCheck">Já mandei</button></div>`;
+      b.parentElement.remove();
+      $("#waCheck").onclick = async () => {
+        const s = await api("/whatsapp");
+        if (s.linked) { toast("WhatsApp conectado", "success"); renderWhatsAppCard(); }
+        else toast("Ainda não recebi. A Nora responde uns segundos depois da mensagem.", "info");
+      };
+    } catch (e) { toast(e.message, "error"); b.disabled = false; }
+  };
+}
 
 VIEWS.admin = async (v) => {
   const renderList = async (q) => {

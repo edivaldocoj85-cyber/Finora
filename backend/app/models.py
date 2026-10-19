@@ -319,6 +319,17 @@ class PluggyItem(Owned, Base):
     last_error: Mapped[str] = mapped_column(Text, default="")
 
 
+class WhatsAppLink(Owned, Base):
+    """Número de WhatsApp vinculado a um usuário (um por pessoa). O vínculo só vale depois
+    que a própria pessoa manda, desse número, o código gerado no app — assim ninguém liga
+    um número que não é seu. user_id é sempre o login (dados pessoais), nunca uma empresa."""
+    __tablename__ = "whatsapp_links"
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)  # só dígitos, como chega da UAZAPI
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    code_hash: Mapped[str | None] = mapped_column(String(64))  # sha256 do código pendente
+    code_expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class Alert(Owned, Base):
     __tablename__ = "alerts"
     level: Mapped[str] = mapped_column(String(10), default="info")  # info|warning|danger

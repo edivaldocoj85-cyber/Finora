@@ -53,6 +53,22 @@ docker compose up -d --build
 4. **Versão do widget:** confira a versão atual do Pluggy Connect na documentação e ajuste `PLUGGY_CONNECT_SRC` no início de `frontend/app.js`, se preciso.
 5. **Contas do Meu Pluggy:** para uso pessoal, vá em *Conexões bancárias → Tenho um Item ID* e cole o ID do item.
 
+## Nora no WhatsApp
+
+A pessoa conversa com a Nora pelo WhatsApp: pergunta saldo, resumo do mês, vencimentos e faturas, e lança gastos e receitas ("gastei 35 na padaria"). Mensagens mandadas em sequência viram uma resposta só (espera `WHATSAPP_BUFFER_SECONDS` de silêncio), e a resposta chega em partes, com "digitando…".
+
+1. **Instância UAZAPI:** conecte o número do bot (`GET /instance/connect`, QR code) e copie o token da **instância** para `UAZAPI_INSTANCE_TOKEN`, a URL para `UAZAPI_BASE_URL` e o número (só dígitos) para `WHATSAPP_BOT_NUMBER`.
+2. **Segredo do webhook:** gere `WHATSAPP_WEBHOOK_SECRET` e cadastre o webhook:
+   ```bash
+   curl -X PUT "$UAZAPI_BASE_URL/webhook" -H "token: $UAZAPI_INSTANCE_TOKEN" -H "Content-Type: application/json"      -d '{"webhookUrl": "https://SEU-DOMINIO/api/whatsapp/webhook/SEU_SEGREDO", "events": ["message"]}'
+   ```
+3. **Vínculo:** no app, *Configurações → WhatsApp → Conectar WhatsApp* gera um código; a pessoa manda `FINORA <código>` do próprio celular e o número que enviou fica ligado à conta. Número não vinculado só recebe a instrução, sem passar pela IA.
+
+- **Requisito:** precisa de `ANTHROPIC_API_KEY`. O modelo é `WHATSAPP_MODEL` (padrão `claude-opus-5-5`, esforço `low`).
+- **Dados usados:** a Nora no WhatsApp usa sempre os dados pessoais da conta, nunca os de uma empresa.
+- **O que ela grava:** lançamentos com origem `whatsapp`. Só esses, e só nas últimas 24 h, podem ser desfeitos pela conversa.
+- **Memória:** o histórico da conversa e o agrupamento das mensagens ficam na memória do processo. Por isso o app roda com **um worker só**, e reiniciar apaga o histórico. Na Vercel essa integração fica desligada.
+
 ## Consultor com IA
 
 Defina `ANTHROPIC_API_KEY`. Sem a chave, o consultor gera um relatório por regras, sem pesquisa na web.

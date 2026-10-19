@@ -26,7 +26,7 @@ from ..db import get_db, SessionLocal
 from ..models import (Account, AdvisorReport, Alert, Asset, Category, CategoryRule, Contract, CostCenter,
                       Goal, Income, Investment, InvestmentEvent, InvestmentTrade, PluggyItem,
                       PortfolioSnapshot, Pot, PotMove, Receivable, SharedAccess, Transaction, User,
-                      WaitlistSignup)
+                      WaitlistSignup, WhatsAppLink)
 from ..services import reconcile as reconcile_service
 from ..services import (advisor, allocation, analytics, assistant, cashflow, market, montecarlo, notifications, pluggy,
                         portfolio, pots, recurring, report, rewards, chart_of_accounts,
@@ -338,7 +338,7 @@ def _delete_user_data(db: Session, u: User) -> None:
         storage.delete(path)  # arquivos no disco/Supabase Storage não saem com o DELETE do banco
     for M in (PotMove, Pot, InvestmentEvent, InvestmentTrade, PortfolioSnapshot, Investment, Transaction,
               CategoryRule, Contract, Receivable, Income, Goal, Asset, Alert, AdvisorReport, PluggyItem,
-              Account, CostCenter, Category):
+              Account, CostCenter, Category, WhatsAppLink):
         db.query(M).filter_by(user_id=u.id).delete()
     db.query(SharedAccess).filter(or_(SharedAccess.owner_id == u.id, SharedAccess.member_id == u.id)).delete()
     db.query(User).filter_by(id=u.id).delete()
