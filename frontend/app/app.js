@@ -1,6 +1,8 @@
 /* Finora — frontend SPA (vanilla JS) */
 const PLUGGY_CONNECT_SRC = "https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js";
 const GOOGLE_IDENTITY_SRC = "https://accounts.google.com/gsi/client";
+// versão do deploy (o servidor põe ?v=<hash> nos .js do index.html); vai pro sw.js também
+const BUILD = new URL(document.currentScript?.src || location.href).searchParams.get("v") || "dev";
 
 const state = { token: localGet("finora_token"), user: null, cats: [], accounts: [], costCenters: [], charts: [] };
 const $ = (s, el = document) => el.querySelector(s);
@@ -219,6 +221,10 @@ async function ensureMfaThenBoot() {
     for (const f of factorsData?.totp || []) await sb.auth.mfa.unenroll({ factorId: f.id });
     await showMfaSetup();
   } catch (err) {
+    // sessão salva que não serve mais (expirada/revogada): apaga só neste navegador, senão
+    // cada recarga lê a mesma sessão quebrada e cai no mesmo erro
+    await sb.auth.signOut({ scope: "local" }).catch(() => {});
+    state.token = null; localSet("finora_token", null);
     showAuth();
     $("#authError").textContent = err.message || "Não foi possível verificar sua sessão. Tente entrar de novo.";
   }
@@ -371,6 +377,8 @@ async function initAuth() {
     ({ data: { session } } = await sb.auth.getSession());
     if (session) await ensureMfaThenBoot(); else showAuth();
   } catch {
+    await sb.auth.signOut({ scope: "local" }).catch(() => {});
+    state.token = null; localSet("finora_token", null);
     $("#authError").textContent = "Não foi possível recuperar sua sessão. Tente entrar de novo.";
     showAuth();
   }
@@ -2623,7 +2631,9 @@ function initAssistant() {
 
 /* ------------------------------------------------------------------ PWA */
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); window._installPrompt = e; });
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+// sw.js com a versão na URL: o Cloudflare guarda .js por 4 h, então sem isso o SW velho
+// (e o cache dele) sobrevive ao deploy. updateViaCache "none" ignora o cache HTTP na checagem.
+if ("serviceWorker" in navigator) navigator.serviceWorker.register(`sw.js?v=${encodeURIComponent(BUILD)}`, { updateViaCache: "none" }).catch(() => {});
 
 // qualquer erro inesperado no início mostra a tela de login com o aviso, nunca a página em branco
 initAuth().catch((e) => { showAuth(); $("#authError").textContent = "Erro ao iniciar: " + (e?.message || e); });
