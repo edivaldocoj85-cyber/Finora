@@ -56,6 +56,17 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     resend_from: str = "Finora <onboarding@resend.dev>"
 
+    # Nora no WhatsApp (UAZAPI) — https://docs.uazapi.com. O webhook fica em
+    # PUBLIC_URL/api/whatsapp/webhook/<WHATSAPP_WEBHOOK_SECRET>; sem os 4 primeiros
+    # (e sem ANTHROPIC_API_KEY) a integração fica desligada.
+    uazapi_base_url: str = ""
+    uazapi_instance_token: str = ""        # token da INSTÂNCIA, não o admin token
+    whatsapp_webhook_secret: str = ""
+    whatsapp_bot_number: str = ""          # número do bot só com dígitos (5561999990000), pro link wa.me
+    whatsapp_model: str = "claude-opus-5-5"
+    whatsapp_effort: str = "low"           # conversa curta: low basta; suba se as respostas ficarem rasas
+    whatsapp_buffer_seconds: float = 8     # silêncio esperado antes de responder (junta mensagens em rajada)
+
 
 @lru_cache
 def get_settings() -> Settings:
